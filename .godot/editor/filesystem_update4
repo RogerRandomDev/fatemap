@@ -1,0 +1,16 @@
+res://Scenes/MapMaker.tscn
+res://services/GUIToolbarService.gd
+res://models/guiResources/guiToolbarDropdown.gd
+res://services/GUIService.gd
+res://models/guiResources/guiArrayMethods.gd
+res://Scenes/test.tscn
+res://addons/sk_fly_camera/src/CameraSpeedControls.tscn
+res://Scenes/ToolBarContents.gd
+res://models/guiResources/guiDropdownResource.gd
+res://models/guiResources/guiParameterTypes.gd
+res://new_resource.tres
+res://services/PhysicalObjectService.gd
+res://services/ToolMethodService.gd
+res://models/camera/camera_gizmo.gd
+res://Scenes/RightInspector.gd
+res://Scenes/mapMaker.gd

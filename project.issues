@@ -1,0 +1,28 @@
+{
+	"version": 1.0,
+	"meta": {
+		"tag_colors": {
+
+		}
+	},
+	"issues": {
+		"Roger": [
+			{
+				"text": "Create Object System allowing for groups or singular objects, tags, and data values to be created",
+				"tags": [
+					"System"
+				],
+				"timestamp": 1756081527.19146,
+				"priority": 1.0
+			},
+			{
+				"text": "Create Interface to allow you to place and alter a mesh in the environment",
+				"tags": [
+					"System"
+				],
+				"timestamp": 1756081605.43169,
+				"priority": 1.0
+			}
+		]
+	}
+}

@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://td0o0k0h20tb"]
+
+[ext_resource type="Script" uid="uid://cud4fv65ubb40" path="res://addons/sk_fly_camera/src/camera_speed_controls.gd" id="1_d0x4c"]
+
+[node name="CameraSpeedControls" type="Node"]
+script = ExtResource("1_d0x4c")
