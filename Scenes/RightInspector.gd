@@ -1,6 +1,7 @@
 extends Node
 
-
+var InspectorMain: guiElement
+var InspectorValueList: guiElement
 
 
 func _ready() -> void:
