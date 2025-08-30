@@ -1,0 +1,59 @@
+{
+	"categories": [
+		{
+			"uuid": "241956c6-4433-4e8c-8192-f5853db78742",
+			"title": "Task",
+			"color": "70bafa"
+		}
+	],
+	"stages": [
+		{
+			"uuid": "256ce33f-2476-4829-a80b-c713150bd0a9",
+			"title": "Todo",
+			"tasks": [
+				"314ef178-afb9-48b8-b486-f8f696400226"
+			]
+		},
+		{
+			"uuid": "03de83f7-f218-436c-bbc0-2ae258579d81",
+			"title": "Doing",
+			"tasks": []
+		},
+		{
+			"uuid": "83f69cd3-ec44-40a4-8dff-32c87541563b",
+			"title": "Done",
+			"tasks": []
+		}
+	],
+	"tasks": [
+		{
+			"uuid": "314ef178-afb9-48b8-b486-f8f696400226",
+			"title": "ObjectTagging",
+			"description": "Objects need to be taggable. a tag defines special cases and info about the object (I.E. NOSHADOW could prevent the object from casting shadows, BOUNDCOLLISION could simplify collision to a box around the AABB of the object)",
+			"category": "241956c6-4433-4e8c-8192-f5853db78742",
+			"steps": [
+				{
+					"details": "elements must be taggable",
+					"done": true
+				},
+				{
+					"details": "tags should be able to have a tagType resource to mark what the tag does",
+					"done": false
+				}
+			]
+		}
+	],
+	"layout": {
+		"columns": [
+			[
+				"256ce33f-2476-4829-a80b-c713150bd0a9"
+			],
+			[
+				"03de83f7-f218-436c-bbc0-2ae258579d81"
+			],
+			[
+				"83f69cd3-ec44-40a4-8dff-32c87541563b"
+			]
+		]
+	}
+}
