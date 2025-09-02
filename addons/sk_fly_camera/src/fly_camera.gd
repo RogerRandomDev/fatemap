@@ -141,8 +141,6 @@ const _ACTION_FORWARD  := "cam_forward"
 const _ACTION_BACKWARD := "cam_backward"
 const _ACTION_LEFT     := "cam_left"
 const _ACTION_RIGHT    := "cam_right"
-const _ACTION_FASTER   := "cam_faster"
-const _ACTION_SLOWER   := "cam_slower"
 const _ACTION_ACTIVATE := "cam_activate"
 
 var _actions_to_key := {
@@ -150,8 +148,6 @@ var _actions_to_key := {
 	_ACTION_BACKWARD : KEY_S,
 	_ACTION_LEFT     : KEY_A,
 	_ACTION_RIGHT    : KEY_D,
-	_ACTION_FASTER   : KEY_SHIFT,
-	_ACTION_SLOWER   : KEY_CTRL,
 	_ACTION_ACTIVATE : mouse_button,
 }
 
@@ -212,8 +208,6 @@ func _physics_process(delta: float) -> void:
 		if _is_cam_action_pressed(_ACTION_BACKWARD): dir += aim[2]
 		if _is_cam_action_pressed(_ACTION_LEFT):     dir -= aim[0]
 		if _is_cam_action_pressed(_ACTION_RIGHT):    dir += aim[0]
-		if _is_cam_action_pressed(_ACTION_FASTER):   spd *= speed_factor
-		if _is_cam_action_pressed(_ACTION_SLOWER):   spd /= speed_factor
 
 	dir = dir.normalized()
 

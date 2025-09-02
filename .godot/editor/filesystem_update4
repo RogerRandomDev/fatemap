@@ -1,1 +1,13 @@
 res://Scenes/MapMaker.tscn
+res://Scenes/MapMakerTheme.tres
+res://Scenes/RightInspector.gd
+res://models/objects/guiObjectParameterTabContainer.gd
+res://models/objectModel.gd
+res://models/objects/tabs/ParamaterTab.gd
+res://models/objects/tabs/TagTab.gd
+res://models/resources/objectDataResource.gd
+res://Scenes/mapMaker.gd
+res://Scenes/meshToolbar.gd
+res://addons/sk_fly_camera/src/CameraSpeedControls.tscn
+res://addons/sk_fly_camera/src/camera_speed_controls.gd
+res://addons/sk_fly_camera/src/fly_camera.gd

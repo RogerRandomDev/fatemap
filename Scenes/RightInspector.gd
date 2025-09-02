@@ -14,9 +14,16 @@ func _ready() -> void:
 			&"MiddleHorizontalContainer"
 		)
 	).reference
-	
-	
-	
 	primaryVertical.set_anchors_preset(Control.PRESET_FULL_RECT)
+	primaryVertical.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	primaryVertical.size_flags_stretch_ratio=0.25
 	
+	var parameterLister = GUIService.insertElement(
+		GUIService.createElement(
+			guiObjectParameterTabContainer.new(),
+			&"selectedParameterTabContainer",
+			[&"Tools",&"Parameters",&"Layout"],
+			&"RightToolBox"
+		)
+	).reference
 	

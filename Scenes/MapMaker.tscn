@@ -1,4 +1,4 @@
-[gd_scene load_steps=14 format=3 uid="uid://gq185wjg7pqu"]
+[gd_scene load_steps=15 format=3 uid="uid://gq185wjg7pqu"]
 
 [ext_resource type="Script" uid="uid://ctkdd8bryxxtr" path="res://Scenes/mapMaker.gd" id="1_cyx2k"]
 [ext_resource type="Theme" uid="uid://8cjq1xuuwswd" path="res://Scenes/MapMakerTheme.tres" id="1_ni7vo"]
@@ -8,7 +8,9 @@
 [ext_resource type="Script" uid="uid://cb25fk4wauy8v" path="res://models/camera/camera_gizmo.gd" id="5_01tu6"]
 [ext_resource type="Script" uid="uid://bppken1hqjrw8" path="res://models/resources/objectPhysicalDataResource.gd" id="5_majic"]
 [ext_resource type="Script" uid="uid://cny0xd3e8lnt0" path="res://Scenes/ToolBarContents.gd" id="7_cn52i"]
+[ext_resource type="Script" uid="uid://comuvjjgnhyph" path="res://Scenes/selected_outliner.gd" id="8_l3yla"]
 [ext_resource type="Script" uid="uid://dxjm221ox8g4l" path="res://Scenes/RightInspector.gd" id="9_nposp"]
+[ext_resource type="Script" uid="uid://6sr3giptw1ue" path="res://Scenes/meshToolbar.gd" id="11_6lnv8"]
 
 [sub_resource type="Environment" id="Environment_nposp"]
 background_mode = 1
@@ -19,11 +21,13 @@ ambient_light_color = Color(1, 1, 1, 1)
 [sub_resource type="World3D" id="World3D_l3yla"]
 environment = SubResource("Environment_nposp")
 
-[sub_resource type="BoxMesh" id="BoxMesh_nposp"]
-
-[sub_resource type="Resource" id="Resource_majic"]
+[sub_resource type="Resource" id="Resource_nposp"]
 script = ExtResource("5_majic")
-parameterCount = 0
+parameterCount = 1
+parameter_0/name = "TestParam"
+parameter_0/description = ""
+parameter_0/type = "Integer"
+parameter_0/value = 4
 metadata/_custom_type_script = "uid://bppken1hqjrw8"
 
 [node name="MapMaker" type="VBoxContainer"]
@@ -34,12 +38,24 @@ grow_horizontal = 2
 grow_vertical = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
+mouse_filter = 2
 theme = ExtResource("1_ni7vo")
 script = ExtResource("1_cyx2k")
+
+[node name="ToolBarContents" type="Node" parent="."]
+script = ExtResource("7_cn52i")
+
+[node name="RightInspector" type="Node" parent="."]
+script = ExtResource("9_nposp")
+
+[node name="MeshToolbar" type="Node" parent="."]
+script = ExtResource("11_6lnv8")
 
 [node name="MapView" type="SubViewport" parent="."]
 own_world_3d = true
 world_3d = SubResource("World3D_l3yla")
+handle_input_locally = false
+physics_object_picking = true
 
 [node name="FlyCamera" type="CharacterBody3D" parent="MapView"]
 script = ExtResource("2_ut11n")
@@ -61,6 +77,7 @@ anchor_right = 1.0
 offset_left = -40.0
 offset_bottom = 40.0
 grow_horizontal = 0
+mouse_filter = 2
 stretch = true
 
 [node name="SubViewport" type="SubViewport" parent="MapView/FlyCamera/CameraGizmo/Control"]
@@ -76,13 +93,10 @@ projection = 1
 current = true
 size = 2.0
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="MapView"]
-mesh = SubResource("BoxMesh_nposp")
+[node name="MeshInstance3D" type="Marker3D" parent="MapView"]
 script = ExtResource("4_8pyo2")
-t = SubResource("Resource_majic")
+t = SubResource("Resource_nposp")
+objectType = 1
 
-[node name="ToolBarContents" type="Node" parent="."]
-script = ExtResource("7_cn52i")
-
-[node name="RightInspector" type="Node" parent="."]
-script = ExtResource("9_nposp")
+[node name="SelectedOutliner" type="Node" parent="MapView"]
+script = ExtResource("8_l3yla")

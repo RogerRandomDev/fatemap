@@ -1,4 +1,10 @@
 Node
+Tree
+Marker3D
+VSeparator
+ObjectModel
+CollisionShape3D
+Area3D
 Camera3D
 SubViewport
 SubViewportContainer
@@ -6,7 +12,3 @@ Control
 MeshInstance3D
 VSlider
 VBoxContainer
-HBoxContainer
-ProgressBar
-FlyCamera
-CSGMesh3D

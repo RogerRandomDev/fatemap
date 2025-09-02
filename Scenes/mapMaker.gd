@@ -5,6 +5,11 @@ extends VBoxContainer
 
 func _ready() -> void:
 	loadGUILayout()
+	
+	signalService.addSignal(&"mapObjectSelected")
+	
+	PhysicalObjectInputController.initializeInputController()
+	
 
 func loadGUILayout()->void:
 	loadToolBar()
@@ -42,7 +47,7 @@ func loadMiddleRegion()->void:
 	#MiddleContainer updates
 	MiddleContainer.reference.set_anchors_preset(Control.PRESET_FULL_RECT)
 	MiddleContainer.reference.size_flags_vertical=Control.SIZE_EXPAND_FILL
-	MiddleContainer.reference.mouse_filter=Control.MOUSE_FILTER_PASS
+	MiddleContainer.reference.mouse_filter=Control.MOUSE_FILTER_IGNORE
 
 func loadViewContainer()->void:
 	var ViewContainer :=GUIService.insertElement(
@@ -57,5 +62,20 @@ func loadViewContainer()->void:
 	ViewContainer.reference.size_flags_vertical=Control.SIZE_EXPAND_FILL
 	ViewContainer.reference.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	ViewContainer.reference.mouse_filter=Control.MOUSE_FILTER_PASS
+	ViewContainer.reference.update_minimum_size()
 	(ViewContainer.reference as SubViewportContainer).stretch=true
 	mapViewport.reparent(ViewContainer.reference)
+	var viewportInternal :=GUIService.insertElement(
+		GUIService.createElement(
+			VBoxContainer.new(),
+			&"PrimaryViewportVBox",
+			[&"Layout",&"Viewport"],
+			&"PrimaryViewport"
+		)
+	)
+	
+	viewportInternal.reference.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	viewportInternal.reference.size_flags_vertical=Control.SIZE_EXPAND_FILL
+	viewportInternal.reference.set_anchors_preset(Control.PRESET_FULL_RECT)
+	viewportInternal.reference.update_minimum_size()
+	viewportInternal.reference.mouse_filter=Control.MOUSE_FILTER_IGNORE

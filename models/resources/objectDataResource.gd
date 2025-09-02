@@ -20,10 +20,44 @@ var parameterTypes:PackedStringArray=[]
 var parameterDescriptions:PackedStringArray=[]
 var parameterValues:Array=[]
 
+var inheritedTags:PackedStringArray=[]
+
+var baseTags:PackedStringArray=[]
 
 
 
+func getTagDefaults(includeInherited:bool=true)->PackedStringArray:
+	var tagList:PackedStringArray=[]
+	if includeInherited and inheritedData!=null:
+		tagList.append_array(
+			inheritedData.getTagDefaults(true)
+		)
+	tagList.append_array(
+		Array(baseTags).filter(func(tag):return not tagList.has(tag))
+		)
+	#ensure only unique tags, no duplicates allowed
+	return tagList
 
+func getParameterDefaults(includeDefaults:bool=true,includeInherited:bool=true,overrideMatchingNames:bool=true)->Array[Dictionary]:
+	var parameterList:Array[Dictionary]=[]
+	if includeInherited and inheritedData!=null:
+		parameterList.append_array(
+			inheritedData.getParameterDefaults(includeDefaults,includeInherited)
+		)
+	for index in len(parameterNames):
+		#makes sure all parameter names are a unique value
+		if overrideMatchingNames:
+			var removeParamIndex=parameterList.find_custom(func(param):return param.name==parameterNames[index])
+			if removeParamIndex>-1:parameterList.remove_at(removeParamIndex)
+		
+		parameterList.push_back({
+			"name":parameterNames[index],
+			"type":parameterTypes[index],
+			"value":parameterValues[index]
+		})
+	
+	
+	return parameterList
 
 #region manage inheritance property set/get
 ## Gather parameters from [member inheritedData] and its own [member inheritedData] objects
@@ -139,21 +173,21 @@ func getCustomPropertyList() -> Array[Dictionary]:
 		&"usage": PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_ARRAY,
 		&"hint": PROPERTY_HINT_NONE,
 		&"hint_string": "",
-		&"class_name": "parameter",
+		&"class_name": "parameter,parameter_",
 	})
 	for i in parameterNames.size():
 		properties.append({
-				"name": "parameter%s/name" % i,
+				"name": "parameter_%s/name" % i,
 				"type": TYPE_STRING,
 				"hint": PROPERTY_HINT_NONE
 			})
 		properties.append({
-				"name": "parameter%s/description" % i,
+				"name": "parameter_%s/description" % i,
 				"type": TYPE_STRING,
 				"hint": PROPERTY_HINT_MULTILINE_TEXT
 			})
 		properties.append({
-				"name": "parameter%s/type" % i,
+				"name": "parameter_%s/type" % i,
 				"type": TYPE_STRING,
 				"hint": PROPERTY_HINT_ENUM,
 				"hint_string": ",".join(ObjectParameters.parameterTypeMap.keys()),

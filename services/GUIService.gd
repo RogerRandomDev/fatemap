@@ -4,7 +4,7 @@ class_name GUIService
 
 
 static var GUIElements:Array[guiElement]=[]
-
+static var selectedPhysical:ObjectModel
 
 
 
