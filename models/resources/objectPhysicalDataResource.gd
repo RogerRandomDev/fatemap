@@ -2,4 +2,4 @@
 extends ObjectDataResource
 class_name ObjectPhysicalDataResource
 
-var mesh:Mesh=BoxMesh.new()
+@export var mesh:Mesh=BoxMesh.new()

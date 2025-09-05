@@ -1,0 +1,47 @@
+[gd_resource type="Resource" script_class="guiDropdownResource" load_steps=3 format=3 uid="uid://dr25645qk8jbv"]
+
+[ext_resource type="Script" uid="uid://56abiotdxm3f" path="res://models/resources/guiDropdownResource.gd" id="1_eetcp"]
+
+[sub_resource type="Resource" id="Resource_eetcp"]
+script = ExtResource("1_eetcp")
+option_count = 6
+option_0/name = "Default"
+option_0/type = "default"
+option_0/description = "Default view mode"
+option_0/value = &"SetDebugViewMode"
+option_0/param = "0"
+option_1/name = "Unshaded"
+option_1/type = "default"
+option_1/description = "Unshaded view"
+option_1/value = &"SetDebugViewMode"
+option_1/param = "1"
+option_2/name = "Overdraw"
+option_2/type = "default"
+option_2/description = "Overdraw view"
+option_2/value = &"SetDebugViewMode"
+option_2/param = "3"
+option_3/name = "Wireframe"
+option_3/type = "default"
+option_3/description = "Wireframe view"
+option_3/value = &"SetDebugViewMode"
+option_3/param = "4"
+option_4/name = "Normals"
+option_4/type = "default"
+option_4/description = "Normal view"
+option_4/value = &"SetDebugViewMode"
+option_4/param = "5"
+option_5/name = "Occluders"
+option_5/type = "default"
+option_5/description = "Occluders view"
+option_5/value = &"SetDebugViewMode"
+option_5/param = "24"
+metadata/_custom_type_script = "uid://56abiotdxm3f"
+
+[resource]
+script = ExtResource("1_eetcp")
+option_count = 1
+option_0/name = "Debug Views"
+option_0/type = "submenu"
+option_0/description = "Special view modes for debuging/misc"
+option_0/value = SubResource("Resource_eetcp")
+metadata/_custom_type_script = "uid://56abiotdxm3f"

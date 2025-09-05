@@ -17,5 +17,7 @@ func getData()->ObjectDataResource:return null
 func getBounds()->AABB:
 	match(objectType):
 		objectTypes.OBJECT:
-			return (objectDisplay as MeshInstance3D).get_aabb()
+			var aabb=(objectDisplay as MeshInstance3D).get_aabb()
+			aabb.position+=objectDisplay.global_position
+			return aabb
 	return AABB(global_position-Vector3(0.25,0.25,0.25),Vector3(0.5,0.5,0.5))

@@ -21,7 +21,9 @@ func buildFromResource(resource:guiDropdownResource,currentPopup:PopupMenu=get_p
 				AddOption(
 					currentPopup,
 					context.get("name"),
-					context.get("value",&"") if not context.get("value",&"")==null else &""
+					context.get("value",&"") if not context.get("value",&"")==null else &"",
+					context.get("param",null),
+					context.get("description",null)
 				)
 				continue
 			"separator":
@@ -30,16 +32,21 @@ func buildFromResource(resource:guiDropdownResource,currentPopup:PopupMenu=get_p
 			"submenu":
 				var newSubMenu=PopupMenu.new()
 				currentPopup.add_submenu_node_item(context.get("name"),newSubMenu)
+				currentPopup.set_item_tooltip(currentPopup.item_count-1,
+					context.get("description",null)
+				)
 				buildFromResource(context.get("value"),newSubMenu)
 				continue
 		
 
 
 
-func AddOption(popup:PopupMenu,option:StringName,callback:StringName=&"")->bool:
+func AddOption(popup:PopupMenu,option:StringName,callback:StringName=&"",specialValue:String="",description:String="")->bool:
 	var index=popup.item_count
 	popup.add_item(option,index)
-	popup.set_item_metadata(index,callback)
+	popup.set_item_metadata(index,[callback,specialValue])
+	if description!="" and description!=null:
+		popup.set_item_tooltip(index,description)
 	
 	return true
 
@@ -52,5 +59,6 @@ static func addMenuCallback(menu:PopupMenu)->void:
 ## Triggers a method stored in a popup item's metadata
 static func callIndexedMenuMethod(index:int=0,popup:PopupMenu=null)->void:
 	var meta_method = popup.get_item_metadata(index)
-	if meta_method==&"":return
-	ToolMethodService.executeMethod(meta_method)
+	if meta_method[0]==&"":return
+	var meta_param=str_to_var(meta_method[1]) if meta_method[1]!=""else null
+	ToolMethodService.executeMethod(meta_method[0],[meta_param])

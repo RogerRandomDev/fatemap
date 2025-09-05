@@ -1,3 +1,10 @@
+Label
+TextureRect
+VBoxContainer
+PanelContainer
+MeshInstance3D
+CSGMesh3D
+Gizmo3D
 Node
 Tree
 Marker3D
@@ -6,9 +13,3 @@ ObjectModel
 CollisionShape3D
 Area3D
 Camera3D
-SubViewport
-SubViewportContainer
-Control
-MeshInstance3D
-VSlider
-VBoxContainer

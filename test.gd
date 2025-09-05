@@ -1,9 +1,13 @@
 extends ObjectModel
 
-@export var t:ObjectPhysicalDataResource
+@export var objectData:ObjectPhysicalDataResource
+var _instanceData:ObjectDataResource=ObjectDataResource.new()
+
+
 
 func _ready() -> void:
-	objectDisplay=PhysicalObjectService.buildMesh(t,self)
-	PhysicalObjectService.buildPickableArea(t,self)
+	_instanceData.inheritedData=objectData
+	objectDisplay=PhysicalObjectService.buildMesh(objectData,self)
+	PhysicalObjectService.buildPickableArea(objectData,self,objectDisplay)
 
-func getData():return t
+func getData():return objectData

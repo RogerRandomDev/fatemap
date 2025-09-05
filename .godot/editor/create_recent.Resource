@@ -1,3 +1,4 @@
+ShaderMaterial
 guiDropdownResource
 ObjectDataResource
 guiElement

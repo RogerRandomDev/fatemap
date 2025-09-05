@@ -1,0 +1,32 @@
+[gd_scene load_steps=2 format=3 uid="uid://edq08tl4fdbu"]
+
+[ext_resource type="Script" uid="uid://drf5xtucccj2h" path="res://models/objects/MaterialGridOption.gd" id="1_4tfqd"]
+
+[node name="MaterialGridOption" type="PanelContainer"]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -0.5
+offset_right = 0.5
+offset_bottom = 27.0
+grow_horizontal = 2
+size_flags_horizontal = 4
+size_flags_vertical = 0
+script = ExtResource("1_4tfqd")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+
+[node name="MaterialPreview" type="TextureRect" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 0
+expand_mode = 4
+
+[node name="MaterialName" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+horizontal_alignment = 1
+clip_text = true
+text_overrun_behavior = 3

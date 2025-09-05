@@ -4,11 +4,33 @@ extends VBoxContainer
 @onready var mapViewport = $MapView
 
 func _ready() -> void:
+	Gizmo3DService.initializeGizmo()
 	loadGUILayout()
 	
 	signalService.addSignal(&"mapObjectSelected")
 	
 	PhysicalObjectInputController.initializeInputController()
+	
+	Gizmo3DService.attachGizmoTo(
+		GUIService.getByName(&"PrimaryViewport").reference.get_child(0)
+		
+	)
+	MaterialService.addMaterial(
+		&"TestExample",
+		StandardMaterial3D.new(),
+		load("res://icon.svg")
+	)
+	MaterialService.addMaterial(
+		&"TestExample2",
+		StandardMaterial3D.new(),
+		load("res://icon.svg")
+	)
+	MaterialService.addMaterial(
+		&"TestExample3",
+		StandardMaterial3D.new(),
+		load("res://icon.svg")
+	)
+	
 	
 
 func loadGUILayout()->void:

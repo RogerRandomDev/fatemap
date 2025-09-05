@@ -3,6 +3,7 @@ class_name PhysicalObjectInputController
 
 
 static var activeObject:Node3D=null
+static var activeObjectList:Array[Node3D]=[]
 static var hoveredObjects:Array[Node3D]=[]
 
 
@@ -22,5 +23,29 @@ static func onMouseExitObject(object:Node3D)->void:
 static func objectInputEvent(camera: Node, event: InputEvent, event_position: Vector3, normal: Vector3, shape_idx: int,object:Node3D)->void:
 	if event is InputEventMouseButton:
 		if event.button_index==MOUSE_BUTTON_LEFT and event.pressed:
-			activeObject=object
+			if Input.is_key_pressed(KEY_SHIFT):
+				activeObject=object
+				if activeObjectList.has(object):activeObjectList.erase(object)
+				else:activeObjectList.push_back(object)
+			else:if Input.is_key_pressed(KEY_CTRL):
+				activeObjectList.erase(object)
+			else:
+				activeObject=object
+				activeObjectList=[object]
+			
 			signalService.emitSignal(&"mapObjectSelected",[object])
+			Gizmo3DService.updateSelectedObjects(activeObjectList)
+			var meshInstance = activeObject.get_child(0)
+			if meshInstance is MeshInstance3D:
+				MeshEditService.setEditing(activeObject)
+				MeshEditService.editing.beginEdit(false)
+				MeshEditService.editing.select(normal,event_position)
+				MeshEditService.editing.translateSelection(normal)
+				MeshEditService.editing.commit()
+				MeshEditService.editing.setMaterial(
+					MaterialService.getMaterial(&"TestExample")
+				)
+				PhysicalObjectService.updatePickableArea(activeObject)
+				
+			
+			
