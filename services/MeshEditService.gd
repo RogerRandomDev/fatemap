@@ -326,6 +326,7 @@ class meshFace extends Resource:
 	var uvScale:Vector2=Vector2.ONE
 	var uvOffset:Vector2=Vector2.ZERO
 	var uvRotation:float=0.0
+	
 	func _init(scale:Vector2=Vector2.ONE,offset:Vector2=Vector2.ZERO,rotation:float=0.0):
 		uvScale=scale
 		uvOffset=offset

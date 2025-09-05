@@ -1,3 +1,5 @@
+NavigationObstacle3D
+NavigationLink3D
 Label
 TextureRect
 VBoxContainer
@@ -11,5 +13,3 @@ Marker3D
 VSeparator
 ObjectModel
 CollisionShape3D
-Area3D
-Camera3D
