@@ -38,13 +38,14 @@ static func objectInputEvent(camera: Node, event: InputEvent, event_position: Ve
 			var meshInstance = activeObject.get_child(0)
 			if meshInstance is MeshInstance3D:
 				MeshEditService.setEditing(activeObject)
-				MeshEditService.editing.beginEdit(false)
+				#MeshEditService.editing.beginEdit(false)
 				MeshEditService.editing.select(normal,event_position)
-				MeshEditService.editing.translateSelection(normal)
-				MeshEditService.editing.commit()
 				MeshEditService.editing.setMaterial(
 					MaterialService.getMaterial(&"TestExample")
 				)
+				MeshEditService.editing.translateSelection(Vector3(0,1,0))
+				MeshEditService.editing.mesh.rebuild()
+				
 				PhysicalObjectService.updatePickableArea(activeObject)
 				
 			

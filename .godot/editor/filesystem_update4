@@ -1,3 +1,9 @@
 res://Scenes/MapMaker.tscn
 res://Scenes/MapMakerTheme.tres
 res://services/MeshEditService.gd
+res://models/objectMeshModel.gd
+res://Scenes/mapMaker.gd
+res://services/PhysicalObjectService.gd
+res://models/utility/physicalObjectInputController.gd
+res://new_placeholder_texture_2d.tres
+res://test.gd

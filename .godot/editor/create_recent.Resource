@@ -1,3 +1,4 @@
+PlaceholderTexture2D
 ShaderMaterial
 guiDropdownResource
 ObjectDataResource

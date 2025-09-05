@@ -16,14 +16,14 @@ func _ready() -> void:
 		
 	)
 	MaterialService.addMaterial(
-		&"TestExample",
+		&"NONE",
 		StandardMaterial3D.new(),
 		load("res://icon.svg")
 	)
 	MaterialService.addMaterial(
-		&"TestExample2",
+		&"TestExample",
 		StandardMaterial3D.new(),
-		load("res://icon.svg")
+		load("res://new_placeholder_texture_2d.tres")
 	)
 	MaterialService.addMaterial(
 		&"TestExample3",

@@ -14,16 +14,17 @@ static func buildMesh(object:ObjectPhysicalDataResource,instance:Node3D=null,mak
 	surfaceTool.set_smooth_group(-1)
 	surfaceTool.generate_normals()
 	
-	var arrayMesh:ArrayMesh=ArrayMesh.new()
+	var arrayMesh:objectMeshModel=objectMeshModel.new()
 	arrayMesh.add_surface_from_arrays(
 		Mesh.PRIMITIVE_TRIANGLES,
 		surfaceTool.commit_to_arrays()
 		)
+	arrayMesh.initializeFaces()
+	arrayMesh.rebuild()
 	
 	meshInstance.mesh=arrayMesh
 	if instance:
 		instance.add_child(meshInstance)
-	
 	meshInstance.name="MESH_OBJECT"
 	
 	
