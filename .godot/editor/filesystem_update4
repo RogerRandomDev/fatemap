@@ -1,16 +1,3 @@
 res://Scenes/MapMaker.tscn
 res://Scenes/MapMakerTheme.tres
 res://services/MeshEditService.gd
-res://addons/sk_fly_camera/src/CameraSpeedControls.tscn
-res://models/utility/physicalObjectInputController.gd
-res://services/PhysicalObjectService.gd
-res://models/objects/tabs/SurfaceTab.gd
-res://models/objects/guiObjectParameterTabContainer.gd
-res://services/MaterialService.gd
-res://new_shader_material.tres
-res://new_shader_material.gdshader
-res://models/objects/MaterialGridOption.tscn
-res://models/objects/MaterialGridOption.gd
-res://Scenes/mapMaker.gd
-res://test.gd
-res://models/resources/objectPhysicalDataResource.gd

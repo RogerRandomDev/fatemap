@@ -7,7 +7,24 @@ static var editing:editingMesh
 
 static func setEditing(object:ObjectModel)->void:
 	var mesh=object.get_node_or_null("MESH_OBJECT")
+	if editing:
+		storeFaceInfoInObject(editing.dataObject)
+	else:(func():
+		await object.get_tree().process_frame
+		for i in 2:
+			var face=editing.editingFaceInfo.getInfoFromFace(editing.meshSurfaces[0],i)
+			face.uvRotation=PI*0.25
+		).call()
+	
 	editing=editingMesh.new(object,mesh)
+	retrieveFaceInfoInObject(object)
+
+static func storeFaceInfoInObject(object:ObjectModel)->void:
+	object.set_meta(&"FaceInfo",editing.editingFaceInfo)
+static func retrieveFaceInfoInObject(object:ObjectModel)->void:
+	if not object.has_meta(&"FaceInfo"):return
+	editing.editingFaceInfo=object.get_meta(&"FaceInfo",null)
+
 
 
 enum MeshEditMode{
@@ -23,7 +40,7 @@ class editingMesh extends Resource:
 	
 	var meshSurfaces:Array[MeshDataTool]=[]
 	#surface special info
-	var editingFaceInfo:meshFacesInfo
+	var editingFaceInfo:meshFacesInfo=meshFacesInfo.new()
 	#part selections
 	var selectedFaces:PackedInt32Array=[]
 	var selectedFaceSurfaces:PackedInt32Array=[]
@@ -61,8 +78,6 @@ class editingMesh extends Resource:
 			var MDT:MeshDataTool=MeshDataTool.new()
 			MDT.create_from_surface(mesh,surfaceIndex)
 			meshSurfaces.push_back(MDT)
-		editingFaceInfo=meshFacesInfo.new()
-		editingFaceInfo.setSurfaceCount(mesh.get_surface_count(),meshSurfaces)
 	
 	##clears selected arrays
 	func clearSelections()->void:
@@ -157,108 +172,154 @@ class editingMesh extends Resource:
 			var pos=vertexSurface.get_vertex(vertex)
 			vertexSurface.set_vertex(vertex,pos+translateBy)
 			#update UVS of the mesh
-			
-			
+			var infoRef=editingFaceInfo.getInfoFromVertex(vertexSurface,vertex)
 			var norm=vertexSurface.get_vertex_normal(vertex)
-			var quat=Quaternion(norm,Vector3.UP).inverse()
+			var quat=Quaternion(norm,Vector3.FORWARD).inverse()
 			var uvDir = (pos+translateBy)*quat
-			vertexSurface.set_vertex_uv2(vertex,Vector2(uvDir.x,uvDir.z))
-			vertexSurface.set_vertex_uv(vertex,Vector2(uvDir.x,uvDir.z))
+			vertexSurface.set_vertex_uv(vertex,infoRef.apply(Vector2(uvDir.x,-uvDir.y)))
+	##Moves selected faces to given surface
+	func transferSelectedToSurface(toSurface:MeshDataTool,surfaceId:int=0)->Dictionary:
+		var removedFromFaces:Dictionary={}
+		var changedFaces:PackedInt32Array=[]
+		var newSurfaceTool:SurfaceTool=SurfaceTool.new()
+		newSurfaceTool.create_from(mesh,surfaceId)
+		newSurfaceTool.begin(Mesh.PRIMITIVE_TRIANGLES)
+		newSurfaceTool.set_smooth_group(-1)
+		newSurfaceTool.set_material(toSurface.get_material())
+		var toSurfaceIndex=meshSurfaces.find(toSurface) if surfaceId==-1 else surfaceId
+		var newFaceIndex = 0
+		for index in selectedFaces.size():
+			var face = selectedFaces[index]
+			var surfaceIndex=selectedFaceSurfaces[index]
+			var faceSurface = meshSurfaces[surfaceIndex]
+			
+			var formerFaceInfo=editingFaceInfo.getInfoFromFace(faceSurface,face)
+			
+			if not changedFaces.has(surfaceIndex):changedFaces.push_back(surfaceIndex)
+			if faceSurface!=toSurface:
+				if not removedFromFaces.has(surfaceIndex):removedFromFaces[surfaceIndex]=PackedInt32Array()
+				removedFromFaces[surfaceIndex].push_back(face)
+			for i in 3:
+				var vert = faceSurface.get_face_vertex(face,i)
+				newSurfaceTool.set_color(faceSurface.get_vertex_color(vert))
+				
+				newSurfaceTool.set_uv(faceSurface.get_vertex_uv(vert))
+				newSurfaceTool.add_vertex(faceSurface.get_vertex(vert))
+			newFaceIndex+=1
+		newSurfaceTool.generate_normals()
+		toSurface.clear()
+		toSurface.create_from_surface(newSurfaceTool.commit(),0)
+		return removedFromFaces
 	
 	##Sets material of selected faces to the provided materialModel
 	func setMaterial(material:MaterialService.materialModel)->void:
 		var trueMaterial:Material=material.getInstance(false)
 		#gets a surface with a matching material
 		#to what is being set
-		var matchedSurfaceIndex:int=meshSurfaces.find_custom(func(surface):return surface.get_material()==trueMaterial)
-		if matchedSurfaceIndex==-1:#if none matches create a new one
+		var editedSurfaces:PackedInt32Array=[]
+		
+		var matchedSurfaceIndex=range(0,meshSurfaces.size()).filter(func(ind):
+			return mesh.surface_get_material(ind)==trueMaterial
+			)
+		if matchedSurfaceIndex.size()==0:#if none matches create a new one
 			var newSurface:=MeshDataTool.new()
 			meshSurfaces.push_back(newSurface)
-			newSurface.set_material(trueMaterial)
-			
 			matchedSurfaceIndex=meshSurfaces.size()-1
+		else:
+			matchedSurfaceIndex=matchedSurfaceIndex[0]
+			editedSurfaces.push_back(matchedSurfaceIndex)
 		var useSurface:MeshDataTool=meshSurfaces[matchedSurfaceIndex]
-		
-		
-		
-		var newSurfaceTool:SurfaceTool=SurfaceTool.new()
-		newSurfaceTool.begin(Mesh.PRIMITIVE_TRIANGLES)
-		newSurfaceTool.set_material(trueMaterial)
-		newSurfaceTool.set_smooth_group(-1)
-		var removedFromFaces:Dictionary={}
-		var changedFaces:PackedInt32Array=[]
-		
-		
-		for index in selectedFaces.size():
-			var face = selectedFaces[index]
-			var surfaceIndex=selectedFaceSurfaces[index]
-			var faceSurface = meshSurfaces[surfaceIndex]
-			
-			if not changedFaces.has(surfaceIndex):changedFaces.push_back(surfaceIndex)
-			if faceSurface!=useSurface:
-				if not removedFromFaces.has(surfaceIndex):
-					removedFromFaces[surfaceIndex]=PackedInt32Array()
-				var vert_0=faceSurface.get_face_vertex(face,0)
-				var vert_1=faceSurface.get_face_vertex(face,1)
-				var vert_2=faceSurface.get_face_vertex(face,2)
-				
-				removedFromFaces[surfaceIndex].push_back(face)
-				newSurfaceTool.set_uv(faceSurface.get_vertex_uv(vert_0))
-				newSurfaceTool.add_vertex(faceSurface.get_vertex(vert_0))
-				
-				newSurfaceTool.set_uv(faceSurface.get_vertex_uv(vert_1))
-				newSurfaceTool.add_vertex(faceSurface.get_vertex(vert_1))
-				
-				newSurfaceTool.set_uv(faceSurface.get_vertex_uv(vert_2))
-				newSurfaceTool.add_vertex(faceSurface.get_vertex(vert_2))
-		newSurfaceTool.generate_normals()
-		newSurfaceTool.commit(mesh)
-		
+		useSurface.set_material(trueMaterial)
+		var removedFromFaces:Dictionary=transferSelectedToSurface(useSurface)
+		useSurface.commit_to_surface(mesh)
 		for surfaceIndex in removedFromFaces.keys():
 			var st=SurfaceTool.new()
 			st.begin(Mesh.PRIMITIVE_TRIANGLES)
 			st.set_smooth_group(-1)
 			var removedVertices=removedFromFaces[surfaceIndex]
 			var surface=meshSurfaces[surfaceIndex]
+			var skippedFaces:int=0
 			for face in surface.get_face_count():
-				if removedVertices.has(face):continue
-				var vert_0=surface.get_face_vertex(face,0)
-				var vert_1=surface.get_face_vertex(face,1)
-				var vert_2=surface.get_face_vertex(face,2)
-				st.set_uv(surface.get_vertex_uv(vert_0))
-				st.add_vertex(surface.get_vertex(vert_0))
-				st.set_uv(surface.get_vertex_uv(vert_1))
-				st.add_vertex(surface.get_vertex(vert_1))
-				st.set_uv(surface.get_vertex_uv(vert_2))
-				st.add_vertex(surface.get_vertex(vert_2))
+				if removedVertices.has(face):
+					skippedFaces+=1
+					continue
+				var faceInfo=editingFaceInfo.getInfoFromFace(surface,face)
+				for i in 3:
+					var vert = surface.get_face_vertex(face,i)
+					var uv=surface.get_vertex_uv(vert)
+					st.set_color(surface.get_vertex_color(vert))
+					st.set_uv(uv)
+					st.add_vertex(surface.get_vertex(vert))
 			st.generate_normals()
-			st.commit(mesh)
-		var i=0
-		for surf in removedFromFaces.keys():
-			mesh.surface_remove(surf-i)
-			i+=1
-		
+			surface.clear()
+			surface.create_from_surface(st.commit(),0)
+			editedSurfaces.push_back(surfaceIndex)
 		populateSurfaces.call_deferred()
+		optimizeSurfaces.call_deferred()
 		clearSelections()
+	
+	func optimizeSurfaces()->void:
+		var surfaceGroups:Dictionary={}
+		for surface in meshSurfaces:
+			if not surfaceGroups.has(surface.get_material()):surfaceGroups[surface.get_material()]=[]
+			surfaceGroups[surface.get_material()].push_back(surface)
+		mesh.clear_surfaces()
+		var newSurfaces:Array[SurfaceTool]=[]
+		for surfaceMat in surfaceGroups:
+			var surfaceSet=surfaceGroups[surfaceMat]
+			var st=SurfaceTool.new()
+			st.begin(Mesh.PRIMITIVE_TRIANGLES)
+			st.set_smooth_group(-1)
+			st.set_material(surfaceMat)
+			for surface in surfaceSet:
+				var tempMesh=ArrayMesh.new()
+				(surface as MeshDataTool).commit_to_surface(tempMesh)
+				st.append_from(tempMesh,0,Transform3D())
+			st.commit(mesh)
+	
 
 class meshFacesInfo extends Resource:
-	var surfaceFaceMap:Array[Array]=[]
+	var surfaceFaceMap:Array[meshFace]=[]
 	
-	func setSurfaceCount(count:int,surfaces)->void:
-		surfaceFaceMap.resize(count)
-		for surfaceInd in surfaceFaceMap.size():
-			var surface = surfaceFaceMap[surfaceInd]
-			surface.resize(surfaces[surfaceInd].get_face_count())
-			for face in surface.size():
-				surface[face]=meshFace.new()
+	func vertexHasInfo(surface:MeshDataTool,vertex)->bool:
+		return surface.get_vertex_color(vertex).g!=0.0
 	
-	func getInfo(surface:int,face:int)->meshFace:
-		if surfaceFaceMap.size()<surface-1:
-			surfaceFaceMap.resize(surface)
-			if surfaceFaceMap[surface].size()<face-1:
-				surfaceFaceMap[surface].resize(face)
-				surfaceFaceMap[surface][face]=meshFace.new()
-		return surfaceFaceMap[surface][face]
+	func getInfoFromFace(surface:MeshDataTool,face)->meshFace:
+		var checkVertex=surface.get_face_vertex(face,0)
+		if not vertexHasInfo(surface,checkVertex):
+			var useIndex=null
+			for i in 3:
+				if vertexHasInfo(surface,surface.get_face_vertex(face,i)):
+					useIndex=surface.get_vertex_color(
+						surface.get_face_vertex(face,i)
+					)
+					break
+			if useIndex==null:
+				useIndex=Color(surfaceFaceMap.size(),1,0,0)
+				surfaceFaceMap.push_back(meshFace.new())
+			surface.set_vertex_color(surface.get_face_vertex(face,0),useIndex)
+			surface.set_vertex_color(surface.get_face_vertex(face,1),useIndex)
+			surface.set_vertex_color(surface.get_face_vertex(face,2),useIndex)
+		
+		return getInfoFromVertex(surface,checkVertex)
+	
+	func getInfoFromVertex(surface:MeshDataTool,vertex)->meshFace:
+		if not vertexHasInfo(surface,vertex):
+			var useIndex=null
+			var face=surface.get_vertex_faces(vertex)[0]
+			for i in 3:
+				if vertexHasInfo(surface,surface.get_face_vertex(face,i)):
+					useIndex=surface.get_vertex_color(
+						surface.get_face_vertex(face,i)
+					)
+					break
+			if useIndex==null:
+				useIndex=Color(surfaceFaceMap.size(),1,0,0)
+				surfaceFaceMap.push_back(meshFace.new())
+			surface.set_vertex_color(vertex,useIndex)
+		return surfaceFaceMap[int(surface.get_vertex_color(vertex).r)]
+			
+	
 	
 
 class meshFace extends Resource:
@@ -269,3 +330,7 @@ class meshFace extends Resource:
 		uvScale=scale
 		uvOffset=offset
 		uvRotation=rotation
+	func remove(uv:Vector2)->Vector2:
+		return (uv/uvScale).rotated(-uvRotation)-uvOffset
+	func apply(uv:Vector2)->Vector2:
+		return (uv*uvScale).rotated(uvRotation)+uvOffset
