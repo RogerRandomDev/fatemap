@@ -21,7 +21,7 @@ func updatedMeshSelection()->void:
 	var selection=MeshEditService.editing.selectedFaces
 	var st=SurfaceTool.new()
 	if selection.size()==0:
-		selection=MeshEditService.editing.mesh.getCleanEdges()
+		selection=MeshEditService.editing.mesh.cleanedEdges
 		st.begin(Mesh.PRIMITIVE_LINES)
 		for edge in selection:
 			st.add_vertex(edge.vertices[0].position)

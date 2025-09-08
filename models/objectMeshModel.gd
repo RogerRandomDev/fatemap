@@ -1,38 +1,33 @@
 extends ArrayMesh
 class_name objectMeshModel
 
-
 var vertices:Array[meshVertex]=[]
 var edges:Array[meshEdge]=[]
 var faces:Array[meshFace]=[]
 var faceMaterialMap:Dictionary={}
 var surfacePool:Array[MeshDataTool]=[]
 
-
+var cleanedEdges:Array[meshEdge]=[]
+var cleanedFaces:Array[cleanFace]=[]
 
 func  initializeFaces()->void:
 	var dt:MeshDataTool=MeshDataTool.new()
 	dt.create_from_surface(self,0)
-	
 	for face in dt.get_face_count():
 		var vertexPositions:PackedInt32Array=[
 			dt.get_face_vertex(face,0),
 			dt.get_face_vertex(face,1),
-			dt.get_face_vertex(face,2)
-		]
+			dt.get_face_vertex(face,2)]
+		
 		var faceInfo=meshFace.new(
-			self,
-			[
-				dt.get_vertex(vertexPositions[0]),
-				dt.get_vertex(vertexPositions[1]),
-				dt.get_vertex(vertexPositions[2])]
-			,
-			[
-				dt.get_vertex_uv(vertexPositions[0]),
-				dt.get_vertex_uv(vertexPositions[1]),
-				dt.get_vertex_uv(vertexPositions[2])
-			]
-		)
+			self,[
+			dt.get_vertex(vertexPositions[0]),
+			dt.get_vertex(vertexPositions[1]),
+			dt.get_vertex(vertexPositions[2])],[
+			dt.get_vertex_uv(vertexPositions[0]),
+			dt.get_vertex_uv(vertexPositions[1]),
+			dt.get_vertex_uv(vertexPositions[2])])
+		
 		faces.push_back(faceInfo)
 	rebuild()
 	updateNormals()
@@ -58,6 +53,9 @@ func rebuild()->void:
 		st.clear()
 		surfaceIndex+=1
 	loadSurfacePool()
+	cleanedEdges=getCleanEdges()
+	cleanedFaces=getCleanFaces()
+	
 
 func loadSurfacePool()->void:
 	surfacePool=[]
@@ -66,10 +64,11 @@ func loadSurfacePool()->void:
 		mdt.create_from_surface(self,surface)
 		surfacePool.push_back(mdt)
 
-
 func updateNormals()->void:
 	for vertex in vertices:
 		vertex.updateNormal()
+	for face in faces:
+		face.updateNormal()
 
 func updateUVs(updateImmediately:bool=true)->void:
 	for vertex in vertices:
@@ -81,28 +80,93 @@ func updateUVs(updateImmediately:bool=true)->void:
 	for surface in surfacePool:
 		surface.commit_to_surface(self)
 
-
 func getSelectedFaces(normal:Vector3,hitPosition:Vector3=Vector3.ZERO)->Array[meshFace]:
-	return faces.filter(
+	var selectedFaces:Array[meshFace]=[]
+	var filteredClean=cleanedFaces.filter(
 		func(face):
-			return face.getFaceNormal().snappedf(0.001).is_equal_approx(normal)
+			return face.normal.is_equal_approx(normal)
 			)
+	for face in filteredClean:
+		selectedFaces.append_array(face.referenceFaces)
+	return selectedFaces
+func getCleanEdges() -> Array[meshEdge]:
+	var edge_groups := {}  # key: position-only key, value: list of matching edges
+	var cleanEdges: Array[meshEdge] = []
 
-func getCleanEdges()->Array[meshEdge]:
-	var cleanEdges:Array[meshEdge]=[]
 	for edge in edges:
-		var skip=false
-		for cleanEdge in cleanEdges:
-			if cleanEdge.matches(edge):
-				if cleanEdge.normalMatches(edge):
-					cleanEdges.erase(cleanEdge)
-				skip=true;break
-		if not skip:cleanEdges.push_back(edge)
+		var pos_a = edge.vertices[0].position.snappedf(0.001)
+		var pos_b = edge.vertices[1].position.snappedf(0.001)
+		var pos_key = _get_sorted_key(pos_a, pos_b)
+
+		if not edge_groups.has(pos_key):
+			edge_groups[pos_key] = []
+		edge_groups[pos_key].append(edge)
+
+	# Process each group
+	for pos_key in edge_groups:
+		var group: Array = edge_groups[pos_key]
+
+		if group.size() == 1:
+			cleanEdges.append(group[0])
+			continue
+
+		# Check if all normals match
+		var base_normals = [
+			group[0].vertices[0].normal.snappedf(0.001),
+			group[0].vertices[1].normal.snappedf(0.001)
+		]
+
+		var normals_match := true
+		for i in range(1, group.size()):
+			var n0 = group[i].vertices[0].normal.snappedf(0.001)
+			var n1 = group[i].vertices[1].normal.snappedf(0.001)
+
+			var match_same_order = (n0 == base_normals[0] and n1 == base_normals[1])
+			var match_reverse_order = (n0 == base_normals[1] and n1 == base_normals[0])
+
+			if not (match_same_order or match_reverse_order):
+				normals_match = false
+				break
+
+		if normals_match:
+			continue  # Exclude all if normals match
+		else:
+			cleanEdges.append(group[0])  # Keep one if normals differ
+
 	return cleanEdges
 
-func getCleanFaces()->Array[meshFace]:
-	var cleanFaces:Array[meshFace]=[]
-	
+
+func _get_sorted_key(a: Vector3, b: Vector3) -> String:
+	# Compare components to determine order
+	if a.x < b.x: return str(a) + "|" + str(b)
+	if a.x > b.x: return str(b) + "|" + str(a)
+	if a.y < b.y: return str(a) + "|" + str(b)
+	if a.y > b.y: return str(b) + "|" + str(a)
+	if a.z < b.z: return str(a) + "|" + str(b)
+	if a.z > b.z: return str(b) + "|" + str(a)
+	# Positions are equal
+	return str(a) + "|" + str(b)
+
+
+func getCleanFaces()->Array[cleanFace]:
+	var cleanFaces:Array[cleanFace]=[]
+	var cleanVertices:Array[meshVertex]=[]
+	var cleanedNormalGroups:Dictionary={}
+	var cleanedNormalFaces:Dictionary={}
+	for index in len(vertices):
+		var vertex=vertices[index]
+		if cleanVertices.any(func(cleanedVertex):return cleanedVertex.matches(vertex)):continue
+		cleanVertices.push_back(vertex)
+		if not cleanedNormalGroups.has(vertex.normal):cleanedNormalGroups[vertex.normal]=[]
+		cleanedNormalGroups[vertex.normal].push_back(vertex.position)
+	for face in faces:
+		if not cleanedNormalFaces.has(face.normal):cleanedNormalFaces[face.normal]=[]
+		cleanedNormalFaces[face.normal].push_back(face)
+	for normalPlane in cleanedNormalGroups:
+		var planeVertexPoints:PackedVector3Array=cleanedNormalGroups[normalPlane]
+		cleanFaces.push_back(cleanFace.new(
+			planeVertexPoints,normalPlane,cleanedNormalFaces[normalPlane]
+		))
 	return cleanFaces
 
 
@@ -123,6 +187,7 @@ class meshVertex extends RefCounted:
 		position=vertexPosition
 		uv=vertexUV
 		_mesh=mesh
+		if _mesh==null:return
 		index=_mesh.vertices.size()
 		getWeldedVertices()
 		_mesh.vertices.push_back(self)
@@ -130,7 +195,7 @@ class meshVertex extends RefCounted:
 	##ensure we keep any vertices in the same position locked to it
 	func getWeldedVertices()->void:
 		for vertex in _mesh.vertices:
-			if vertex.position.snappedf(0.001)==position.snappedf(0.001):
+			if vertex.position==position:
 				vertex.weldedVertices.push_back(self)
 				weldedVertices.push_back(vertex)
 	
@@ -155,8 +220,7 @@ class meshVertex extends RefCounted:
 		index=indexOn
 	
 	func updateNormal()->Vector3:
-		var mdt=MeshDataTool.new()
-		mdt.create_from_surface(_mesh,surfaceIndex)
+		var mdt=_mesh.surfacePool[surfaceIndex]
 		normal=mdt.get_vertex_normal(index)
 		return normal
 	
@@ -164,6 +228,9 @@ class meshVertex extends RefCounted:
 		var uvAlignedPosition=position*Quaternion(normal,Vector3.BACK).inverse()
 		uv=Vector2(uvAlignedPosition.x,-uvAlignedPosition.y)
 		return uv
+	
+	func matches(checkAgainst:meshVertex)->bool:
+		return checkAgainst.position==position and checkAgainst.normal==normal
 	
 
 class meshVertexObject extends RefCounted:
@@ -177,6 +244,7 @@ class meshEdge extends meshVertexObject:
 		vertices=inputVertices
 		for vertex in vertices:
 			vertex.edges.push_back(self)
+		if _mesh==null:return
 		_mesh.edges.push_back(self)
 		
 	
@@ -184,14 +252,14 @@ class meshEdge extends meshVertexObject:
 	func matches(edge:meshEdge)->bool:
 		return vertices.all(
 			func(vertex):return edge.vertices.any(
-				func(edgeVertex):return edgeVertex.position.snappedf(0.001)==vertex.position.snappedf(0.001)
+				func(edgeVertex):return edgeVertex.position==vertex.position
 		))
 	
 	##compars an edge's normals to see if they match
 	func normalMatches(edge:meshEdge)->bool:
 		return vertices.all(
 			func(vertex):return edge.vertices.any(
-				func(edgeVertex):return edgeVertex.normal.snappedf(0.001)==vertex.normal.snappedf(0.001)
+				func(edgeVertex):return edgeVertex.normal==vertex.normal
 			)
 		)
 
@@ -205,7 +273,7 @@ class meshFace extends meshVertexObject:
 	var edges:Array[meshEdge]=[]
 	
 	var vertexUVS:PackedVector2Array=[]
-	
+	var normal:Vector3
 	var faceIndex:int
 	var surfaceIndex:int=0
 	
@@ -227,7 +295,7 @@ class meshFace extends meshVertexObject:
 				]
 			))
 		
-		
+		if _mesh==null:return
 		setSurfaceMaterial(MaterialService.getMaterial(&"NONE"))
 	
 	func setSurfaceMaterial(material:MaterialService.materialModel)->void:
@@ -257,12 +325,11 @@ class meshFace extends meshVertexObject:
 		for vertex in vertices:
 			mdt.set_vertex_uv(vertex.index,(vertex.uv*uvScale+uvOffset).rotated(uvRotation))
 	
+	func updateNormal()->void:
+		normal=vertices[0].normal
 	
-	##TODO: garbage implementation
-	##utter trash. replace with our own to make it faster at some point
 	func getFaceNormal()->Vector3:
-		return _mesh.surfacePool[surfaceIndex].get_face_normal(faceIndex)
-		#return Vector3.ZERO
+		return normal
 	
 	func translateBy(offset:Vector3,specifiedIndex:PackedFloat32Array=[],blockChangeForOperation:bool=false)->void:
 		var uniqueVertices:Array[meshVertex]=[]
@@ -270,3 +337,12 @@ class meshFace extends meshVertexObject:
 			if specifiedIndex.size()>0 and not specifiedIndex.has(vertex.index):continue
 			vertex.translateBy(offset,true,blockChangeForOperation)
 			
+
+class cleanFace extends RefCounted:
+	var vertices:PackedVector3Array=[]
+	var normal:Vector3
+	var referenceFaces:Array=[]
+	func _init(vertexList:PackedVector3Array,faceNormal:Vector3,linkedFaces:Array)->void:
+		vertices=vertexList
+		normal=faceNormal
+		referenceFaces=linkedFaces

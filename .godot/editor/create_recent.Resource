@@ -1,3 +1,4 @@
+InputMapData
 ShaderMaterial
 StandardMaterial3D
 PlaceholderTexture2D

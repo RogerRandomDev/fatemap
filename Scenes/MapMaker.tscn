@@ -1,18 +1,18 @@
 [gd_scene load_steps=18 format=3 uid="uid://gq185wjg7pqu"]
 
-[ext_resource type="Script" uid="uid://ctkdd8bryxxtr" path="res://Scenes/mapMaker.gd" id="1_cyx2k"]
+[ext_resource type="Script" uid="uid://ctkdd8bryxxtr" path="res://Scenes/MapMaker/mapMaker.gd" id="1_cyx2k"]
 [ext_resource type="Theme" uid="uid://8cjq1xuuwswd" path="res://Scenes/MapMakerTheme.tres" id="1_ni7vo"]
 [ext_resource type="Script" uid="uid://cte4jalives85" path="res://addons/sk_fly_camera/src/fly_camera.gd" id="2_ut11n"]
 [ext_resource type="PackedScene" uid="uid://td0o0k0h20tb" path="res://addons/sk_fly_camera/src/CameraSpeedControls.tscn" id="3_8pyo2"]
 [ext_resource type="Script" uid="uid://3st8ol26ukji" path="res://test.gd" id="4_8pyo2"]
 [ext_resource type="Script" uid="uid://cb25fk4wauy8v" path="res://models/camera/camera_gizmo.gd" id="5_01tu6"]
 [ext_resource type="Script" uid="uid://bppken1hqjrw8" path="res://models/resources/objectPhysicalDataResource.gd" id="5_majic"]
-[ext_resource type="Script" uid="uid://dlyp3vs6kb3fw" path="res://Scenes/selectedFaceHighlighter.gd" id="6_04lqo"]
-[ext_resource type="Script" uid="uid://d2wj0xfk5yf0o" path="res://Scenes/WorldGrid.gd" id="7_6lnv8"]
-[ext_resource type="Script" uid="uid://cny0xd3e8lnt0" path="res://Scenes/ToolBarContents.gd" id="7_cn52i"]
-[ext_resource type="Script" uid="uid://dxjm221ox8g4l" path="res://Scenes/RightInspector.gd" id="9_nposp"]
-[ext_resource type="Script" uid="uid://6sr3giptw1ue" path="res://Scenes/meshToolbar.gd" id="11_6lnv8"]
-[ext_resource type="Script" uid="uid://dprdgamtvb32c" path="res://Scenes/PrimaryViewport.gd" id="11_mmgm2"]
+[ext_resource type="Script" uid="uid://dlyp3vs6kb3fw" path="res://Scenes/MapMaker/selectedFaceHighlighter.gd" id="6_04lqo"]
+[ext_resource type="Script" uid="uid://d2wj0xfk5yf0o" path="res://Scenes/MapMaker/WorldGrid.gd" id="7_6lnv8"]
+[ext_resource type="Script" uid="uid://cny0xd3e8lnt0" path="res://Scenes/MapMaker/ToolBarContents.gd" id="7_cn52i"]
+[ext_resource type="Script" uid="uid://dxjm221ox8g4l" path="res://Scenes/MapMaker/RightInspector.gd" id="9_nposp"]
+[ext_resource type="Script" uid="uid://6sr3giptw1ue" path="res://Scenes/MapMaker/meshToolbar.gd" id="11_6lnv8"]
+[ext_resource type="Script" uid="uid://dprdgamtvb32c" path="res://Scenes/MapMaker/PrimaryViewport.gd" id="11_mmgm2"]
 
 [sub_resource type="Environment" id="Environment_nposp"]
 background_mode = 1
@@ -24,11 +24,12 @@ fog_light_color = Color(0.1, 0.1, 0.1, 1)
 [sub_resource type="World3D" id="World3D_l3yla"]
 environment = SubResource("Environment_nposp")
 
-[sub_resource type="BoxMesh" id="BoxMesh_l3yla"]
+[sub_resource type="CylinderMesh" id="CylinderMesh_mmgm2"]
+rings = 8
 
 [sub_resource type="Resource" id="Resource_6lnv8"]
 script = ExtResource("5_majic")
-mesh = SubResource("BoxMesh_l3yla")
+mesh = SubResource("CylinderMesh_mmgm2")
 parameterCount = 0
 metadata/_custom_type_script = "uid://bppken1hqjrw8"
 

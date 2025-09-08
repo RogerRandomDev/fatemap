@@ -23,6 +23,13 @@ settings/addon_root_folder="res://addons/debug_draw_3d"
 
 enabled=PackedStringArray("res://addons/Gizmo3DScript/plugin.cfg", "res://addons/sk_fly_camera/plugin.cfg")
 
+[input]
+
+e={
+"deadzone": 0.2,
+"events": []
+}
+
 [shader_globals]
 
 cameraPosition={
