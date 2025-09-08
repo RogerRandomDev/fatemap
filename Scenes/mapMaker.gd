@@ -4,34 +4,25 @@ extends VBoxContainer
 @onready var mapViewport = $MapView
 
 func _ready() -> void:
-	Gizmo3DService.initializeGizmo()
 	loadGUILayout()
 	
 	signalService.addSignal(&"mapObjectSelected")
 	
 	PhysicalObjectInputController.initializeInputController()
 	
-	Gizmo3DService.attachGizmoTo(
-		GUIService.getByName(&"PrimaryViewport").reference.get_child(0)
-		
-	)
+	var mt=StandardMaterial3D.new()
+	mt.texture_filter=BaseMaterial3D.TEXTURE_FILTER_NEAREST
+	
 	MaterialService.addMaterial(
 		&"NONE",
-		StandardMaterial3D.new(),
-		load("res://icon.svg")
-	)
-	MaterialService.addMaterial(
-		&"TestExample",
-		StandardMaterial3D.new(),
+		mt,
 		load("res://new_placeholder_texture_2d.tres")
 	)
 	MaterialService.addMaterial(
-		&"TestExample3",
-		StandardMaterial3D.new(),
+		&"TestExample",
+		mt,
 		load("res://icon.svg")
 	)
-	
-	
 
 func loadGUILayout()->void:
 	loadToolBar()

@@ -38,6 +38,7 @@ func loadMaterialList()->void:
 		materialOption.loadContext(surfaceMaterial)
 		materialOption.setIconSize(surfaceMaterialIconSize)
 		materialOption.updateSpacings(optionExtraBorder)
+		materialOption.gui_input.connect(optionEvent.bind(materialOption))
 		materialList.add_child(materialOption)
 
 func updateGridLayout()->void:
@@ -50,3 +51,10 @@ func updateGridLayout()->void:
 
 func loadContents(contents:ObjectDataResource)->void:
 	pass
+
+func optionEvent(event:InputEvent,option)->void:
+	if not MeshEditService.isEditing():return
+	if not event is InputEventMouseButton:return
+	if event.button_index==MOUSE_BUTTON_LEFT and event.is_pressed():
+		MeshEditService.editing.setMaterial(option.myMaterial,true)
+		MeshEditService.editing.mesh.rebuild()

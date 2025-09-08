@@ -21,6 +21,7 @@ static func buildMesh(object:ObjectPhysicalDataResource,instance:Node3D=null,mak
 		)
 	arrayMesh.initializeFaces()
 	arrayMesh.rebuild()
+	arrayMesh.updateNormals()
 	
 	meshInstance.mesh=arrayMesh
 	if instance:

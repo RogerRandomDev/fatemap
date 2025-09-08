@@ -27,6 +27,8 @@ func removeTabs(tabs:PackedStringArray=[])->void:
 
 func selectedObjectChanged(newSelectedObject:ObjectModel=null)->void:
 	await removeTabs()
+	if newSelectedObject==null:return
+	
 	addTab(
 		&"Surface",
 		SurfaceTab.new(),

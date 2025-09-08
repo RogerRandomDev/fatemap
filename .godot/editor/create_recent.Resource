@@ -1,5 +1,6 @@
-PlaceholderTexture2D
 ShaderMaterial
+StandardMaterial3D
+PlaceholderTexture2D
 guiDropdownResource
 ObjectDataResource
 guiElement

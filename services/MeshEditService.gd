@@ -6,10 +6,13 @@ static var editing:editingMesh
 
 
 static func setEditing(object:ObjectModel)->void:
+	if object==null:
+		editing=null
+		return
 	var mesh=object.get_node_or_null("MESH_OBJECT")
 	editing=editingMesh.new(object,mesh)
 
-
+static func isEditing()->bool:return editing!=null
 
 enum MeshEditMode{
 	FACE=0,
@@ -58,25 +61,18 @@ class editingMesh extends Resource:
 	func select(normal:Vector3,hitPosition:Vector3=Vector3.ZERO,keep:bool=false)->void:
 		if not keep:clearSelections()
 		var localNormal = normal*meshObject.global_transform.basis.get_rotation_quaternion()
-		selectedFaces.append_array(mesh.getSelectedFaces(localNormal,hitPosition))
+		selectedFaces.append_array(mesh.getSelectedFaces(localNormal.snappedf(0.001),hitPosition))
 	
 	func translateSelection(translateBy:Vector3,local:bool=true)->void:
 		if selectedFaces.size()==0:return
 		if local:translateBy*=Quaternion(selectedFaces[0].getFaceNormal(),Vector3.UP)
-		var weldedChanges:PackedVector3Array=[]
 		for face in selectedFaces:
-			weldedChanges.append_array(face.translateBy(translateBy))
-		#make it an array of only unique positions
-		var removedChanges:int=0
-		for index in len(weldedChanges):
-			if weldedChanges.find(weldedChanges[index-removedChanges])!=index-removedChanges:
-				weldedChanges.remove_at(index-removedChanges)
-				removedChanges+=1
-		for face in mesh.faces.filter(func(f):return not selectedFaces.has(f)):
-			for weldedChange in weldedChanges:
-				face.weldedTranslate(weldedChange,weldedChange+translateBy)
+			face.translateBy(translateBy,[],true)
 	
-	func setMaterial(material:MaterialService.materialModel)->void:
+	func setMaterial(material:MaterialService.materialModel,setAllIfNoneActive:bool=false)->void:
+		if setAllIfNoneActive and selectedFaces.size()==0:
+			for face in mesh.faces:face.setSurfaceMaterial(material)
+		
 		for face in selectedFaces:
 			face.setSurfaceMaterial(material)
 	

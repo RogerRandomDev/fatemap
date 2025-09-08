@@ -1,3 +1,4 @@
+Node
 NavigationObstacle3D
 NavigationLink3D
 Label
@@ -7,9 +8,7 @@ PanelContainer
 MeshInstance3D
 CSGMesh3D
 Gizmo3D
-Node
 Tree
 Marker3D
 VSeparator
 ObjectModel
-CollisionShape3D
