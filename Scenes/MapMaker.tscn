@@ -27,6 +27,7 @@ environment = SubResource("Environment_nposp")
 [sub_resource type="CylinderMesh" id="CylinderMesh_mmgm2"]
 top_radius = 2.0
 bottom_radius = 2.0
+radial_segments = 16
 rings = 0
 
 [sub_resource type="Resource" id="Resource_6lnv8"]

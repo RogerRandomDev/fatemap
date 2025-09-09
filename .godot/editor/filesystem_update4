@@ -2,3 +2,5 @@ res://Scenes/MapMaker.tscn
 res://Scenes/MapMakerTheme.tres
 res://models/objects/MaterialGridOption.tscn
 res://models/objectMeshModel.gd
+res://Scenes/MapMaker/selectedFaceHighlighter.gd
+res://services/MeshEditService.gd

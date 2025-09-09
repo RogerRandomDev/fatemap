@@ -10,6 +10,8 @@ var surfacePool:Array[MeshDataTool]=[]
 var positionIDs:Dictionary={}
 var normalIDs:Dictionary={}
 
+var cleanedFaces:Array[cleanedFace]=[]
+
 
 func  initializeFaces()->void:
 	var dt:MeshDataTool=MeshDataTool.new()
@@ -34,6 +36,7 @@ func  initializeFaces()->void:
 
 func rebuild()->void:
 	clear_surfaces()
+	surfacePool=[]
 	var surfaceIndex:int=0
 	for surfaceMaterial in faceMaterialMap:
 		var surfaceFaces:Array=faceMaterialMap[surfaceMaterial]
@@ -48,11 +51,16 @@ func rebuild()->void:
 			currentVertexIndex=face.loadToSurfaceTool(st,currentVertexIndex,faceIndex,surfaceIndex)
 			faceIndex+=1
 		st.generate_normals()
-		st.commit(self)
+		
+		var MDT=MeshDataTool.new()
+		MDT.create_from_surface(st.commit(),0)
+		surfacePool.push_back(MDT)
 		surfaceIndex+=1
-	loadSurfacePool()
 	updateNormals()
-	updateUVs.call_deferred()
+	updateUVs()
+	for surface in surfacePool:
+		surface.commit_to_surface(self)
+	preloadCleanFaces()
 
 func loadSurfacePool()->void:
 	surfacePool=[]
@@ -78,6 +86,10 @@ func updateUVs(updateImmediately:bool=true)->void:
 	for surface in surfacePool:
 		surface.commit_to_surface(self)
 
+func preloadCleanFaces()->void:
+	cleanedFaces=getCleanFaces()
+
+
 func getPositionID(pos:Vector3,createIfEmpty:bool=true)->int:
 	if not positionIDs.values().has(pos) and createIfEmpty:
 		positionIDs[positionIDs.size()]=pos
@@ -92,12 +104,18 @@ func getNormalID(norm:Vector3,createIfEmpty:bool=true)->int:
 func getSelectedFaces(normal:Vector3,hitPosition:Vector3=Vector3.ZERO)->Array[meshFace]:
 	var checkNormalID=getNormalID(normal,false)
 	if checkNormalID==-1:return []
+	#used to track the intersection ray
+	var hitFrom:Vector3=hitPosition-normal*0.1
+	var hitTo:Vector3=hitPosition+normal*0.1
 	
 	var selectedFaces:Array[meshFace]=[]
-	selectedFaces=faces.filter(
+	var cleanFaceSelected=cleanedFaces.filter(
 		func(face):
-			return face.normalID==checkNormalID
+			return face.normalID==checkNormalID && face.enclosesRay(hitFrom,hitTo)
 			)
+	if cleanFaceSelected.size()==0:return selectedFaces
+	cleanFaceSelected.sort_custom(func(a,b):return (a.getCenter()-hitPosition).length_squared()<(b.getCenter()-hitPosition).length_squared())
+	selectedFaces=cleanFaceSelected[0].faces
 	return selectedFaces
 
 func getCleanEdges()->Array[meshEdge]:
@@ -126,12 +144,41 @@ func getCleanEdges()->Array[meshEdge]:
 		cleanedEdges.push_back(uncleanEdges[uncleanEdge])
 	return cleanedEdges
 
+func getCleanFaces()->Array[cleanedFace]:
+	var cleanFaces:Dictionary={}
+	for face in faces:
+		var normID=face.normalID
+		if not cleanFaces.has(normID):
+			cleanFaces[normID]=[]
+		cleanFaces[normID].push_back(face)
+	var cleanFaceGroupings:Dictionary={}
+	var uncleanFaces:Dictionary={}
+	for normID in cleanFaces:
+		var cleanGroup=cleanFaces[normID]
+		if not uncleanFaces.has(normID):uncleanFaces[normID]={}
+		for face in cleanGroup:
+			var cleanedGroupID:int=uncleanFaces[normID].values().find_custom(
+				func(faceGroup):return face.vertices.any(func(vert):return faceGroup.has(vert.positionID))
+			)
+			if cleanedGroupID==-1:
+				cleanedGroupID=cleanFaceGroupings.size()
+				cleanFaceGroupings[cleanedGroupID]=[]
+				uncleanFaces[normID][cleanedGroupID]=[]
+			else:cleanedGroupID=uncleanFaces[normID].keys()[cleanedGroupID]
+			cleanFaceGroupings[cleanedGroupID].push_back(face)
+			for vertex in face.vertices:uncleanFaces[normID][cleanedGroupID].push_back(vertex.positionID)
+	var cleanedFaces:Array[cleanedFace]=[]
+	for faceGroup in cleanFaceGroupings.values():
+		cleanedFaces.push_back(cleanedFace.new(faceGroup))
+	return cleanedFaces
+
+
 ## removes faces where their surface area would  be 0[br]
 ## caused by  any edge in it having both vertices share the same positionID
 func cleanZeroSurfaceFaces()->void:
 	for face in faces:
 		if face.edges.any(func(edge):return edge.isZeroLength()):
-			pass
+			face.remove()
 
 
 
@@ -180,7 +227,7 @@ class meshVertex extends RefCounted:
 		#return normal
 	
 	func updateUV()->Vector2:
-		var uvAlignedPosition=position*Quaternion(normal.normalized(),Vector3.FORWARD).inverse()
+		var uvAlignedPosition=position*Quaternion(normal.normalized(),Vector3.FORWARD).normalized().inverse()
 		uv=Vector2(uvAlignedPosition.x,-uvAlignedPosition.y)
 		return uv
 	
@@ -188,7 +235,7 @@ class meshVertex extends RefCounted:
 		return checkAgainst.positionID==positionID and checkAgainst.normalID==normalID
 	
 	func remove()->void:
-		pass
+		_mesh.vertices.erase(self)
 
 class meshVertexObject extends RefCounted:
 	var vertices:Array[meshVertex]=[]
@@ -221,7 +268,9 @@ class meshEdge extends meshVertexObject:
 	func isZeroLength()->bool:return vertices[0].positionID==vertices[1].positionID
 	
 	func remove()->void:
-		pass
+		for vertex in vertices:
+			vertex.remove()
+		_mesh.edges.erase(self)
 
 
 class meshFace extends meshVertexObject:
@@ -303,5 +352,45 @@ class meshFace extends meshVertexObject:
 		return vertices.map(func(vertex):return vertex.positionID)
 	
 	func remove()->void:
-		pass
+		for edge in edges:
+			edge.remove()
+		for vertex in vertices:
+			vertex.remove()
+		_mesh.faces.erase(self)
+
+
+class cleanedFace extends RefCounted:
+	var positionIDs:PackedInt32Array=[]
+	var positions:
+		get:return Array(positionIDs).map(func(id):return _mesh.positionIDs[id])
+	
+	var normalID:int
+	var faces:Array[meshFace]=[]
+	
+	var _mesh:objectMeshModel
+	
+	func _init(fromFaces:Array)->void:
+		_mesh=fromFaces[0]._mesh
+		var uniquePositions:Dictionary={}
+		for face in fromFaces:
+			face.vertices.map(func(v):uniquePositions[v.positionID]=null)
+			faces.push_back(face)
+		positionIDs=uniquePositions.keys()
+		normalID=fromFaces[0].normalID
+		
+	func getCenter()->Vector3:
+		var centerPos=Vector3.ZERO
+		for pos in positions:
+			centerPos+=pos
+		return centerPos/positionIDs.size()
+	
+	##not the best implementation but it makes sure
+	##you actually enclose the ray you are trying to click
+	func enclosesRay(from:Vector3,point:Vector3)->bool:
+		return faces.any(func(face):return Geometry3D.segment_intersects_triangle(
+			from,point,
+			face.vertices[0].position,
+			face.vertices[1].position,
+			face.vertices[2].position)
+		)
 	

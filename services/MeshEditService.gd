@@ -61,6 +61,7 @@ class editingMesh extends Resource:
 	func select(normal:Vector3,hitPosition:Vector3=Vector3.ZERO,keep:bool=false)->void:
 		if not keep:clearSelections()
 		var localNormal = normal*meshObject.global_transform.basis.get_rotation_quaternion()
+		hitPosition-=meshObject.global_position
 		selectedFaces.append_array(mesh.getSelectedFaces(localNormal.snappedf(0.001),hitPosition))
 	
 	func translateSelection(translateBy:Vector3,local:bool=true)->void:
