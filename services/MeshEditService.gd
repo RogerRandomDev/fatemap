@@ -66,8 +66,13 @@ class editingMesh extends Resource:
 	func translateSelection(translateBy:Vector3,local:bool=true)->void:
 		if selectedFaces.size()==0:return
 		if local:translateBy*=Quaternion(selectedFaces[0].getFaceNormal(),Vector3.UP)
+		var editingPositionIDs=[]
 		for face in selectedFaces:
-			face.translateBy(translateBy,[],true)
+			for positionID in face.getPositionIDs():
+				if editingPositionIDs.has(positionID):continue
+				editingPositionIDs.push_back(positionID)
+		for positionID in editingPositionIDs:
+			mesh.positionIDs[positionID]=(mesh.positionIDs[positionID]+translateBy)
 	
 	func setMaterial(material:MaterialService.materialModel,setAllIfNoneActive:bool=false)->void:
 		if setAllIfNoneActive and selectedFaces.size()==0:

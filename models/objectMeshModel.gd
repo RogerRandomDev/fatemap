@@ -7,8 +7,9 @@ var faces:Array[meshFace]=[]
 var faceMaterialMap:Dictionary={}
 var surfacePool:Array[MeshDataTool]=[]
 
-var cleanedEdges:Array[meshEdge]=[]
-var cleanedFaces:Array[cleanFace]=[]
+var positionIDs:Dictionary={}
+var normalIDs:Dictionary={}
+
 
 func  initializeFaces()->void:
 	var dt:MeshDataTool=MeshDataTool.new()
@@ -30,8 +31,6 @@ func  initializeFaces()->void:
 		
 		faces.push_back(faceInfo)
 	rebuild()
-	updateNormals()
-	updateUVs()
 
 func rebuild()->void:
 	clear_surfaces()
@@ -50,12 +49,10 @@ func rebuild()->void:
 			faceIndex+=1
 		st.generate_normals()
 		st.commit(self)
-		st.clear()
 		surfaceIndex+=1
 	loadSurfacePool()
-	cleanedEdges=getCleanEdges()
-	cleanedFaces=getCleanFaces()
-	
+	updateNormals()
+	updateUVs.call_deferred()
 
 func loadSurfacePool()->void:
 	surfacePool=[]
@@ -65,6 +62,7 @@ func loadSurfacePool()->void:
 		surfacePool.push_back(mdt)
 
 func updateNormals()->void:
+	normalIDs.clear()
 	for vertex in vertices:
 		vertex.updateNormal()
 	for face in faces:
@@ -80,101 +78,73 @@ func updateUVs(updateImmediately:bool=true)->void:
 	for surface in surfacePool:
 		surface.commit_to_surface(self)
 
+func getPositionID(pos:Vector3,createIfEmpty:bool=true)->int:
+	if not positionIDs.values().has(pos) and createIfEmpty:
+		positionIDs[positionIDs.size()]=pos
+		return positionIDs.size()-1
+	return positionIDs.values().find(pos)
+func getNormalID(norm:Vector3,createIfEmpty:bool=true)->int:
+	if not normalIDs.values().has(norm) and createIfEmpty:
+		normalIDs[normalIDs.size()]=norm
+		return normalIDs.size()-1
+	return normalIDs.values().find(norm)
+
 func getSelectedFaces(normal:Vector3,hitPosition:Vector3=Vector3.ZERO)->Array[meshFace]:
+	var checkNormalID=getNormalID(normal,false)
+	if checkNormalID==-1:return []
+	
 	var selectedFaces:Array[meshFace]=[]
-	var filteredClean=cleanedFaces.filter(
+	selectedFaces=faces.filter(
 		func(face):
-			return face.normal.is_equal_approx(normal)
+			return face.normalID==checkNormalID
 			)
-	for face in filteredClean:
-		selectedFaces.append_array(face.referenceFaces)
 	return selectedFaces
-func getCleanEdges() -> Array[meshEdge]:
-	var edge_groups := {}  # key: position-only key, value: list of matching edges
-	var cleanEdges: Array[meshEdge] = []
 
+func getCleanEdges()->Array[meshEdge]:
+	var cleanEdges:Dictionary={}
+	var uncleanEdges:Dictionary={}
 	for edge in edges:
-		var pos_a = edge.vertices[0].position.snappedf(0.001)
-		var pos_b = edge.vertices[1].position.snappedf(0.001)
-		var pos_key = _get_sorted_key(pos_a, pos_b)
+		var normID=edge.vertices[0].normalID
+		if not cleanEdges.has(normID):
+			cleanEdges[normID]=[]
+		cleanEdges[normID].push_back(edge)
+	for cleanNormal in cleanEdges:
+		var edgeSet=cleanEdges[cleanNormal]
+		for edge in edgeSet:
+			var edgePair=[
+				min(edge.vertices[0].positionID,edge.vertices[1].positionID),
+				max(edge.vertices[0].positionID,edge.vertices[1].positionID)
+			]
+			var edgePosition=str(edgePair[0])+"|"+str(edgePair[1])+"|"+str(edge.vertices[0].normalID)
+			if not uncleanEdges.has(edgePosition):
+				uncleanEdges[edgePosition]=edge
+			else:
+				uncleanEdges[edgePosition]=null
+	var cleanedEdges:Array[meshEdge]=[]
+	for uncleanEdge in uncleanEdges:
+		if uncleanEdges[uncleanEdge]==null:continue
+		cleanedEdges.push_back(uncleanEdges[uncleanEdge])
+	return cleanedEdges
 
-		if not edge_groups.has(pos_key):
-			edge_groups[pos_key] = []
-		edge_groups[pos_key].append(edge)
-
-	# Process each group
-	for pos_key in edge_groups:
-		var group: Array = edge_groups[pos_key]
-
-		if group.size() == 1:
-			cleanEdges.append(group[0])
-			continue
-
-		# Check if all normals match
-		var base_normals = [
-			group[0].vertices[0].normal.snappedf(0.001),
-			group[0].vertices[1].normal.snappedf(0.001)
-		]
-
-		var normals_match := true
-		for i in range(1, group.size()):
-			var n0 = group[i].vertices[0].normal.snappedf(0.001)
-			var n1 = group[i].vertices[1].normal.snappedf(0.001)
-
-			var match_same_order = (n0 == base_normals[0] and n1 == base_normals[1])
-			var match_reverse_order = (n0 == base_normals[1] and n1 == base_normals[0])
-
-			if not (match_same_order or match_reverse_order):
-				normals_match = false
-				break
-
-		if normals_match:
-			continue  # Exclude all if normals match
-		else:
-			cleanEdges.append(group[0])  # Keep one if normals differ
-
-	return cleanEdges
-
-
-func _get_sorted_key(a: Vector3, b: Vector3) -> String:
-	# Compare components to determine order
-	if a.x < b.x: return str(a) + "|" + str(b)
-	if a.x > b.x: return str(b) + "|" + str(a)
-	if a.y < b.y: return str(a) + "|" + str(b)
-	if a.y > b.y: return str(b) + "|" + str(a)
-	if a.z < b.z: return str(a) + "|" + str(b)
-	if a.z > b.z: return str(b) + "|" + str(a)
-	# Positions are equal
-	return str(a) + "|" + str(b)
-
-
-func getCleanFaces()->Array[cleanFace]:
-	var cleanFaces:Array[cleanFace]=[]
-	var cleanVertices:Array[meshVertex]=[]
-	var cleanedNormalGroups:Dictionary={}
-	var cleanedNormalFaces:Dictionary={}
-	for index in len(vertices):
-		var vertex=vertices[index]
-		if cleanVertices.any(func(cleanedVertex):return cleanedVertex.matches(vertex)):continue
-		cleanVertices.push_back(vertex)
-		if not cleanedNormalGroups.has(vertex.normal):cleanedNormalGroups[vertex.normal]=[]
-		cleanedNormalGroups[vertex.normal].push_back(vertex.position)
+## removes faces where their surface area would  be 0[br]
+## caused by  any edge in it having both vertices share the same positionID
+func cleanZeroSurfaceFaces()->void:
 	for face in faces:
-		if not cleanedNormalFaces.has(face.normal):cleanedNormalFaces[face.normal]=[]
-		cleanedNormalFaces[face.normal].push_back(face)
-	for normalPlane in cleanedNormalGroups:
-		var planeVertexPoints:PackedVector3Array=cleanedNormalGroups[normalPlane]
-		cleanFaces.push_back(cleanFace.new(
-			planeVertexPoints,normalPlane,cleanedNormalFaces[normalPlane]
-		))
-	return cleanFaces
+		if face.edges.any(func(edge):return edge.isZeroLength()):
+			pass
 
 
 
 class meshVertex extends RefCounted:
-	var position:Vector3
+	var positionID:int
+	var position:
+		get:return _mesh.positionIDs[positionID]
+		set(value):positionID=_mesh.getPositionID(value.snappedf(0.001))
+	var normalID:int
+	var normal:
+		get:return _mesh.normalIDs[normalID]
+		set(value):normalID=_mesh.getNormalID(value.snappedf(0.001))
 	var uv:Vector2
-	var normal:Vector3
 	var index:int=0
 	var surfaceIndex:int=0
 	var weldedVertices:Array[meshVertex]=[]
@@ -183,55 +153,42 @@ class meshVertex extends RefCounted:
 	var _mesh:objectMeshModel
 	var locked:bool=false
 	
-	func _init(vertexPosition:Vector3,vertexUV:Vector2,mesh:objectMeshModel) -> void:
-		position=vertexPosition
+	func _init(vertexPosition:int,vertexUV:Vector2,mesh:objectMeshModel) -> void:
+		positionID=vertexPosition
 		uv=vertexUV
 		_mesh=mesh
-		if _mesh==null:return
 		index=_mesh.vertices.size()
-		getWeldedVertices()
 		_mesh.vertices.push_back(self)
 	
-	##ensure we keep any vertices in the same position locked to it
-	func getWeldedVertices()->void:
-		for vertex in _mesh.vertices:
-			if vertex.position==position:
-				vertex.weldedVertices.push_back(self)
-				weldedVertices.push_back(vertex)
-	
-	func clearConnections()->void:
-		for vertex in weldedVertices:
-			if vertex.weldedVertices.has(self):
-				vertex.weldedVertices.erase(self)
-	
-	func translateBy(offset:Vector3,includeWeldedVertices:bool=true,blockChangeForOperation:bool=false)->void:
+	func translateBy(offset:Vector3,blockChangeForOperation:bool=false)->void:
 		if blockChangeForOperation and locked:return
 		#lock itself from changing for rest of operation
 		#prevents 2 welded vertices stacking translations
 		if blockChangeForOperation:
 			locked=true
 			(func():locked=false).call_deferred()
-		position+=offset
-		if includeWeldedVertices:
-			for vertex in weldedVertices:
-				vertex.translateBy(offset,false,blockChangeForOperation)
+		_mesh.positionIDs[positionID]=(_mesh.positionIDs[positionID]+offset).snappedf(0.001)
+		
+	
 	func updateSurface(surface:int,indexOn:int)->void:
 		surfaceIndex=surface
 		index=indexOn
 	
-	func updateNormal()->Vector3:
+	func updateNormal()->void:
 		var mdt=_mesh.surfacePool[surfaceIndex]
 		normal=mdt.get_vertex_normal(index)
-		return normal
+		#return normal
 	
 	func updateUV()->Vector2:
-		var uvAlignedPosition=position*Quaternion(normal,Vector3.BACK).inverse()
+		var uvAlignedPosition=position*Quaternion(normal.normalized(),Vector3.FORWARD).inverse()
 		uv=Vector2(uvAlignedPosition.x,-uvAlignedPosition.y)
 		return uv
 	
 	func matches(checkAgainst:meshVertex)->bool:
-		return checkAgainst.position==position and checkAgainst.normal==normal
+		return checkAgainst.positionID==positionID and checkAgainst.normalID==normalID
 	
+	func remove()->void:
+		pass
 
 class meshVertexObject extends RefCounted:
 	var vertices:Array[meshVertex]=[]
@@ -252,17 +209,19 @@ class meshEdge extends meshVertexObject:
 	func matches(edge:meshEdge)->bool:
 		return vertices.all(
 			func(vertex):return edge.vertices.any(
-				func(edgeVertex):return edgeVertex.position==vertex.position
+				func(edgeVertex):return edgeVertex.positionID==vertex.positionID
 		))
 	
-	##compars an edge's normals to see if they match
+	##compares an edge's normals to see if they match
 	func normalMatches(edge:meshEdge)->bool:
-		return vertices.all(
-			func(vertex):return edge.vertices.any(
-				func(edgeVertex):return edgeVertex.normal==vertex.normal
-			)
-		)
-
+		return vertices[0].normalID==edge.vertices[0].normalID
+	
+	## is true whenever both positionIDs of an edge are the same[br]
+	## meaning it has zero length
+	func isZeroLength()->bool:return vertices[0].positionID==vertices[1].positionID
+	
+	func remove()->void:
+		pass
 
 
 class meshFace extends meshVertexObject:
@@ -273,7 +232,10 @@ class meshFace extends meshVertexObject:
 	var edges:Array[meshEdge]=[]
 	
 	var vertexUVS:PackedVector2Array=[]
-	var normal:Vector3
+	var normalID:int
+	var normal:Vector3:
+		get:return _mesh.normalIDs[normalID]
+		set(value):normalID = _mesh.getNormalID(value.snappedf(0.001))
 	var faceIndex:int
 	var surfaceIndex:int=0
 	
@@ -281,7 +243,7 @@ class meshFace extends meshVertexObject:
 		_mesh=owner
 		for vertex in len(vertexPosList):
 			vertices.push_back(meshVertex.new(
-				vertexPosList[vertex],
+				_mesh.getPositionID(vertexPosList[vertex]),
 				uvs[vertex],
 				_mesh
 			))
@@ -324,9 +286,10 @@ class meshFace extends meshVertexObject:
 		var mdt=_mesh.surfacePool[surfaceIndex]
 		for vertex in vertices:
 			mdt.set_vertex_uv(vertex.index,(vertex.uv*uvScale+uvOffset).rotated(uvRotation))
+			
 	
 	func updateNormal()->void:
-		normal=vertices[0].normal
+		normal=_mesh.surfacePool[surfaceIndex].get_face_normal(faceIndex)
 	
 	func getFaceNormal()->Vector3:
 		return normal
@@ -335,14 +298,10 @@ class meshFace extends meshVertexObject:
 		var uniqueVertices:Array[meshVertex]=[]
 		for vertex in vertices:
 			if specifiedIndex.size()>0 and not specifiedIndex.has(vertex.index):continue
-			vertex.translateBy(offset,true,blockChangeForOperation)
-			
-
-class cleanFace extends RefCounted:
-	var vertices:PackedVector3Array=[]
-	var normal:Vector3
-	var referenceFaces:Array=[]
-	func _init(vertexList:PackedVector3Array,faceNormal:Vector3,linkedFaces:Array)->void:
-		vertices=vertexList
-		normal=faceNormal
-		referenceFaces=linkedFaces
+			vertex.translateBy(offset,blockChangeForOperation)
+	func getPositionIDs()->PackedInt32Array:
+		return vertices.map(func(vertex):return vertex.positionID)
+	
+	func remove()->void:
+		pass
+	

@@ -46,7 +46,7 @@ static func objectInputEvent(camera: Node, event: InputEvent, event_position: Ve
 			if activeObject==null:return
 			var meshInstance=activeObject.get_child(0)
 			if meshInstance is MeshInstance3D:
-				MeshEditService.editing.select(normal,event_position)
+				MeshEditService.editing.select(normal.snappedf(0.001),event_position)
 				
 				signalService.emitSignal(&"meshSelectionChanged")
 		
