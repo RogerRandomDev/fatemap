@@ -7,8 +7,10 @@ var dragOrigin:Vector3=Vector3.ZERO
 var lastPos:Vector3=Vector3.ZERO
 var dragPlane:Vector3=Vector3.UP
 
-const pointSize:float=12.0
+const pointSize:float=8
 
+
+var  multimesh:MultiMeshInstance3D
 var camera
 
 func _ready() -> void:
@@ -16,13 +18,16 @@ func _ready() -> void:
 	signalService.bindToSignal(&"meshSelectionChanged",updateMeshSelection)
 	await get_tree().process_frame
 	camera = get_viewport().get_camera_3d()
-	MeshEditService.editMode=MeshEditService.MeshEditMode.EDGE
+	multimesh=get_child(0)
+	#MeshEditService.editMode=MeshEditService.MeshEditMode.EDGE
 
 func updateMeshSelection()->void:
 	renderPoints={}
 	screenSpacePoints={}
 	var editMode:int=MeshEditService.getEditMode()
-	if not MeshEditService.isEditing():return
+	if not MeshEditService.isEditing():
+		updateEditPointRender()
+		return
 	match(editMode):
 		MeshEditService.MeshEditMode.FACE:
 			for index in MeshEditService.editing.mesh.cleanedFaces:
@@ -38,21 +43,21 @@ func updateMeshSelection()->void:
 				screenSpacePoints[getScreenSpace(pointAt)]=pointAt
 		MeshEditService.MeshEditMode.VERTEX:
 			pass
+	updateEditPointRender()
 
 func getScreenSpace(pointAt:Vector3)->Vector2:
 	return camera.unproject_position(pointAt)
 
-func _process(delta: float) -> void:queue_redraw()
-
-func _draw() -> void:
-	updateEditPointRender()
-
 func updateEditPointRender()->void:
+	multimesh.multimesh.instance_count=renderPoints.size()
+	var index=0
+	var baseTrans=Transform3D(Basis(),Vector3.ZERO)
+	var  meshSize=(pointSize*tan(deg_to_rad(camera.fov))) / get_viewport_rect().size.y
+	multimesh.multimesh.mesh.size=Vector2(meshSize,meshSize)
 	for drawPoint in renderPoints.keys():
-		if camera.is_position_behind(drawPoint):continue
-		var drawMatrix=camera.unproject_position(drawPoint)
-		draw_circle(drawMatrix,pointSize,Color.GOLDENROD)
-		draw_circle(drawMatrix,pointSize*0.75,Color.CHARTREUSE)
+		baseTrans.origin=drawPoint
+		multimesh.multimesh.set_instance_transform(index,baseTrans)
+		index+=1
 
 
 func _input(event: InputEvent) -> void:

@@ -36,3 +36,11 @@ cameraPosition={
 "type": "vec2",
 "value": Vector2(0, 0)
 }
+EditGrabPointOutline={
+"type": "color",
+"value": Color(0, 0.54, 0.261, 1)
+}
+EditGrabPoint={
+"type": "color",
+"value": Color(0.64, 0.64, 0.1856, 1)
+}

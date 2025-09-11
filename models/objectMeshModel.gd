@@ -12,6 +12,12 @@ var normalIDs:Dictionary={}
 
 var cleanedFaces:Array[cleanedFace]=[]
 
+const projectionAxis:PackedVector3Array=[
+	
+]
+var globalTransform:Transform3D=Transform3D()
+
+
 
 func  initializeFaces()->void:
 	var dt:MeshDataTool=MeshDataTool.new()
@@ -227,19 +233,22 @@ class meshVertex extends RefCounted:
 		#return normal
 	
 	func updateUV()->Vector2:
-		# Choose a fixed global axis to act as the tangent base
-		# Make sure it's not parallel to the normal
-		var base_axis = Vector3.FORWARD
-		if abs(normal.dot(base_axis)) > 0.99:
-			base_axis = Vector3.LEFT
-		# Project base axis onto the plane to get consistent tangent
-		var T = (base_axis - normal * normal.dot(base_axis)).normalized()  # Tangent
-		var B = normal.cross(T).normalized()  # Bitangent
-		# Now use the local x and y as UVs
-		uv = Vector2(
-			position.dot(T),
-			position.dot(B)
-		)
+		var abs_normal=normal.abs()
+		var axis_u;var axis_v
+		if abs_normal.x > abs_normal.y and abs_normal.x > abs_normal.z:
+			# X is dominant project onto YZ plane
+			axis_u = Vector3.BACK      # Y
+			axis_v = Vector3.DOWN    # Z
+		elif abs_normal.y > abs_normal.z:
+			# Y is dominant project onto XZ plane
+			axis_u = Vector3.RIGHT * sign(normal.y)  # X
+			axis_v = Vector3.BACK  # Z
+		else:
+			# Z is dominant project onto XY plane
+			axis_u = Vector3.RIGHT   # X
+			axis_v = Vector3.DOWN     # Y
+		var globalPos=_mesh.globalTransform.origin+position*_mesh.globalTransform.basis
+		uv=Vector2(globalPos.dot(axis_u),globalPos.dot(axis_v))
 		return uv
 	
 	func matches(checkAgainst:meshVertex)->bool:

@@ -28,9 +28,9 @@ func buildToolbar()->void:
 func attachTransformModeButtons()->void:
 	var translateButton := GUIService.insertElement(
 		GUIService.createElement(
-			Button.new(),
-			&"MeshToolTranslateButton",
-			[&"Tools",&"Buttons",&"Selection",&"Transform"],
+			load("res://Scenes/MapMaker/editModeSelectButton.gd").new(),
+			&"MeshToolSelectEditMode",
+			[&"Tools",&"Buttons",&"Selection",&"EditMode",&"Mesh"],
 			&"MeshToolbar"
 		)
 	)
