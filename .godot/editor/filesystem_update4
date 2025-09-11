@@ -5,3 +5,5 @@ res://models/objectMeshModel.gd
 res://Scenes/EditPoints.gd
 res://Scenes/MapMaker/editModeSelectButton.gd
 res://addons/sk_fly_camera/src/camera_speed_controls.gd
+res://models/utility/physicalObjectInputController.gd
+res://services/MeshEditService.gd

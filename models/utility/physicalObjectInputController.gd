@@ -37,9 +37,13 @@ static func objectInputEvent(camera: Node, event: InputEvent, event_position: Ve
 			if oldActive!=activeObject:
 				MeshEditService.setEditing(activeObject)
 				signalService.emitSignal(&"meshSelectionChanged")
-			if oldActive!=activeObject:
 				signalService.emitSignal(&"mapObjectSelected",[activeObject])
+			elif not object.get_tree().root.get_viewport().is_input_handled() and  MeshEditService.isEditing():
+					if not MeshEditService.getEditMode()==MeshEditService.MeshEditMode.FACE:return
+					MeshEditService.editing.selectByClickInfo(normal,event_position,event.shift_pressed)
+					signalService.emitSignal(&"meshSelectionChanged")
 		(object.get_tree().root.get_viewport()).set_input_as_handled()
+		
 	
 
 static func deselect()->void:

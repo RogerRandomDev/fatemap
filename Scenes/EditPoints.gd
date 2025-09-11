@@ -61,7 +61,7 @@ func updateEditPointRender()->void:
 
 
 func _input(event: InputEvent) -> void:
-	if event is InputEventKey and event.is_pressed() and MeshEditService.isEditing():
+	if event is InputEventKey and event.is_pressed():
 		# Assume this is in _process or wherever you're updating
 		var forward = -camera.global_transform.basis.z
 		forward.y = 0  # Ignore vertical axis
@@ -95,7 +95,7 @@ func _input(event: InputEvent) -> void:
 			KEY_PAGEDOWN:
 				moveSelection(Vector3.DOWN)
 				get_viewport().set_input_as_handled()
-		return
+		if MeshEditService.isEditing():return
 	if event is InputEventMouseButton and MeshEditService.isEditing():
 		if event.button_index==MOUSE_BUTTON_LEFT:
 			if event.pressed:
@@ -103,16 +103,39 @@ func _input(event: InputEvent) -> void:
 					MeshEditService.editing.clearSelections()
 				if selectPointToChange(get_local_mouse_position()):
 					get_viewport().set_input_as_handled()
-				signalService.emitSignal(&"meshSelectionChanged")
+					signalService.emitSignal(&"meshSelectionChanged")
+			lastPos=Vector3.ZERO
 	if get_viewport().is_input_handled():return
+	##TODO: make this its own node handler so we can better track it
+	if event is InputEventMouseMotion and MeshEditService.isEditing() and Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
+		if MeshEditService.editing.selectedFaces.size()==0:return
+		var atFace=MeshEditService.editing.mesh.cleanedFaces[MeshEditService.editing.mesh.cleanedFaces.find_custom(func(f):return f.faces.has(MeshEditService.editing.selectedFaces[0]))]
+		var norm=atFace.getNormal()
+		if  Input.is_key_pressed(KEY_SHIFT):
+			norm=Vector3.UP
+		var pos=atFace.getCenter()
+		var plane=Plane(norm,pos+MeshEditService.editing.meshObject.global_position)
+		var cam_norm=(camera  as Camera3D).project_local_ray_normal(get_local_mouse_position())*camera.global_transform.basis.inverse()
+		var intersectionPoint = plane.intersects_ray(camera.global_position,cam_norm)
+		if lastPos==Vector3.ZERO and intersectionPoint:
+			lastPos=intersectionPoint
+		if intersectionPoint==null:return
+		var changeBy=(intersectionPoint-lastPos).snappedf(0.25)
+		MeshEditService.editing.translateSelection(changeBy,true)
+		lastPos+=changeBy
+		MeshEditService.editing.mesh.rebuild()
+		PhysicalObjectService.updatePickableArea(MeshEditService.editing.dataObject)
+		signalService.emitSignal(&"meshSelectionChanged")
+	
 	if event is InputEventMouseButton and PhysicalObjectInputController.hoveredObjects.size()==0 and event.is_pressed() and event.button_index==MOUSE_BUTTON_LEFT:
 		PhysicalObjectInputController.deselect()
 
 func moveSelection(moveBy:Vector3,local:bool=true)->void:
 	if not MeshEditService.isEditing():return
+	if MeshEditService.editing.selectedVertices.size()==0:MeshEditService.editing.dataObject.position+=moveBy
 	MeshEditService.editing.translateSelection(moveBy,local)
 	MeshEditService.editing.mesh.rebuild(false)
-	PhysicalObjectService.updatePickableArea(MeshEditService.editing.meshObject.get_parent())
+	PhysicalObjectService.updatePickableArea(MeshEditService.editing.dataObject)
 	signalService.emitSignal(&"meshSelectionChanged")
 	
 

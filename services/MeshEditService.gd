@@ -95,7 +95,8 @@ class editingMesh extends Resource:
 		if not keep:clearSelections()
 		var localNormal = normal*meshObject.global_transform.basis.get_rotation_quaternion()
 		hitPosition-=meshObject.global_position
-		selectedFaces.append_array(mesh.getSelectedFaces(localNormal.snappedf(0.001),hitPosition))
+		var hitFace= mesh.getSelectedFaces(localNormal.snappedf(0.001),hitPosition)
+		for face in  hitFace:selectFace(face)
 	
 	func translateSelection(translateBy:Vector3,local:bool=true)->void:
 		if selectedVertices.size()==0:return

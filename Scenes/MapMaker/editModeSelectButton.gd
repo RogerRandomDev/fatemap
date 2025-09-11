@@ -24,6 +24,7 @@ func _ready() -> void:
 		var newItem = list.add_item(option)
 		list.set_item_tooltip(newItem,option)
 	list.item_selected.connect(_option_selected)
+	list.select(2)
 
 func _option_selected(optionIndex:int)->void:
 	MeshEditService.editMode=options.values()[optionIndex]

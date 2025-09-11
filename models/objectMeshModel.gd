@@ -373,6 +373,13 @@ class meshFace extends meshVertexObject:
 	func getPositionIDs()->PackedInt32Array:
 		return vertices.map(func(vertex):return vertex.positionID)
 	
+	func getCenter()->Vector3:
+		var centerPos=Vector3.ZERO
+		for pos in vertices:
+			centerPos+=pos.position
+		return centerPos/vertices.size()
+	
+	
 	func remove()->void:
 		for edge in edges:
 			edge.remove()
