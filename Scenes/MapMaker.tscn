@@ -1,4 +1,4 @@
-[gd_scene load_steps=18 format=3 uid="uid://gq185wjg7pqu"]
+[gd_scene load_steps=19 format=3 uid="uid://gq185wjg7pqu"]
 
 [ext_resource type="Script" uid="uid://ctkdd8bryxxtr" path="res://Scenes/MapMaker/mapMaker.gd" id="1_cyx2k"]
 [ext_resource type="Theme" uid="uid://8cjq1xuuwswd" path="res://Scenes/MapMakerTheme.tres" id="1_ni7vo"]
@@ -12,7 +12,7 @@
 [ext_resource type="Script" uid="uid://cny0xd3e8lnt0" path="res://Scenes/MapMaker/ToolBarContents.gd" id="7_cn52i"]
 [ext_resource type="Script" uid="uid://dxjm221ox8g4l" path="res://Scenes/MapMaker/RightInspector.gd" id="9_nposp"]
 [ext_resource type="Script" uid="uid://6sr3giptw1ue" path="res://Scenes/MapMaker/meshToolbar.gd" id="11_6lnv8"]
-[ext_resource type="Script" uid="uid://dprdgamtvb32c" path="res://Scenes/MapMaker/PrimaryViewport.gd" id="11_mmgm2"]
+[ext_resource type="Script" uid="uid://chdkupotchpee" path="res://Scenes/EditPoints.gd" id="14_qtfr5"]
 
 [sub_resource type="Environment" id="Environment_nposp"]
 background_mode = 1
@@ -24,11 +24,14 @@ fog_light_color = Color(0.1, 0.1, 0.1, 1)
 [sub_resource type="World3D" id="World3D_l3yla"]
 environment = SubResource("Environment_nposp")
 
+[sub_resource type="GDScript" id="GDScript_mmgm2"]
+script/source = "extends SubViewportContainer
+
+
+
+"
+
 [sub_resource type="CylinderMesh" id="CylinderMesh_mmgm2"]
-top_radius = 2.0
-bottom_radius = 2.0
-radial_segments = 16
-rings = 0
 
 [sub_resource type="Resource" id="Resource_6lnv8"]
 script = ExtResource("5_majic")
@@ -44,7 +47,6 @@ grow_horizontal = 2
 grow_vertical = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-mouse_filter = 2
 theme = ExtResource("1_ni7vo")
 script = ExtResource("1_cyx2k")
 
@@ -63,7 +65,17 @@ world_3d = SubResource("World3D_l3yla")
 handle_input_locally = false
 physics_object_picking = true
 
-[node name="Node" type="Node" parent="MapView"]
+[node name="EditPoints" type="Control" parent="MapView"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+script = ExtResource("14_qtfr5")
+
+[node name="FaceHighlighter" type="Node" parent="MapView"]
 script = ExtResource("6_04lqo")
 
 [node name="FlyCamera" type="CharacterBody3D" parent="MapView"]
@@ -90,7 +102,7 @@ offset_left = -40.0
 offset_bottom = 40.0
 grow_horizontal = 0
 stretch = true
-script = ExtResource("11_mmgm2")
+script = SubResource("GDScript_mmgm2")
 
 [node name="SubViewport" type="SubViewport" parent="MapView/FlyCamera/CameraGizmo/Control"]
 own_world_3d = true

@@ -1,4 +1,5 @@
 Node
+Control
 NavigationObstacle3D
 NavigationLink3D
 Label
@@ -11,4 +12,3 @@ Gizmo3D
 Tree
 Marker3D
 VSeparator
-ObjectModel

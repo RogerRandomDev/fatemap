@@ -41,6 +41,7 @@ func loadGuiElement()->void:
 		[&"Camera"],
 		&"PrimaryViewportVBox"
 	)).reference
+	slider.mouse_filter=Control.MOUSE_FILTER_IGNORE
 	slider.set_anchors_preset(Control.PRESET_LEFT_WIDE)
 	slider.size_flags_vertical=Control.SIZE_EXPAND_FILL
 	slider.update_minimum_size()

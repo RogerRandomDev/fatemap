@@ -21,13 +21,10 @@ static func onMouseExitObject(object:Node3D)->void:
 	hoveredObjects.erase(object)
 
 static func objectInputEvent(camera: Node, event: InputEvent, event_position: Vector3, normal: Vector3, shape_idx: int,object:Node3D)->void:
+	
 	if event is InputEventMouseButton:
+		var oldActive=activeObject
 		if event.button_index==MOUSE_BUTTON_LEFT and event.pressed:
-			#if Input.is_key_pressed(KEY_SHIFT):
-				#activeObject=object
-				#if activeObjectList.has(object):activeObjectList.erase(object)
-				#else:activeObjectList.push_back(object)
-			#else:
 			if Input.is_key_pressed(KEY_CTRL):
 				activeObjectList.erase(object)
 				if activeObject==object:
@@ -37,18 +34,18 @@ static func objectInputEvent(camera: Node, event: InputEvent, event_position: Ve
 				if activeObject!=object:
 					activeObject=object
 				activeObjectList=[object]
-			MeshEditService.setEditing(activeObject)
-			signalService.emitSignal(&"meshSelectionChanged")
-			
-			signalService.emitSignal(&"mapObjectSelected",[activeObject])
-		
-		if (event.button_index==MOUSE_BUTTON_LEFT and event.shift_pressed) and event.pressed:
-			if activeObject==null:return
-			var meshInstance=activeObject.get_child(0)
-			if meshInstance is MeshInstance3D:
-				MeshEditService.editing.select(normal.snappedf(0.001),event_position)
-				
+			if oldActive!=activeObject:
+				MeshEditService.setEditing(activeObject)
 				signalService.emitSignal(&"meshSelectionChanged")
-		
+			if oldActive!=activeObject:
+				signalService.emitSignal(&"mapObjectSelected",[activeObject])
 		(object.get_tree().root.get_viewport()).set_input_as_handled()
+	
+
+static func deselect()->void:
+	activeObjectList=[]
+	activeObject=null
+	MeshEditService.setEditing(activeObject)
+	signalService.emitSignal(&"mapObjectSelected",[activeObject])
+	signalService.emitSignal(&"meshSelectionChanged")
 	

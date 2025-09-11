@@ -1,6 +1,13 @@
 res://Scenes/MapMaker.tscn
 res://Scenes/MapMakerTheme.tres
 res://models/objects/MaterialGridOption.tscn
+res://services/MeshEditService.gd
+res://Scenes/EditPoints.gd
 res://models/objectMeshModel.gd
 res://Scenes/MapMaker/selectedFaceHighlighter.gd
-res://services/MeshEditService.gd
+res://Scenes/MapMaker/mapMaker.gd
+res://Scenes/ServiceInitializer.gd
+res://models/camera/camera_gizmo.gd
+res://models/utility/physicalObjectInputController.gd
+res://Scenes/MapMaker/PrimaryViewport.gd
+res://addons/sk_fly_camera/src/camera_speed_controls.gd

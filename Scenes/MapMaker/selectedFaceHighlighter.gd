@@ -10,8 +10,7 @@ func _ready() -> void:
 	add_child(m)
 	m.mesh=mesh
 	m.set_layer_mask_value(20,true)#ill need to make a static enum somwhere to track what layers are for rendering what
-	signalService.addSignal(&"meshSelectionChanged")
-	signalService.bindToSignal(&"meshSelectionChanged",updatedMeshSelection)
+	signalService.bindToSignal.call_deferred(&"meshSelectionChanged",updatedMeshSelection)
 
 
 func updatedMeshSelection()->void:
@@ -21,13 +20,16 @@ func updatedMeshSelection()->void:
 	
 	var selection=MeshEditService.editing.selectedFaces
 	var st=SurfaceTool.new()
-	if selection.size()==0:
-		selection=MeshEditService.editing.mesh.getCleanEdges()
-		st.begin(Mesh.PRIMITIVE_LINES)
-		for edge in selection:
-			st.add_vertex(edge.vertices[0].position)
-			st.add_vertex(edge.vertices[1].position)
-	else:
+	
+	var lineSelection=MeshEditService.editing.mesh.getCleanEdges()
+	st.begin(Mesh.PRIMITIVE_LINES)
+	for edge in lineSelection:
+		st.add_vertex(edge.vertices[0].position)
+		st.add_vertex(edge.vertices[1].position)
+	st.set_material(load("res://debugMaterial.tres"))
+	st.commit(mesh)
+	if selection.size()!=0:
+		st.clear()
 		st.begin(Mesh.PRIMITIVE_TRIANGLES)
 		var i=0
 		var f=0
@@ -35,9 +37,6 @@ func updatedMeshSelection()->void:
 			i=face.loadToSurfaceTool(st,i,f,-1)
 			f+=1
 		st.generate_normals()
-	st.set_material(load("res://debugMaterial.tres"))
-	await get_tree().process_frame
-	m.mesh=st.commit()
-	mesh=m.mesh
-	if selection.size()!=0 and selection[0] is objectMeshModel.meshFace and MeshEditService.editing!=null:
-		MeshEditService.editing.selectedFaces=selection
+		st.set_material(load("res://debugMaterial.tres"))
+		st.commit(mesh)
+	m.mesh=mesh

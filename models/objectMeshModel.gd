@@ -34,7 +34,7 @@ func  initializeFaces()->void:
 		faces.push_back(faceInfo)
 	rebuild()
 
-func rebuild()->void:
+func rebuild(replaceCleanFaces:bool=true)->void:
 	clear_surfaces()
 	surfacePool=[]
 	var surfaceIndex:int=0
@@ -60,7 +60,7 @@ func rebuild()->void:
 	updateUVs()
 	for surface in surfacePool:
 		surface.commit_to_surface(self)
-	preloadCleanFaces()
+	if replaceCleanFaces:preloadCleanFaces()
 
 func loadSurfacePool()->void:
 	surfacePool=[]
@@ -227,8 +227,19 @@ class meshVertex extends RefCounted:
 		#return normal
 	
 	func updateUV()->Vector2:
-		var uvAlignedPosition=position*Quaternion(normal.normalized(),Vector3.FORWARD).normalized().inverse()
-		uv=Vector2(uvAlignedPosition.x,-uvAlignedPosition.y)
+		# Choose a fixed global axis to act as the tangent base
+		# Make sure it's not parallel to the normal
+		var base_axis = Vector3.FORWARD
+		if abs(normal.dot(base_axis)) > 0.99:
+			base_axis = Vector3.LEFT
+		# Project base axis onto the plane to get consistent tangent
+		var T = (base_axis - normal * normal.dot(base_axis)).normalized()  # Tangent
+		var B = normal.cross(T).normalized()  # Bitangent
+		# Now use the local x and y as UVs
+		uv = Vector2(
+			position.dot(T),
+			position.dot(B)
+		)
 		return uv
 	
 	func matches(checkAgainst:meshVertex)->bool:
@@ -266,6 +277,8 @@ class meshEdge extends meshVertexObject:
 	## is true whenever both positionIDs of an edge are the same[br]
 	## meaning it has zero length
 	func isZeroLength()->bool:return vertices[0].positionID==vertices[1].positionID
+	
+	func getCenter()->Vector3:return (vertices[0].position+vertices[1].position)*0.5
 	
 	func remove()->void:
 		for vertex in vertices:
@@ -383,6 +396,9 @@ class cleanedFace extends RefCounted:
 		for pos in positions:
 			centerPos+=pos
 		return centerPos/positionIDs.size()
+	
+	func getNormal()->Vector3:
+		return _mesh.normalIDs[normalID]
 	
 	##not the best implementation but it makes sure
 	##you actually enclose the ray you are trying to click

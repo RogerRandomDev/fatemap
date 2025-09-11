@@ -3,7 +3,11 @@ extends VBoxContainer
 
 @onready var mapViewport = $MapView
 
+func _enter_tree() -> void:ServiceInitializer.initializeAllServices()
+
 func _ready() -> void:
+	
+	
 	loadGUILayout()
 	
 	signalService.addSignal(&"mapObjectSelected")
@@ -86,19 +90,8 @@ func loadViewContainer()->void:
 			&"PrimaryViewport"
 		)
 	)
-	
 	viewportInternal.reference.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	viewportInternal.reference.size_flags_vertical=Control.SIZE_EXPAND_FILL
 	viewportInternal.reference.set_anchors_preset(Control.PRESET_FULL_RECT)
 	viewportInternal.reference.update_minimum_size()
 	viewportInternal.reference.mouse_filter=Control.MOUSE_FILTER_IGNORE
-
-
-func _input(event: InputEvent) -> void:
-	if Input.is_key_pressed(KEY_W) and event.is_pressed():
-		if not MeshEditService.isEditing():return
-		MeshEditService.editing.translateSelection(Vector3(0,0.1,0))
-		MeshEditService.editing.mesh.rebuild()
-		MeshEditService.editing.mesh.updateNormals()
-		PhysicalObjectService.updatePickableArea(MeshEditService.editing.dataObject)
-		signalService.emitSignal(&"meshSelectionChanged")
