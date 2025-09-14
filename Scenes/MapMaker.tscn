@@ -35,6 +35,7 @@ size = Vector2(2.25, 1.5)
 
 [sub_resource type="MultiMesh" id="MultiMesh_qtfr5"]
 transform_format = 1
+use_colors = true
 mesh = SubResource("QuadMesh_mmgm2")
 
 [sub_resource type="GDScript" id="GDScript_mmgm2"]
@@ -44,11 +45,15 @@ script/source = "extends SubViewportContainer
 
 "
 
-[sub_resource type="BoxMesh" id="BoxMesh_qtfr5"]
+[sub_resource type="CylinderMesh" id="CylinderMesh_qtfr5"]
+top_radius = 1.0
+bottom_radius = 1.0
+radial_segments = 8
+rings = 0
 
 [sub_resource type="Resource" id="Resource_6lnv8"]
 script = ExtResource("5_majic")
-mesh = SubResource("BoxMesh_qtfr5")
+mesh = SubResource("CylinderMesh_qtfr5")
 parameterCount = 0
 metadata/_custom_type_script = "uid://bppken1hqjrw8"
 

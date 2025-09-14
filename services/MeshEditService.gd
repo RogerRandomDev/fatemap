@@ -4,10 +4,12 @@ class_name MeshEditService
 
 static var editing:editingMesh
 static var editMode:MeshEditMode=MeshEditMode.FACE
+static var editor:meshEditMode
 
 static func initializeService()->void:
 	signalService.addSignal(&"meshSelectionChanged")
 	signalService.addSignal(&"UpdateEditingMesh")
+	signalService.addSignal(&"EditModeChanged")
 
 static func setEditing(object:ObjectModel)->void:
 	signalService.emitSignal.call_deferred(&"UpdateEditingMesh")
@@ -16,6 +18,9 @@ static func setEditing(object:ObjectModel)->void:
 		return
 	var mesh=object.get_node_or_null("MESH_OBJECT")
 	if editing and editing.meshObject==mesh:return
+	editor=alongFaceNormal.new();editor.camera=object.get_viewport().get_camera_3d()
+	editor.updateEditingObject(object)
+	
 	editing=editingMesh.new(object,mesh)
 	editing.mesh.preloadCleanFaces()
 
@@ -106,22 +111,42 @@ class editingMesh extends Resource:
 	
 	
 	##obtains any face and connected vertex using info from clicking on the object
-	func selectByClickInfo(normal:Vector3,hitPosition:Vector3=Vector3.ZERO,keep:bool=false)->void:
+	func selectByClickInfo(normal:Vector3,hitPosition:Vector3=Vector3.ZERO,keep:bool=false)->Array[objectMeshModel.meshFace]:
 		if not keep:clearSelections()
 		var localNormal = normal*meshObject.global_transform.basis.get_rotation_quaternion()
 		hitPosition-=meshObject.global_position
 		var hitFace= mesh.getSelectedFaces(localNormal.snappedf(0.001),hitPosition)
 		for face in  hitFace:selectFace(face,keep)
+		return hitFace
 	
 	func translateSelection(translateBy:Vector3,local:bool=true)->void:
 		if selectedVertices.size()==0:return
 		if local:translateBy*=meshObject.global_transform.basis.get_rotation_quaternion()
-		var editingPositionIDs=[]
-		for vertex in selectedVertices:
-			if editingPositionIDs.has(vertex.positionID):continue
-			editingPositionIDs.push_back(vertex.positionID)
-		for positionID in editingPositionIDs:
+		var editingPositionIDs={}
+		for vertex in selectedVertices:editingPositionIDs[vertex.positionID]=null
+		for positionID in editingPositionIDs.keys():
 			mesh.positionIDs[positionID]=(mesh.positionIDs[positionID]+translateBy)
+	
+	func snapSelectedToGrid()->void:
+		if selectedVertices.size()==0:return
+		var editingPositionIDs={}
+		for vertex in selectedVertices:editingPositionIDs[vertex.positionID]=null
+		for positionID in editingPositionIDs.keys():
+			mesh.positionIDs[positionID]=mesh.positionIDs[positionID].snappedf(
+				ParameterService.getParam(&"snapDistance")
+			)
+	
+	#not implemented yet, it will slide your edit along the edges to keep angles consistent
+	func translateAlongEdges()->void:
+		#var alongAxis=MeshEditService.editing.mesh.getCleanEdgesTouchingCleanFace(
+			#MeshEditService.editing.mesh.getCleanFaceForFace(MeshEditService.editing.selectedFaces[0])
+		#)
+		#var positionAlongAxis=[]
+		#positionAlongAxis.push_back(
+				#alongAxis.find_custom(func(edge):return edge.positionIDs.has(vertex.positionID))
+			#)
+		#*alongAxis[positionAlongAxis[i]].getQuaternion(positionID)
+		pass
 	
 	func setMaterial(material:MaterialService.materialModel,setAllIfNoneActive:bool=false)->void:
 		if setAllIfNoneActive and selectedFaces.size()==0:

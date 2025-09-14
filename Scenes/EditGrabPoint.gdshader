@@ -41,7 +41,8 @@ void vertex() {
 void fragment() {
 	float centerDist=length(UV-vec2(0.5));
 	if(centerDist>0.5) discard;
-	ALBEDO.rgb=(centerDist<0.4?EditGrabPoint:EditGrabPointOutline).rgb;
+	if(COLOR.r==0.0) ALBEDO.rgb=(centerDist<0.4?EditGrabPoint:EditGrabPointOutline).rgb;
+
 }
 
 //void light() {

@@ -2,10 +2,11 @@ extends Control
 
 
 var renderPoints:Dictionary={}
-var screenSpacePoints:Dictionary={}
-var dragOrigin:Vector3=Vector3.ZERO
-var lastPos:Vector3=Vector3.ZERO
-var dragPlane:Vector3=Vector3.UP
+var renderPointFaces:Array=[]
+var renderPointEdges:Array=[]
+var renderPointVertices:Array=[]
+
+var selectedPoints:PackedInt32Array=[]
 
 const pointSize:float=8
 
@@ -32,7 +33,9 @@ func _ready() -> void:
 
 func updateMeshSelection()->void:
 	renderPoints={}
-	screenSpacePoints={}
+	renderPointEdges=[]
+	renderPointFaces=[]
+	
 	var editMode:int=MeshEditService.getEditMode()
 	if not MeshEditService.isEditing():
 		updateEditPointRender()
@@ -42,17 +45,18 @@ func updateMeshSelection()->void:
 			for index in MeshEditService.editing.mesh.cleanedFaces:
 				var pointAt=index.getCenter()+MeshEditService.editing.meshObject.global_transform.origin
 				renderPoints[pointAt]=index
-				screenSpacePoints[getScreenSpace(pointAt)]=pointAt
+				renderPointFaces.push_back(index.faces)
 		MeshEditService.MeshEditMode.EDGE:
-			var cleanEdges=MeshEditService.editing.mesh.getCleanEdges()
+			var cleanEdges=MeshEditService.editing.mesh.getTrueCleanEdges()
 			renderPoints={}
 			for edge in cleanEdges:
 				var pointAt=edge.getCenter()+MeshEditService.editing.meshObject.global_transform.origin
-				renderPoints[pointAt]=edge
-				screenSpacePoints[getScreenSpace(pointAt)]=pointAt
+				renderPoints[pointAt]=edge.edges[0]
+				renderPointEdges.push_back(edge)
 		MeshEditService.MeshEditMode.VERTEX:
 			pass
 	updateEditPointRender()
+	updateSelected()
 
 func getScreenSpace(pointAt:Vector3)->Vector2:
 	return camera.unproject_position(pointAt)
@@ -96,36 +100,8 @@ func _handle_mouse_drag(event: InputEvent) -> bool:
 	if get_viewport().is_input_handled():return false
 	if event is InputEventMouseMotion and MeshEditService.isEditing() and Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
 		if MeshEditService.editing.selectedFaces.size() == 0:return false
-		var atFace = MeshEditService.editing.mesh.cleanedFaces[
-			MeshEditService.editing.mesh.cleanedFaces.find_custom(
-				func(f): return f.faces.has(MeshEditService.editing.selectedFaces[0])
-			)
-		]
-		var norm = atFace.getNormal()
-		var pos = atFace.getCenter()
-		
-		var cam_norm = camera.project_local_ray_normal(get_local_mouse_position()) * camera.global_transform.basis.get_rotation_quaternion().inverse()
-		var plane: Plane;var intersectionPoint;
-		
-		if Input.is_key_pressed(KEY_CTRL) or Input.is_key_pressed(KEY_SHIFT):
-			if Input.is_key_pressed(KEY_SHIFT):norm = Vector3.UP
-			plane = Plane(norm, pos + MeshEditService.editing.meshObject.global_position)
-			intersectionPoint = plane.intersects_ray(camera.global_position, cam_norm)
-		else:
-			var origin = pos + MeshEditService.editing.meshObject.global_position
-			plane = Plane(origin.direction_to(camera.global_position), origin)
-			var cameraRayPoint = plane.intersects_ray(camera.global_position, cam_norm)
-			intersectionPoint = Geometry3D.get_closest_point_to_segment_uncapped(
-				cameraRayPoint, origin, origin + norm
-			)
-		if lastPos == Vector3.ZERO and intersectionPoint:lastPos = intersectionPoint
-		if intersectionPoint == null:return false
-		var changeBy = (intersectionPoint - lastPos)
-		changeBy = changeBy.normalized()*snappedf(changeBy.length(),ParameterService.getParam(&"snapDistance"))
-		MeshEditService.editing.translateSelection(changeBy, true)
-		lastPos += changeBy
-		MeshEditService.editing.mesh.rebuild()
-		PhysicalObjectService.updatePickableArea(MeshEditService.editing.dataObject)
+		MeshEditService.editor.updateSelectionLocation(get_local_mouse_position())
+		PhysicalObjectService.updatePickableArea(MeshEditService.editor.editingObject)
 		signalService.emitSignal(&"meshSelectionChanged")
 		return true
 	return false
@@ -139,7 +115,9 @@ func _handle_mouse_click(event: InputEvent) -> bool:
 			signalService.emitSignal(&"meshSelectionChanged")
 			return true
 		else:
-			lastPos = Vector3.ZERO
+			#move general object-selecting here too
+			#instead of it's own location as in now
+			pass
 	return false
 
 func _handle_outside_click_deselect(event: InputEvent) -> bool:
@@ -174,20 +152,52 @@ func moveSelection(moveBy:Vector3,local:bool=true)->void:
 
 func selectPointToChange(atPos:Vector2)->bool:
 	if renderPoints.size()==0:return false
-	var sortDistance=screenSpacePoints.keys().map(func(pointPos):return (pointPos.distance_squared_to(atPos)))
+	var sortDistance=renderPoints.keys().map(func(pointPos):return (getScreenSpace(pointPos).distance_squared_to(atPos)))
 	var sortedDistances=sortDistance.duplicate()
 	sortedDistances.sort()
-	var closestPoint=screenSpacePoints.values()[sortDistance.find(sortedDistances[0])]
+	var pointIndex=sortDistance.find(sortedDistances[0])
+	var newPoint=renderPoints.values()[pointIndex]
 	if sortedDistances[0]>pointSize*pointSize:return false
-	var newPoint=renderPoints.values()[sortDistance.find(sortedDistances[0])]
 	var previousSelected=MeshEditService.editing.selectedVertices.size()
 	MeshEditService.editing.select(newPoint,Input.is_key_pressed(KEY_SHIFT))
-	lastPos=Vector3.ZERO
+	if newPoint is objectMeshModel.cleanedFace:
+		MeshEditService.editor.updateSelectedCleanFace(newPoint)
+	updateSelected()
 	return true
 	
 func deselectPoint()->void:
 	MeshEditService.editing.clearSelections()
+	for pointIndex in selectedPoints:
+		multimesh.multimesh.set_instance_color(pointIndex,Color.BLACK)
+	selectedPoints=[]
+	
+	
 	signalService.emitSignal(&"meshSelectionChanged")
+
+func updateSelected()->void:
+	for index in len(renderPointFaces):
+		var face=renderPointFaces[index]
+		if face.any(func(f):return MeshEditService.editing.selectedFaces.has(f)):
+			pointSelected(index)
+		else:
+			pointDeselected(index)
+	for index in len(renderPointEdges):
+		var edge=renderPointEdges[index]
+		if edge.edges.any(func(e):return MeshEditService.editing.selectedEdges.has(e)):
+			pointSelected(index)
+		else:
+			pointDeselected(index)
+
+
+func pointSelected(pointIndex:int)->void:
+	if selectedPoints.has(pointIndex) or renderPoints.size()<=pointIndex:return
+	multimesh.multimesh.set_instance_color(pointIndex,Color.RED)
+	selectedPoints.push_back(pointIndex)
+func pointDeselected(pointIndex:int)->void:
+	if not selectedPoints.has(pointIndex) or renderPoints.size()<=pointIndex:return
+	multimesh.multimesh.set_instance_color(pointIndex,Color.BLACK)
+	selectedPoints.remove_at(selectedPoints.find(pointIndex))
+
 
 func dragSelectedPoint(dragTo:Vector2)->void:
 	pass

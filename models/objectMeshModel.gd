@@ -11,6 +11,9 @@ var positionIDs:Dictionary={}
 var normalIDs:Dictionary={}
 
 var cleanedFaces:Array[cleanedFace]=[]
+var cleanedEdges:Array[cleanedEdge]=[]
+var cleanedVertices:Array[cleanedVertex]=[]
+
 
 const projectionAxis:PackedVector3Array=[
 	
@@ -93,6 +96,8 @@ func updateUVs(updateImmediately:bool=true)->void:
 		surface.commit_to_surface(self)
 
 func preloadCleanFaces()->void:
+	cleanedVertices=getCleanVertices()
+	cleanedEdges=getTrueCleanEdges()
 	cleanedFaces=getCleanFaces()
 
 
@@ -124,6 +129,14 @@ func getSelectedFaces(normal:Vector3,hitPosition:Vector3=Vector3.ZERO)->Array[me
 	selectedFaces=cleanFaceSelected[0].faces
 	return selectedFaces
 
+func getCleanVertices()->Array[cleanedVertex]:
+	var cleanVertices:Dictionary={}
+	for vertex in vertices:
+		cleanVertices.get_or_add(vertex.positionID,[]).push_back(vertex)
+	var cleanVertex:Array[cleanedVertex]=[]
+	for cleanSet in cleanVertices.values():cleanVertex.push_back(cleanedVertex.new(cleanSet))
+	return cleanVertex
+
 func getCleanEdges()->Array[meshEdge]:
 	var cleanEdges:Dictionary={}
 	var uncleanEdges:Dictionary={}
@@ -148,6 +161,20 @@ func getCleanEdges()->Array[meshEdge]:
 	for uncleanEdge in uncleanEdges:
 		if uncleanEdges[uncleanEdge]==null:continue
 		cleanedEdges.push_back(uncleanEdges[uncleanEdge])
+	return cleanedEdges
+
+func getTrueCleanEdges()->Array[cleanedEdge]:
+	var cleanEdges:Dictionary={}
+	var cleanBaseEdges=getCleanEdges()
+	for edge in cleanBaseEdges:
+		var edgePair=[
+				min(edge.vertices[0].positionID,edge.vertices[1].positionID),
+				max(edge.vertices[0].positionID,edge.vertices[1].positionID)
+		]
+		var edgePosition=str(edgePair[0])+"|"+str(edgePair[1])
+		cleanEdges.get_or_add(edgePosition,[]).push_back(edge)
+	var cleanedEdges:Array[cleanedEdge]=[]
+	for edgeSet in cleanEdges.values():cleanedEdges.push_back(cleanedEdge.new(edgeSet))
 	return cleanedEdges
 
 func getCleanFaces()->Array[cleanedFace]:
@@ -178,6 +205,20 @@ func getCleanFaces()->Array[cleanedFace]:
 		cleanedFaces.push_back(cleanedFace.new(faceGroup))
 	return cleanedFaces
 
+func getCleanEdgesTouchingCleanFace(cleanFace:cleanedFace)->Array[cleanedEdge]:
+	var edgesTouching:Array[cleanedEdge]=[]
+	for edge in cleanedEdges:
+		var edgePositions=edge.positionIDs
+		var connectedPoints:int=0
+		for posID in edgePositions:connectedPoints += cleanFace.positionIDs.count(posID)
+		if connectedPoints!=1:continue
+		edgesTouching.push_back(edge)
+	return edgesTouching
+
+func getCleanFaceForFace(face:meshFace)->cleanedFace:
+	return cleanedFaces[
+		cleanedFaces.find_custom(func(cleanFace):return cleanFace.faces.has(face))
+	]
 
 ## removes faces where their surface area would  be 0[br]
 ## caused by  any edge in it having both vertices share the same positionID
@@ -388,15 +429,70 @@ class meshFace extends meshVertexObject:
 		_mesh.faces.erase(self)
 
 
-class cleanedFace extends RefCounted:
+class cleanedVertexObject extends RefCounted:
 	var positionIDs:PackedInt32Array=[]
 	var positions:
 		get:return Array(positionIDs).map(func(id):return _mesh.positionIDs[id])
-	
 	var normalID:int
-	var faces:Array[meshFace]=[]
+	var normal:
+		get:return _mesh.normalIDs[normalID]
 	
 	var _mesh:objectMeshModel
+	
+	func getCenter()->Vector3:
+		var centerPos=Vector3.ZERO
+		for pos in positions:
+			centerPos+=pos
+		return centerPos/positionIDs.size()
+	
+	func getNormal()->Vector3:
+		return _mesh.normalIDs[normalID]
+
+class  cleanedVertex extends RefCounted:
+	var positionID:int
+	var position:
+		get:return _mesh.positionIDs[positionID]
+	var normalID:int
+	var normal:
+		get:return _mesh.normalIDs[normalID]
+	
+	var _mesh:objectMeshModel
+	
+	func _init(fromVertices:Array):
+		_mesh=fromVertices[0]._mesh
+		var potentialNormal:Vector3=Vector3.ZERO
+		for vertex in fromVertices:
+			potentialNormal+=vertex.normal
+		positionID=fromVertices[0].positionID
+		normal=potentialNormal.normalized()
+		
+
+class cleanedEdge extends cleanedVertexObject:
+	var edges:Array[meshEdge]=[]
+	
+	func _init(fromEdges:Array):
+		_mesh = fromEdges[0]._mesh
+		var uniquePositions:Dictionary={}
+		var edgeNormal:Vector3=Vector3.ZERO
+		for edge in fromEdges:
+			edgeNormal+=(edge.vertices[0].normal+edge.vertices[1].normal).normalized()
+			edge.vertices.map(func(v):uniquePositions[v.positionID]=null)
+			edges.push_back(edge)
+		positionIDs=uniquePositions.keys()
+		normal=edgeNormal.normalized()
+	
+	func getQuaternion(firstPointID:int=-1)->Quaternion:
+		var originalPositions=Array(positionIDs)
+		originalPositions.sort_custom(func(a,b):return a==firstPointID)
+		var quat=Quaternion(
+			(_mesh.positionIDs[originalPositions[0]].direction_to(_mesh.positionIDs[originalPositions[1]]).normalized()),
+			Vector3.RIGHT
+		)
+		return quat
+	
+
+class cleanedFace extends cleanedVertexObject:
+	var faces:Array[meshFace]=[]
 	
 	func _init(fromFaces:Array)->void:
 		_mesh=fromFaces[0]._mesh
@@ -407,14 +503,6 @@ class cleanedFace extends RefCounted:
 		positionIDs=uniquePositions.keys()
 		normalID=fromFaces[0].normalID
 		
-	func getCenter()->Vector3:
-		var centerPos=Vector3.ZERO
-		for pos in positions:
-			centerPos+=pos
-		return centerPos/positionIDs.size()
-	
-	func getNormal()->Vector3:
-		return _mesh.normalIDs[normalID]
 	
 	##not the best implementation but it makes sure
 	##you actually enclose the ray you are trying to click
