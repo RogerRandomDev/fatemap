@@ -2,9 +2,15 @@ extends RefCounted
 class_name PhysicalObjectInputController
 
 
-static var activeObject:Node3D=null
-static var activeObjectList:Array[Node3D]=[]
-static var hoveredObjects:Array[Node3D]=[]
+static var activeObject:
+	get:return ParameterService.getParam(&"activeObject")
+	set(value):ParameterService.setParam(&"activeObject",value)
+static var activeObjectList:
+	get:return ParameterService.getParam(&"activeObjectList")
+	set(value):ParameterService.setParam(&"activeObjectList",value)
+static var hoveredObjects:
+	get:return ParameterService.getParam(&"hoveredObjects")
+	set(value):ParameterService.setParam(&"hoveredObjects",value)
 
 
 static func initializeInputController()->void:

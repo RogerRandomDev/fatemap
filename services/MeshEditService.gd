@@ -5,7 +5,6 @@ class_name MeshEditService
 static var editing:editingMesh
 static var editMode:MeshEditMode=MeshEditMode.FACE
 
-
 static func initializeService()->void:
 	signalService.addSignal(&"meshSelectionChanged")
 	signalService.addSignal(&"UpdateEditingMesh")
@@ -69,24 +68,40 @@ class editingMesh extends Resource:
 		selectedEdges=[]
 		selectedVertices=[]
 	
+	func deselectVertex(vertex:objectMeshModel.meshVertex)->void:
+		if not selectedVertices.has(vertex):return
+		selectedVertices.erase(vertex)
+	func deselectEdge(edge:objectMeshModel.meshEdge)->void:
+		if not selectedEdges.has(edge):return
+		selectedEdges.erase(edge)
+		for vertex in edge.vertices:deselectVertex(vertex)
+	func deselectFace(face:objectMeshModel.meshFace)->void:
+		if not selectedFaces.has(face):return
+		selectedFaces.erase(face)
+		for edge in face.edges:deselectEdge(edge)
 	
-	
-	func selectVertex(vertex:objectMeshModel.meshVertex)->void:
-		if not selectedVertices.has(vertex) and mesh.vertices.has(vertex):
-			selectedVertices.push_back(vertex)
-	func selectEdge(edge:objectMeshModel.meshEdge)->void:
-		if not selectedEdges.has(edge) and mesh.edges.has(edge):
+	func selectVertex(vertex:objectMeshModel.meshVertex,toggleSelected:bool=false)->void:
+		if not mesh.vertices.has(vertex):return
+		if not selectedVertices.has(vertex):selectedVertices.push_back(vertex)
+		elif toggleSelected:deselectVertex(vertex)
+	func selectEdge(edge:objectMeshModel.meshEdge,toggleSelected:bool=false)->void:
+		if not mesh.edges.has(edge):return
+		if not selectedEdges.has(edge):
 			selectedEdges.push_back(edge)
-			for vertex in edge.vertices:selectVertex(vertex)
-	func selectFace(face:objectMeshModel.meshFace)->void:
-		if not selectedFaces.has(face) and mesh.faces.has(face):
+			for vertex in edge.vertices:selectVertex(vertex,toggleSelected)
+		elif toggleSelected:deselectEdge(edge)
+	func selectFace(face:objectMeshModel.meshFace,toggleSelected:bool=false)->void:
+		if not mesh.faces.has(face):return
+		if not selectedFaces.has(face):
 			selectedFaces.push_back(face)
-			for edge in face.edges:selectEdge(edge)
-	func select(meshPart)->void:
-		if meshPart is objectMeshModel.meshVertex:selectVertex(meshPart)
-		if meshPart is objectMeshModel.meshEdge:selectEdge(meshPart)
-		if meshPart is objectMeshModel.meshFace:selectFace(meshPart)
-		if meshPart is objectMeshModel.cleanedFace:for face in meshPart.faces:selectFace(face)
+			for edge in face.edges:selectEdge(edge,toggleSelected)
+		elif toggleSelected:deselectFace(face)
+		
+	func select(meshPart,toggleSelected:bool=false)->void:
+		if meshPart is objectMeshModel.meshVertex:selectVertex(meshPart,toggleSelected)
+		if meshPart is objectMeshModel.meshEdge:selectEdge(meshPart,toggleSelected)
+		if meshPart is objectMeshModel.meshFace:selectFace(meshPart,toggleSelected)
+		if meshPart is objectMeshModel.cleanedFace:for face in meshPart.faces:selectFace(face,toggleSelected)
 	
 	
 	
@@ -96,7 +111,7 @@ class editingMesh extends Resource:
 		var localNormal = normal*meshObject.global_transform.basis.get_rotation_quaternion()
 		hitPosition-=meshObject.global_position
 		var hitFace= mesh.getSelectedFaces(localNormal.snappedf(0.001),hitPosition)
-		for face in  hitFace:selectFace(face)
+		for face in  hitFace:selectFace(face,keep)
 	
 	func translateSelection(translateBy:Vector3,local:bool=true)->void:
 		if selectedVertices.size()==0:return

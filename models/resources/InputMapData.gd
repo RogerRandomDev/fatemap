@@ -15,7 +15,6 @@ func getParameterDefaults(includeDefaults:bool=true,includeInherited:bool=true,o
 			"bind":inputBinds[index]
 		})
 	
-	
 	return parameterList
 
 #region custom property manager

@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="paramServiceParams" load_steps=2 format=3 uid="uid://bv3j7rvwisrkk"]
+
+[ext_resource type="Script" uid="uid://v2l1xtifo1ch" path="res://models/resources/paramServiceResource.gd" id="1_6hccd"]
+
+[resource]
+script = ExtResource("1_6hccd")
+parameterCount = 4
+parameter_0/name = "activeObject"
+parameter_0/description = "current active object for editing"
+parameter_0/type = "Object"
+parameter_1/name = "activeObjectList"
+parameter_1/description = "a list of all currently active objects"
+parameter_1/type = "Array"
+parameter_1/value = []
+parameter_2/name = "hoveredObjects"
+parameter_2/description = "a list of currently hovered  objects you can interact with"
+parameter_2/type = "Array"
+parameter_2/value = []
+parameter_3/name = "snapDistance"
+parameter_3/description = "snapping step for the environment"
+parameter_3/type = "float"
+parameter_3/value = 0.25
+metadata/_custom_type_script = "uid://v2l1xtifo1ch"

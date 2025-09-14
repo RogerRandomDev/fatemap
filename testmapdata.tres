@@ -1,8 +1,0 @@
-[gd_resource type="Resource" script_class="InputMapData" load_steps=2 format=3 uid="uid://bmjgk5mwkndkc"]
-
-[ext_resource type="Script" uid="uid://pu05o4yiow38" path="res://models/resources/InputMapData.gd" id="1_ndtub"]
-
-[resource]
-script = ExtResource("1_ndtub")
-inputCount = 0
-metadata/_custom_type_script = "uid://pu05o4yiow38"

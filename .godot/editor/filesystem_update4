@@ -1,9 +1,6 @@
 res://Scenes/MapMaker.tscn
 res://Scenes/MapMakerTheme.tres
 res://Scenes/EditGrabPoint.gdshader
-res://models/objectMeshModel.gd
+res://models/resources/InputMapData.gd
 res://Scenes/EditPoints.gd
-res://Scenes/MapMaker/editModeSelectButton.gd
-res://addons/sk_fly_camera/src/camera_speed_controls.gd
-res://models/utility/physicalObjectInputController.gd
-res://services/MeshEditService.gd
+res://ParameterServiceLists/ObjectInteration.tres
