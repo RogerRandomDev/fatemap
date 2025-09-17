@@ -6,6 +6,7 @@ func _ready() -> void:
 
 func loadContents(contents:ObjectDataResource)->void:
 	clear()
+	if contents==null:return
 	var tagList = contents.getTagDefaults(true)
 	for tag in tagList:
 		add_item(tag)

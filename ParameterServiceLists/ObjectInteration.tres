@@ -4,7 +4,7 @@
 
 [resource]
 script = ExtResource("1_6hccd")
-parameterCount = 4
+parameterCount = 5
 parameter_0/name = "activeObject"
 parameter_0/description = "current active object for editing"
 parameter_0/type = "Object"
@@ -20,4 +20,9 @@ parameter_3/name = "snapDistance"
 parameter_3/description = "snapping step for the environment"
 parameter_3/type = "float"
 parameter_3/value = 0.25
+parameter_4/name = "translateMode"
+parameter_4/description = "the mode to translate the selected object/points by.
+I.E. local, global, or along normal/edges"
+parameter_4/type = "int"
+parameter_4/value = null
 metadata/_custom_type_script = "uid://v2l1xtifo1ch"

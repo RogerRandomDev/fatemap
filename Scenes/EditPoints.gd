@@ -33,6 +33,7 @@ func _ready() -> void:
 
 func updateMeshSelection()->void:
 	renderPoints={}
+	renderPointVertices=[]
 	renderPointEdges=[]
 	renderPointFaces=[]
 	
@@ -54,7 +55,12 @@ func updateMeshSelection()->void:
 				renderPoints[pointAt]=edge.edges[0]
 				renderPointEdges.push_back(edge)
 		MeshEditService.MeshEditMode.VERTEX:
-			pass
+			var cleanVertices=MeshEditService.editing.mesh.getCleanVertices()
+			renderPoints={}
+			for vertex in cleanVertices:
+				var pointAt=vertex.position+MeshEditService.editing.meshObject.global_transform.origin
+				renderPoints[pointAt]=vertex.vertices[0]
+				renderPointVertices.push_back(vertex)
 	updateEditPointRender()
 	updateSelected()
 
@@ -107,6 +113,9 @@ func _handle_mouse_drag(event: InputEvent) -> bool:
 	return false
 
 func _handle_mouse_click(event: InputEvent) -> bool:
+	#clear focus from outside the area if you click in here
+	if  event is InputEventMouseButton:get_tree().root.gui_release_focus()
+	
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and MeshEditService.isEditing():
 		if not event.pressed:return false
 		if not event.shift_pressed:MeshEditService.editing.clearSelections()
@@ -184,6 +193,12 @@ func updateSelected()->void:
 	for index in len(renderPointEdges):
 		var edge=renderPointEdges[index]
 		if edge.edges.any(func(e):return MeshEditService.editing.selectedEdges.has(e)):
+			pointSelected(index)
+		else:
+			pointDeselected(index)
+	for index in len(renderPointVertices):
+		var vertex=renderPointVertices[index]
+		if vertex.vertices.any(func(vert):return MeshEditService.editing.selectedVertices.has(vert)):
 			pointSelected(index)
 		else:
 			pointDeselected(index)

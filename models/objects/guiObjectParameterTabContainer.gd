@@ -5,6 +5,23 @@ class_name guiObjectParameterTabContainer
 
 func _ready() -> void:
 	signalService.bindToSignal(&"mapObjectSelected",selectedObjectChanged)
+	
+	addTab(
+		&"Surface",
+		SurfaceTab.new(),
+		null
+	)
+	addTab(
+		&"Parameters",
+		ParameterTab.new(),
+		null
+	)
+	addTab(
+		&"Tags",
+		TagTab.new(),
+		null
+	)
+	
 
 func addTab(tabName:String,newTab:Control=null,tabData:ObjectDataResource=null)->bool:
 	if get_node_or_null(tabName)!=null:return false
@@ -26,21 +43,10 @@ func removeTabs(tabs:PackedStringArray=[])->void:
 	return
 
 func selectedObjectChanged(newSelectedObject:ObjectModel=null)->void:
-	await removeTabs()
-	if newSelectedObject==null:return
+	var objectData = null
+	if newSelectedObject:objectData=newSelectedObject.getData()
 	
-	addTab(
-		&"Surface",
-		SurfaceTab.new(),
-		newSelectedObject.getData()
-	)
-	addTab(
-		&"Parameters",
-		ParameterTab.new(),
-		newSelectedObject.getData()
-	)
-	addTab(
-		&"Tags",
-		TagTab.new(),
-		newSelectedObject.getData()
-	)
+	for tab in get_children():
+		if not tab.has_method(&"loadContents"):continue
+		tab.loadContents(objectData)
+	

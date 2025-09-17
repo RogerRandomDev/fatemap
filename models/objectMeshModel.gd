@@ -455,14 +455,17 @@ class  cleanedVertex extends RefCounted:
 	var normalID:int
 	var normal:
 		get:return _mesh.normalIDs[normalID]
+	var vertices:Array[meshVertex]=[]
 	
 	var _mesh:objectMeshModel
 	
 	func _init(fromVertices:Array):
 		_mesh=fromVertices[0]._mesh
 		var potentialNormal:Vector3=Vector3.ZERO
+		
 		for vertex in fromVertices:
 			potentialNormal+=vertex.normal
+			vertices.push_back(vertex)
 		positionID=fromVertices[0].positionID
 		normal=potentialNormal.normalized()
 		

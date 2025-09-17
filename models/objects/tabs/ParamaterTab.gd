@@ -11,6 +11,7 @@ func _ready() -> void:
 func loadContents(contents:ObjectDataResource)->void:
 	clear()
 	var rootItem=create_item()
+	if contents==null:return
 	var parameterValues = contents.getParameterDefaults(true,true,true)
 	for index in len(parameterValues):
 		var value=parameterValues[index]

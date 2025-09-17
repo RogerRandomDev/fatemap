@@ -2,6 +2,7 @@ extends VSplitContainer
 class_name SurfaceTab
 
 var materialList:HFlowContainer
+var faceInfoList:Control
 var surfaceMaterialIconSize:float=96
 var materialOptionSpacing:float=4
 var optionExtraBorder:float=8
@@ -16,6 +17,14 @@ func _ready() -> void:
 	updateGridLayout()
 
 func buildView()->void:
+	faceInfoList=GUIService.insertElement(
+		GUIService.createElement(
+			load("res://Scenes/MapMaker/surfaceTabFaceInfo.gd").new(),
+			&"SurfaceTabFaceInfo",
+			[&"List",&"Surface",&"Material",&"Face"],
+			self
+		)
+	).reference
 	materialList=GUIService.insertElement(
 		GUIService.createElement(
 			HFlowContainer.new(),
@@ -24,6 +33,8 @@ func buildView()->void:
 			self
 		)
 	).reference
+	
+	loadContents(null)
 
 
 
@@ -50,7 +61,10 @@ func updateGridLayout()->void:
 
 
 func loadContents(contents:ObjectDataResource)->void:
-	pass
+	recursiveToggleContents(self,contents!=null)
+	faceInfoList.displaySelectedFaceInfo()
+	faceInfoList.updateWithSelectedObject()
+	if contents==null:return
 
 func optionEvent(event:InputEvent,option)->void:
 	if not MeshEditService.isEditing():return
@@ -58,3 +72,7 @@ func optionEvent(event:InputEvent,option)->void:
 	if event.button_index==MOUSE_BUTTON_LEFT and event.is_pressed():
 		MeshEditService.editing.setMaterial(option.myMaterial,true)
 		MeshEditService.editing.mesh.rebuild()
+
+func recursiveToggleContents(from:Control,enable:bool=true)->void:
+	from.set("editable",enable)
+	for child in from.get_children():recursiveToggleContents(child,enable)
