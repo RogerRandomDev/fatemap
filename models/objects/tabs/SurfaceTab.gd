@@ -5,7 +5,7 @@ var materialList:HFlowContainer
 var faceInfoList:Control
 var surfaceMaterialIconSize:float=96
 var materialOptionSpacing:float=4
-var optionExtraBorder:float=8
+var optionExtraBorder:float=4
 
 var materialGridOption=load("res://models/objects/MaterialGridOption.tscn")
 

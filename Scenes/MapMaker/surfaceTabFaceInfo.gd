@@ -9,48 +9,48 @@ func _ready() -> void:
 	headName.text=&"Face Info"
 	add_child(headName)
 	
-	# TODO: put the logic for building these into another method in here
-	var uvScaleX:SpinBox=SpinBox.new()
-	var uvScaleY:SpinBox=SpinBox.new()
-	uvScaleX.min_value=-10000
-	uvScaleY.min_value=-10000
-	uvScaleX.max_value=10000
-	uvScaleY.max_value=10000
-	uvScaleX.step=0.001
-	uvScaleY.step=0.001
-	
-	infoSet.add_child(uvScaleX)
-	infoSet.add_child(uvScaleY)
-	
-	uvScaleX.value_changed.connect(func(value):
+	var uvScaleX:SpinBox=createSpinBox(
+		-10000,
+		10000,
+		0.001,
+		&"ScaleX",
+		func(value):
 		var updateFaces=MeshEditService.editing.selectedFaces
 		if updateFaces.size()==0:updateFaces=MeshEditService.editing.mesh.faces
 		for face in updateFaces:
 			face.uvScale.x=value
 		MeshEditService.editing.mesh.rebuild()
-		)
-	uvScaleY.value_changed.connect(func(value):
+	)
+	var uvScaleY:SpinBox=createSpinBox(
+		-10000,
+		10000,
+		0.001,
+		&"ScaleY",
+		func(value):
 		var updateFaces=MeshEditService.editing.selectedFaces
 		if updateFaces.size()==0:updateFaces=MeshEditService.editing.mesh.faces
 		for face in updateFaces:
 			face.uvScale.y=value
 		MeshEditService.editing.mesh.rebuild()
-		)
+	)
+	
+	infoSet.add_child(uvScaleX)
+	infoSet.add_child(uvScaleY)
+	
 	add_child(infoSet)
 	add_child(selectionInfo)
 	displaySelectedFaceInfo()
 	
 	signalService.bindToSignal(&"meshSelectionChanged",displaySelectedFaceInfo)
 	signalService.bindToSignal(&"meshSelectionChanged",updateWithSelectedObject)
-	
 
 func updateWithSelectedObject()->void:
 	if not MeshEditService.isEditing():return
 	var firstFace=MeshEditService.editing.mesh.faces[0]
 	if MeshEditService.editing.selectedFaces.size()!=0:
 		firstFace=MeshEditService.editing.selectedFaces[0]
-	infoSet.get_child(0).set_value_no_signal(firstFace.uvScale.x)
-	infoSet.get_child(1).set_value_no_signal(firstFace.uvScale.y)
+	infoSet.get_node("ScaleX").set_value_no_signal(firstFace.uvScale.x)
+	infoSet.get_node("ScaleY").set_value_no_signal(firstFace.uvScale.y)
 
 func displaySelectedFaceInfo()->void:
 	for child in selectionInfo.get_children():child.queue_free()
@@ -74,6 +74,15 @@ func displaySelectedFaceInfo()->void:
 	createLabel(objectInfo,"Vertices:\n%s\n%s"%[str(counters[2]),str(selected[2])])
 	
 	selectionInfo.add_child(objectInfo)
+
+func createSpinBox(minV:float,maxV:float,step:float,boxName:StringName,method:Callable)->SpinBox:
+	var box=SpinBox.new()
+	box.min_value=minV
+	box.max_value=maxV
+	box.step=step
+	box.name=boxName
+	box.value_changed.connect(method)
+	return box
 
 func createLabel(on:Control,text:String)->void:
 	var  lbl:Label=Label.new()

@@ -1,5 +1,5 @@
-extends Control
-
+extends EditInteractionBase
+class_name EditPoints
 
 var renderPoints:Dictionary={}
 var renderPointFaces:Array=[]
@@ -12,24 +12,11 @@ const pointSize:float=8
 
 
 var  multimesh:MultiMeshInstance3D
-var camera
-
-##future slide method:
-##when dragging a face:
-##1. get the vertices we are moving
-##2. get the clean edges that use 1 of those vertices
-##3. for each vertex: get the line the clean edge connected to it move in
-##4. use Geometry3D to move in the direction along the edge(i.e. if the edge is vertical, the movement direction would also be vertical)
-
-
 
 func _ready() -> void:
 	signalService.bindToSignal(&"UpdateEditingMesh",updateMeshSelection)
 	signalService.bindToSignal(&"meshSelectionChanged",updateMeshSelection)
-	await get_tree().process_frame
-	camera = get_viewport().get_camera_3d()
 	multimesh=get_child(0)
-	#MeshEditService.editMode=MeshEditService.MeshEditMode.EDGE
 
 func updateMeshSelection()->void:
 	renderPoints={}
@@ -65,29 +52,22 @@ func updateMeshSelection()->void:
 	updateSelected()
 
 func getScreenSpace(pointAt:Vector3)->Vector2:
-	return camera.unproject_position(pointAt)
+	return holder.camera.unproject_position(pointAt)
 
 func updateEditPointRender()->void:
 	multimesh.multimesh.instance_count=renderPoints.size()
 	var index=0
 	var baseTrans=Transform3D(Basis(),Vector3.ZERO)
-	var  meshSize=(pointSize*tan(deg_to_rad(camera.fov))) / get_viewport_rect().size.y
+	var  meshSize=(pointSize*tan(deg_to_rad(holder.camera.fov))) / holder.get_viewport_rect().size.y
 	multimesh.multimesh.mesh.size=Vector2(meshSize,meshSize)
 	for drawPoint in renderPoints.keys():
 		baseTrans.origin=drawPoint
 		multimesh.multimesh.set_instance_transform(index,baseTrans)
 		index+=1
 
-#region input logic
-func _input(event: InputEvent) -> void:
-	if _handle_keyboard_input(event): return
-	if _handle_mouse_click(event): return
-	if _handle_mouse_drag(event): return
-	if _handle_outside_click_deselect(event): return
-
-func _handle_keyboard_input(event: InputEvent) -> bool:
+func _handle_keyboard_input(event: InputEventKey) -> bool:
 	if not (event is InputEventKey and event.is_pressed()):return false
-	var forward = -camera.global_transform.basis.z
+	var forward = -holder.camera.global_transform.basis.z
 	forward.y = 0;forward = forward.normalized();
 	var snapped_direction = _get_snapped_direction(forward)
 	var rotation_quat = Quaternion(snapped_direction, Vector3.FORWARD)
@@ -102,24 +82,24 @@ func _handle_keyboard_input(event: InputEvent) -> bool:
 	get_viewport().set_input_as_handled()
 	return true
 
-func _handle_mouse_drag(event: InputEvent) -> bool:
+func _handle_mouse_drag(event: InputEventMouseMotion) -> bool:
 	if get_viewport().is_input_handled():return false
 	if event is InputEventMouseMotion and MeshEditService.isEditing() and Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
 		if MeshEditService.editing.selectedFaces.size() == 0:return false
-		MeshEditService.editor.updateSelectionLocation(get_local_mouse_position())
+		MeshEditService.editor.updateSelectionLocation(holder.get_local_mouse_position())
 		PhysicalObjectService.updatePickableArea(MeshEditService.editor.editingObject)
 		signalService.emitSignal(&"meshSelectionChanged")
 		return true
 	return false
 
-func _handle_mouse_click(event: InputEvent) -> bool:
+func _handle_mouse_click(event: InputEventMouseButton) -> bool:
 	#clear focus from outside the area if you click in here
 	if  event is InputEventMouseButton:get_tree().root.gui_release_focus()
 	
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and MeshEditService.isEditing():
 		if not event.pressed:return false
 		if not event.shift_pressed:MeshEditService.editing.clearSelections()
-		if selectPointToChange(get_local_mouse_position()):
+		if selectPointToChange(holder.get_local_mouse_position()):
 			get_viewport().set_input_as_handled()
 			signalService.emitSignal(&"meshSelectionChanged")
 			return true
@@ -129,8 +109,8 @@ func _handle_mouse_click(event: InputEvent) -> bool:
 			pass
 	return false
 
-func _handle_outside_click_deselect(event: InputEvent) -> bool:
-	if event is InputEventMouseButton and event.is_pressed() and event.button_index == MOUSE_BUTTON_LEFT:
+func _handle_outside_click_deselect(event: InputEventMouseButton) -> bool:
+	if event is InputEventMouseButton and not event.is_pressed() and event.button_index == MOUSE_BUTTON_LEFT:
 		if PhysicalObjectInputController.hoveredObjects.size() == 0:
 			PhysicalObjectInputController.deselect()
 			return true
@@ -146,8 +126,6 @@ func _get_snapped_direction(forward: Vector3) -> Vector3:
 			max_dot = dot
 			snapped = dir
 	return snapped
-
-#endregion
 
 func moveSelection(moveBy:Vector3,local:bool=true)->void:
 	if not MeshEditService.isEditing():return
@@ -203,16 +181,12 @@ func updateSelected()->void:
 		else:
 			pointDeselected(index)
 
-
 func pointSelected(pointIndex:int)->void:
 	if selectedPoints.has(pointIndex) or renderPoints.size()<=pointIndex:return
 	multimesh.multimesh.set_instance_color(pointIndex,Color.RED)
 	selectedPoints.push_back(pointIndex)
+
 func pointDeselected(pointIndex:int)->void:
 	if not selectedPoints.has(pointIndex) or renderPoints.size()<=pointIndex:return
 	multimesh.multimesh.set_instance_color(pointIndex,Color.BLACK)
 	selectedPoints.remove_at(selectedPoints.find(pointIndex))
-
-
-func dragSelectedPoint(dragTo:Vector2)->void:
-	pass
