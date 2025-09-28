@@ -40,7 +40,6 @@ static func buildPickableArea(object:ObjectPhysicalDataResource,instance:Node3D,
 	if instance:instance.add_child(area)
 	area.name="PICKABLE_OBJECT"
 	area.add_child(body)
-	
 	body.shape=mesh.create_trimesh_shape()
 	area.input_ray_pickable=true
 	

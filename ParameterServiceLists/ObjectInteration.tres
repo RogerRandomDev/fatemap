@@ -1,10 +1,12 @@
-[gd_resource type="Resource" script_class="paramServiceParams" load_steps=2 format=3 uid="uid://bv3j7rvwisrkk"]
+[gd_resource type="Resource" script_class="paramServiceParams" load_steps=3 format=3 uid="uid://bv3j7rvwisrkk"]
 
 [ext_resource type="Script" uid="uid://v2l1xtifo1ch" path="res://models/resources/paramServiceResource.gd" id="1_6hccd"]
 
+[sub_resource type="BoxMesh" id="BoxMesh_vmo0g"]
+
 [resource]
 script = ExtResource("1_6hccd")
-parameterCount = 5
+parameterCount = 6
 parameter_0/name = "activeObject"
 parameter_0/description = "current active object for editing"
 parameter_0/type = "Object"
@@ -25,4 +27,8 @@ parameter_4/description = "the mode to translate the selected object/points by.
 I.E. local, global, or along normal/edges"
 parameter_4/type = "int"
 parameter_4/value = null
+parameter_5/name = "newObjectShape"
+parameter_5/description = "shape for the new  object to be created"
+parameter_5/type = "Object"
+parameter_5/value = SubResource("BoxMesh_vmo0g")
 metadata/_custom_type_script = "uid://v2l1xtifo1ch"

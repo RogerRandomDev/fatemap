@@ -15,7 +15,8 @@ func _input(event: InputEvent) -> void:
 		if event is InputEventMouseButton and child._handle_outside_click_deselect(event): return
 
 
-func getClickedPoint()->Vector3:
+
+func getMousePoint()->Vector3:
 	var spaceState = get_viewport().world_3d.direct_space_state
 	var clickPos:Vector2=get_local_mouse_position()
 	var clickNorm:Vector3=camera.project_ray_normal(clickPos)
@@ -27,7 +28,8 @@ func getClickedPoint()->Vector3:
 	var hitPoint:=Vector3.INF
 	if rayHit.is_empty():
 		var plane=Plane(Vector3.UP,Vector3.ZERO)
-		hitPoint = plane.intersects_ray(camera.global_position,clickNorm)
+		var p=plane.intersects_ray(camera.global_position,clickNorm)
+		if p!=null:hitPoint=p
 	else:
 		hitPoint=rayHit.position
 	

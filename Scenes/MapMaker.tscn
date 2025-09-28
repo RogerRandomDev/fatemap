@@ -92,6 +92,8 @@ multimesh = SubResource("MultiMesh_qtfr5")
 script = ExtResource("9_qtfr5")
 metadata/_custom_type_script = "uid://bgtxjyyro3vut"
 
+[node name="newObjectHighlighter" type="Marker3D" parent="MapView/EditInteractions/EditCreateMesh"]
+
 [node name="FaceHighlighter" type="Node" parent="MapView"]
 script = ExtResource("6_04lqo")
 
@@ -133,7 +135,5 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 2)
 projection = 1
 current = true
 size = 2.0
-
-[node name="newObjectHighlighter" type="Marker3D" parent="MapView"]
 
 [node name="PlacedObjects" type="Node3D" parent="MapView"]

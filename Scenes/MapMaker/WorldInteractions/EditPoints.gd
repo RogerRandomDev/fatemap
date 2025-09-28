@@ -96,8 +96,7 @@ func _handle_mouse_click(event: InputEventMouseButton) -> bool:
 	#clear focus from outside the area if you click in here
 	if  event is InputEventMouseButton:get_tree().root.gui_release_focus()
 	
-	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and MeshEditService.isEditing():
-		if not event.pressed:return false
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and MeshEditService.isEditing() and event.pressed:
 		if not event.shift_pressed:MeshEditService.editing.clearSelections()
 		if selectPointToChange(holder.get_local_mouse_position()):
 			get_viewport().set_input_as_handled()
@@ -110,10 +109,11 @@ func _handle_mouse_click(event: InputEventMouseButton) -> bool:
 	return false
 
 func _handle_outside_click_deselect(event: InputEventMouseButton) -> bool:
-	if event is InputEventMouseButton and not event.is_pressed() and event.button_index == MOUSE_BUTTON_LEFT:
-		if PhysicalObjectInputController.hoveredObjects.size() == 0:
+	if event is InputEventMouseButton and event.is_pressed() and event.button_index == MOUSE_BUTTON_LEFT:
+		if PhysicalObjectInputController.hoveredObjects.size() == 0 and ParameterService.getParam(&"activeObject")!=null:
 			PhysicalObjectInputController.deselect()
 			return true
+	if MeshEditService.isEditing():return true
 	return false
 
 func _get_snapped_direction(forward: Vector3) -> Vector3:

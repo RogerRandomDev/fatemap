@@ -1,4 +1,5 @@
 extends ObjectModel
+class_name PhysicalObjectModel
 
 @export var objectData:ObjectPhysicalDataResource
 var _instanceData:ObjectDataResource=ObjectDataResource.new()
