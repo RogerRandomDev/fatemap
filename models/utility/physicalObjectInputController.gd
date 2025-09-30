@@ -31,7 +31,7 @@ static func objectInputEvent(camera: Node, event: InputEvent, event_position: Ve
 	
 	if event is InputEventMouseButton:
 		var oldActive=activeObject
-		if event.button_index==MOUSE_BUTTON_LEFT and event.pressed:
+		if event.button_index==MOUSE_BUTTON_LEFT and not event.pressed:
 			if Input.is_key_pressed(KEY_CTRL):
 				activeObjectList.erase(object)
 				if activeObject==object:

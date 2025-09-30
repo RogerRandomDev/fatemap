@@ -31,21 +31,20 @@ static func buildMesh(object:ObjectPhysicalDataResource,instance:Node3D=null,mak
 	
 	return meshInstance
 
-static func buildPickableArea(object:ObjectPhysicalDataResource,instance:Node3D,meshInstance:MeshInstance3D=null)->Area3D:
+static func buildPickableArea(object:ObjectPhysicalDataResource,instance:Node3D,meshInstance:MeshInstance3D=null)->StaticBody3D:
 	
 	var mesh = object.mesh
 	if meshInstance!=null:mesh=meshInstance.mesh
-	var area=Area3D.new()
+	var area=StaticBody3D.new()
 	var body=CollisionShape3D.new()
 	if instance:instance.add_child(area)
 	area.name="PICKABLE_OBJECT"
 	area.add_child(body)
 	body.shape=mesh.create_trimesh_shape()
-	area.input_ray_pickable=true
 	
 	area.mouse_entered.connect(func():signalService.emitSignal(&"MouseEnteredObject",[instance]))
 	area.mouse_exited.connect(func():signalService.emitSignal(&"MouseExitedObject",[instance]))
-	area.input_event.connect(PhysicalObjectInputController.objectInputEvent.bind(instance))
+	#area.input_event.connect(PhysicalObjectInputController.objectInputEvent.bind(instance))
 	return area
 
 static func updatePickableArea(object:Node3D)->void:

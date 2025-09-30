@@ -36,7 +36,7 @@ func _handle_mouse_click(event: InputEventMouseButton) -> bool:
 
 func _handle_mouse_drag(event: InputEventMouseMotion) -> bool:
 	if not editOrigin.is_finite():return false
-	editEnd=holder.getMousePoint().snappedf(
+	editEnd=holder.getMousePoint(true,Vector3(0,editOrigin.y,0)).snappedf(
 		ParameterService.getParam(&"snapDistance")
 	)
 	updateExampleMesh()
@@ -80,7 +80,7 @@ func updateExampleMesh()->void:
 ##TODO: this is janky and ugly so I need to clean this up more
 func finalizeMesh()->void:
 	highlight.hide()
-	if highlight.get_aabb().size.length_squared()<0.01:return
+	if highlight.get_aabb().size.x==0||highlight.get_aabb().size.y==0:return
 	var m = ArrayMesh.new()
 	m.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,highlight.mesh.get_mesh_arrays())
 	var dt:MeshDataTool=MeshDataTool.new()

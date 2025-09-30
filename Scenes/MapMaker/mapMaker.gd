@@ -41,13 +41,26 @@ func loadToolBar()->void:
 			[&"Layout",&"Style"],
 			self
 	))
-	
-	var ToolBar := GUIService.insertElement(
+	var ToolBarHolders :=GUIService.insertElement(
+		GUIService.createElement(
+			VBoxContainer.new(),
+			&"ToolBarHolders",
+			[&"Layout",&"Tools"],
+			&"ToolBarPanel"
+	))
+	var ToolBarTop := GUIService.insertElement(
 		GUIService.createElement(
 			HBoxContainer.new(),
 			&"ToolBar",
 			[&"Layout",&"Tools"],
-			&"ToolBarPanel"
+			&"ToolBarHolders"
+	))
+	var ToolBarBottom := GUIService.insertElement(
+		GUIService.createElement(
+			HBoxContainer.new(),
+			&"ToolBarBottom",
+			[&"Layout",&"Tools"],
+			&"ToolBarHolders"
 	))
 	
 	ToolBarPanel.reference.custom_minimum_size.y=20
