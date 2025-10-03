@@ -6,8 +6,6 @@ extends VBoxContainer
 func _enter_tree() -> void:ServiceInitializer.initializeAllServices()
 
 func _ready() -> void:
-	
-	
 	loadGUILayout()
 	
 	signalService.addSignal(&"mapObjectSelected")

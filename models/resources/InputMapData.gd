@@ -70,7 +70,7 @@ func _set(property: StringName, value: Variant) -> bool:
 	if property.begins_with("input") && property.contains("/"):
 		var index=property.split("input")[1].split("/")[0].to_int()
 		match(property.split("/")[1]):
-			"name":
+			"ActionName":
 				inputActionNames[index]=value
 				return true
 			"bind":

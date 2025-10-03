@@ -3,7 +3,7 @@ class_name ParameterService
 
 static var _parameterList:Dictionary={}
 
-static func initialize(resourcePath:String="res://ParameterServiceLists")->void:
+static func initialize(resourcePath:String="res://ServiceLists")->void:
 	var resourceDir=DirAccess.open(resourcePath)
 	for parameterList in resourceDir.get_files():
 		if not parameterList.ends_with(".tres"):continue

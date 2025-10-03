@@ -1,0 +1,106 @@
+[gd_resource type="Resource" script_class="InputMapData" load_steps=22 format=3 uid="uid://bwk28degu8fgh"]
+
+[ext_resource type="Script" uid="uid://pu05o4yiow38" path="res://models/resources/InputMapData.gd" id="1_m2dc3"]
+
+[sub_resource type="InputEventKey" id="InputEventKey_m2dc3"]
+device = -1
+pressed = true
+keycode = 4194312
+
+[sub_resource type="Shortcut" id="Shortcut_m2dc3"]
+events = [SubResource("InputEventKey_m2dc3")]
+
+[sub_resource type="InputEventMouseButton" id="InputEventMouseButton_fmxf7"]
+button_index = 1
+pressed = true
+
+[sub_resource type="Shortcut" id="Shortcut_flrha"]
+events = [SubResource("InputEventMouseButton_fmxf7")]
+
+[sub_resource type="InputEventKey" id="InputEventKey_fmxf7"]
+device = -1
+pressed = true
+keycode = 4194325
+
+[sub_resource type="Shortcut" id="Shortcut_265h2"]
+events = [SubResource("InputEventKey_fmxf7")]
+
+[sub_resource type="InputEventKey" id="InputEventKey_flrha"]
+device = -1
+pressed = true
+keycode = 4194326
+
+[sub_resource type="Shortcut" id="Shortcut_owrl5"]
+events = [SubResource("InputEventKey_flrha")]
+
+[sub_resource type="InputEventKey" id="InputEventKey_265h2"]
+device = -1
+pressed = true
+keycode = 4194319
+
+[sub_resource type="Shortcut" id="Shortcut_5r5m7"]
+events = [SubResource("InputEventKey_265h2")]
+
+[sub_resource type="InputEventKey" id="InputEventKey_t1xmo"]
+device = -1
+pressed = true
+keycode = 4194321
+
+[sub_resource type="Shortcut" id="Shortcut_io1qw"]
+events = [SubResource("InputEventKey_t1xmo")]
+
+[sub_resource type="InputEventKey" id="InputEventKey_grjuu"]
+device = -1
+pressed = true
+keycode = 4194320
+
+[sub_resource type="Shortcut" id="Shortcut_kxjjk"]
+events = [SubResource("InputEventKey_grjuu")]
+
+[sub_resource type="InputEventKey" id="InputEventKey_f7c53"]
+device = -1
+pressed = true
+keycode = 4194322
+
+[sub_resource type="Shortcut" id="Shortcut_lucx7"]
+events = [SubResource("InputEventKey_f7c53")]
+
+[sub_resource type="InputEventKey" id="InputEventKey_yh0rv"]
+device = -1
+pressed = true
+keycode = 4194323
+
+[sub_resource type="Shortcut" id="Shortcut_j81m8"]
+events = [SubResource("InputEventKey_yh0rv")]
+
+[sub_resource type="InputEventKey" id="InputEventKey_w4slo"]
+device = -1
+keycode = 4194324
+
+[sub_resource type="Shortcut" id="Shortcut_mf07x"]
+events = [SubResource("InputEventKey_w4slo")]
+
+[resource]
+script = ExtResource("1_m2dc3")
+inputCount = 10
+input_0/ActionName = "Delete"
+input_0/bind = SubResource("Shortcut_m2dc3")
+input_1/ActionName = "MouseLeft"
+input_1/bind = SubResource("Shortcut_flrha")
+input_2/ActionName = "SelectMultiple"
+input_2/bind = SubResource("Shortcut_265h2")
+input_3/ActionName = "CreateMesh"
+input_3/bind = SubResource("Shortcut_owrl5")
+input_4/ActionName = "TranslateLeft"
+input_4/bind = SubResource("Shortcut_5r5m7")
+input_5/ActionName = "TranslateRight"
+input_5/bind = SubResource("Shortcut_io1qw")
+input_6/ActionName = "TranslateForward"
+input_6/bind = SubResource("Shortcut_kxjjk")
+input_7/ActionName = "TranslateBack"
+input_7/bind = SubResource("Shortcut_lucx7")
+input_8/ActionName = "TranslateUp"
+input_8/bind = SubResource("Shortcut_j81m8")
+input_9/ActionName = "TranslateDown"
+input_9/bind = SubResource("Shortcut_mf07x")
+metadata/_custom_type_script = "uid://pu05o4yiow38"

@@ -53,7 +53,8 @@ func getParameterDefaults(includeDefaults:bool=true,includeInherited:bool=true,o
 		parameterList.push_back({
 			"name":parameterNames[index],
 			"type":parameterTypes[index],
-			"value":parameterValues[index]
+			"value":parameterValues[index],
+			"description":parameterDescriptions[index]
 		})
 	
 	

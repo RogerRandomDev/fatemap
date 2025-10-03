@@ -241,9 +241,17 @@ func _check_mouse_capture(event:InputEvent) -> void:
 	if not use_default_controls and InputMap.has_action(_ACTION_ACTIVATE):
 		if event.is_action_pressed(_ACTION_ACTIVATE):    button_state = 1
 		elif event.is_action_released(_ACTION_ACTIVATE): button_state = 2
+	elif event is InputEventMouseMotion and Input.is_mouse_button_pressed(int(mouse_button)):
+		button_state = 1
 	elif event is InputEventMouseButton and event.button_index == mouse_button:
-		button_state = 1 if event.pressed else 2
-
+		if not event.pressed:button_state = 2
+	if ((
+		_is_cam_action_pressed(_ACTION_FORWARD) or 
+		_is_cam_action_pressed(_ACTION_BACKWARD) or
+		_is_cam_action_pressed(_ACTION_LEFT) or
+		_is_cam_action_pressed(_ACTION_RIGHT)
+		) and Input.is_mouse_button_pressed(int(mouse_button))): button_state = 1
+	
 	if button_state == 0: return
 
 	match activation_mode:
@@ -298,6 +306,7 @@ func get_rot() -> Vector3:
 
 ## Activate or deactivate the mouse controls
 func set_active(enable:bool) -> void:
+	if enable==_mouse_hidden:return
 	if enable:
 		_mouse_click_pos = get_viewport().get_mouse_position()
 		_mouse_hidden = true

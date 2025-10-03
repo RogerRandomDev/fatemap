@@ -2,13 +2,13 @@ extends Marker3D
 class_name ObjectModel
 
 enum objectTypes{
-	WORLD,
+	MESH,
 	OBJECT,
 	DATA,
 	GROUP
 }
 
-@export var objectType:objectTypes=objectTypes.WORLD
+@export var objectType:objectTypes=objectTypes.DATA
 var objectDisplay:Node3D
 
 

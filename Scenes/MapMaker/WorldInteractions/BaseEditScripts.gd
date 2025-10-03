@@ -3,6 +3,9 @@ class_name EditInteractionBase
 
 @onready var holder:Control=get_parent()
 
+func _check_valid(event:InputEvent)->bool:
+	return true
+
 func _handle_keyboard_input(event: InputEventKey) -> bool:
 	return false
 

@@ -13,6 +13,7 @@ func _ready() -> void:
 func _input(event: InputEvent) -> void:
 	eventData.update(event)
 	for child in get_children():
+		if not child._check_valid(event):continue
 		if event is InputEventKey and child._handle_keyboard_input(event): return
 		if event is InputEventMouseButton and child._handle_mouse_click(event): return
 		if event is InputEventMouseMotion and child._handle_mouse_drag(event): return
