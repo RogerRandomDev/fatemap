@@ -8,6 +8,8 @@ var renderPointVertices:Array=[]
 
 var selectedPoints:PackedInt32Array=[]
 
+var dragSafe:bool=false
+
 const pointSize:float=8
 
 
@@ -65,7 +67,7 @@ func updateEditPointRender()->void:
 		multimesh.multimesh.set_instance_transform(index,baseTrans)
 		index+=1
 
-func _check_valid(event:InputEvent)->bool:
+func _check_valid(_event:InputEvent)->bool:
 	return MeshEditService.isEditing() and MeshEditService.editing.dataObject.objectType==ObjectModel.objectTypes.MESH
 
 func _handle_keyboard_input(event: InputEventKey) -> bool:
@@ -89,9 +91,11 @@ func _handle_keyboard_input(event: InputEventKey) -> bool:
 	return true
 
 func _handle_mouse_drag(event: InputEventMouseMotion) -> bool:
+	if not dragSafe:return false
 	if get_viewport().is_input_handled():return false
 	if InputService.pressed(&"CreateMesh"):return false
 	if event is InputEventMouseMotion and MeshEditService.isEditing() and InputService.pressed(&"MouseLeft"):
+		
 		if MeshEditService.editing.selectedFaces.size() == 0:return false
 		MeshEditService.editor.updateSelectionLocation(holder.get_local_mouse_position())
 		PhysicalObjectService.updatePickableArea(MeshEditService.editor.editingObject)
@@ -111,14 +115,17 @@ func _handle_mouse_click(event: InputEventMouseButton) -> bool:
 		if not InputService.pressed(&"SelectMultiple"):
 			MeshEditService.editing.clearSelections()
 			signalService.emitSignal(&"meshSelectionChanged")
-		
 		if selectPointToChange(holder.get_local_mouse_position()):
 			get_viewport().set_input_as_handled()
 			signalService.emitSignal(&"meshSelectionChanged")
+			dragSafe=true
 			return true
+		else:
+			dragSafe=false
+			
 	return false
 
-func _handle_outside_click_deselect(event: InputEventMouseButton) -> bool:
+func _handle_outside_click_deselect(_event: InputEventMouseButton) -> bool:
 	if InputService.pressed(&"SelectMultiple"):return false
 	if InputService.pressed(&"CreateMesh"):return false
 	if InputService.pressed(&"MouseLeft"):
@@ -131,13 +138,13 @@ func _handle_outside_click_deselect(event: InputEventMouseButton) -> bool:
 func _get_snapped_direction(forward: Vector3) -> Vector3:
 	var directions = [Vector3.FORWARD, Vector3.BACK, Vector3.LEFT, Vector3.RIGHT]
 	var max_dot = -1.0
-	var snapped = Vector3.ZERO
+	var _snapped = Vector3.ZERO
 	for dir in directions:
 		var dot = forward.dot(dir)
 		if dot > max_dot:
 			max_dot = dot
-			snapped = dir
-	return snapped
+			_snapped = dir
+	return _snapped
 
 func moveSelection(moveBy:Vector3,local:bool=true)->void:
 	if not MeshEditService.isEditing():return
@@ -160,7 +167,7 @@ func selectPointToChange(atPos:Vector2)->bool:
 	var pointIndex=sortDistance.find(sortedDistances[0])
 	var newPoint=renderPoints.values()[pointIndex]
 	if sortedDistances[0]>pointSize*pointSize:return false
-	var previousSelected=MeshEditService.editing.selectedVertices.size()
+	var _previousSelected=MeshEditService.editing.selectedVertices.size()
 	MeshEditService.editing.select(newPoint,InputService.pressed(&"CreateMesh"))
 	if newPoint is objectMeshModel.cleanedFace:
 		MeshEditService.editor.updateSelectedCleanFace(newPoint)

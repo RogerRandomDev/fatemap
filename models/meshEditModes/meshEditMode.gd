@@ -69,7 +69,7 @@ func castRayOnPlane(from:Vector3,along:Vector3)->Vector3:
 	return intersection if intersection!=null else Vector3.INF
 
 ## gets the location the edit mode intends to try and move the selection towards
-func getTargetFromMouse(mousePosition:Vector2)->Vector3:return Vector3.INF
+func getTargetFromMouse(_mousePosition:Vector2)->Vector3:return Vector3.INF
 
 ## uses the info it is provided to slide the selection along the given way this editMode uses
-func updateSelectionLocation(mousePosition:Vector2)->void:pass
+func updateSelectionLocation(_mousePosition:Vector2)->void:pass

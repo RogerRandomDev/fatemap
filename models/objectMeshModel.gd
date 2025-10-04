@@ -157,11 +157,11 @@ func getCleanEdges()->Array[meshEdge]:
 				uncleanEdges[edgePosition]=edge
 			else:
 				uncleanEdges[edgePosition]=null
-	var cleanedEdges:Array[meshEdge]=[]
+	var _cleanedEdges:Array[meshEdge]=[]
 	for uncleanEdge in uncleanEdges:
 		if uncleanEdges[uncleanEdge]==null:continue
-		cleanedEdges.push_back(uncleanEdges[uncleanEdge])
-	return cleanedEdges
+		_cleanedEdges.push_back(uncleanEdges[uncleanEdge])
+	return _cleanedEdges
 
 func getTrueCleanEdges()->Array[cleanedEdge]:
 	var cleanEdges:Dictionary={}
@@ -173,9 +173,9 @@ func getTrueCleanEdges()->Array[cleanedEdge]:
 		]
 		var edgePosition=str(edgePair[0])+"|"+str(edgePair[1])
 		cleanEdges.get_or_add(edgePosition,[]).push_back(edge)
-	var cleanedEdges:Array[cleanedEdge]=[]
-	for edgeSet in cleanEdges.values():cleanedEdges.push_back(cleanedEdge.new(edgeSet))
-	return cleanedEdges
+	var _cleanedEdges:Array[cleanedEdge]=[]
+	for edgeSet in cleanEdges.values():_cleanedEdges.push_back(cleanedEdge.new(edgeSet))
+	return _cleanedEdges
 
 func getCleanFaces()->Array[cleanedFace]:
 	var cleanFaces:Dictionary={}
@@ -200,10 +200,10 @@ func getCleanFaces()->Array[cleanedFace]:
 			else:cleanedGroupID=uncleanFaces[normID].keys()[cleanedGroupID]
 			cleanFaceGroupings[cleanedGroupID].push_back(face)
 			for vertex in face.vertices:uncleanFaces[normID][cleanedGroupID].push_back(vertex.positionID)
-	var cleanedFaces:Array[cleanedFace]=[]
+	var _cleanedFaces:Array[cleanedFace]=[]
 	for faceGroup in cleanFaceGroupings.values():
-		cleanedFaces.push_back(cleanedFace.new(faceGroup))
-	return cleanedFaces
+		_cleanedFaces.push_back(cleanedFace.new(faceGroup))
+	return _cleanedFaces
 
 func getCleanEdgesTouchingCleanFace(cleanFace:cleanedFace)->Array[cleanedEdge]:
 	var edgesTouching:Array[cleanedEdge]=[]
@@ -300,6 +300,7 @@ class meshVertex extends RefCounted:
 
 class meshVertexObject extends RefCounted:
 	var vertices:Array[meshVertex]=[]
+	@warning_ignore("unused_private_class_variable")
 	var _mesh:objectMeshModel
 
 class meshEdge extends meshVertexObject:
@@ -407,7 +408,7 @@ class meshFace extends meshVertexObject:
 		return normal
 	
 	func translateBy(offset:Vector3,specifiedIndex:PackedFloat32Array=[],blockChangeForOperation:bool=false)->void:
-		var uniqueVertices:Array[meshVertex]=[]
+		#var uniqueVertices:Array[meshVertex]=[]
 		for vertex in vertices:
 			if specifiedIndex.size()>0 and not specifiedIndex.has(vertex.index):continue
 			vertex.translateBy(offset,blockChangeForOperation)
@@ -486,7 +487,7 @@ class cleanedEdge extends cleanedVertexObject:
 	
 	func getQuaternion(firstPointID:int=-1)->Quaternion:
 		var originalPositions=Array(positionIDs)
-		originalPositions.sort_custom(func(a,b):return a==firstPointID)
+		originalPositions.sort_custom(func(a,_b):return a==firstPointID)
 		var quat=Quaternion(
 			(_mesh.positionIDs[originalPositions[0]].direction_to(_mesh.positionIDs[originalPositions[1]]).normalized()),
 			Vector3.RIGHT

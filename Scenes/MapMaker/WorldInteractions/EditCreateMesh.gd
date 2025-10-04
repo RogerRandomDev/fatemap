@@ -16,11 +16,11 @@ func _ready()->void:
 	highlightOutline.mesh=ArrayMesh.new()
 	signalService.bindToSignal.call_deferred(&"mapObjectSelected",disableCreation)
 
-func disableCreation(arr)->void:
+func disableCreation(_arr)->void:
 	await get_tree().process_frame
 	highlight.visible=false
 
-func _handle_mouse_click(event: InputEventMouseButton) -> bool:
+func _handle_mouse_click(_event: InputEventMouseButton) -> bool:
 	if InputService.pressed(&"MouseLeft")||InputService.released(&"MouseLeft",true):
 		if InputService.pressed(&"MouseLeft",true):
 			if not InputService.pressed(&"CreateMesh"):return false
@@ -39,7 +39,7 @@ func _handle_mouse_click(event: InputEventMouseButton) -> bool:
 			editEnd=Vector3.INF
 	return true
 
-func _handle_mouse_drag(event: InputEventMouseMotion) -> bool:
+func _handle_mouse_drag(_event: InputEventMouseMotion) -> bool:
 	if not editOrigin.is_finite():return false
 	editEnd=holder.getMousePoint(true,Vector3(0,editOrigin.y,0)).snappedf(
 		ParameterService.getParam(&"snapDistance")
@@ -120,7 +120,17 @@ func finalizeMesh()->void:
 	data.mesh=m
 	
 	obj.objectData=data
-	get_parent().get_parent().get_node("PlacedObjects").add_child(obj)
+	var placedObjects=get_parent().get_parent().get_node("PlacedObjects")
+	placedObjects.add_child(obj)
 	obj.global_position=highlight.global_position
 	(obj.get_node("MESH_OBJECT").mesh as objectMeshModel).globalTransform.origin=-obj.global_transform.origin
+	
+	UndoRedoService.startAction(&"CreateMesh")
+	UndoRedoService.addRef(obj)
+	UndoRedoService.addMethods(
+		placedObjects.add_child.bind(obj),
+		placedObjects.remove_child.bind(obj)
+	)
+	UndoRedoService.commitAction()
+	
 	

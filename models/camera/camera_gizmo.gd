@@ -1,7 +1,7 @@
 extends Node
 
 
-func _process(delta: float) -> void:
+func _process(_delta: float) -> void:
 	DebugDraw3D.scoped_config().set_viewport($Control/SubViewport).set_thickness(0.2)
 	var rotation=get_parent().get_camera().global_rotation
 	

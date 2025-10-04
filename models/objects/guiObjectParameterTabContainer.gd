@@ -25,7 +25,6 @@ func _ready() -> void:
 
 func addTab(tabName:String,newTab:Control=null,tabData:ObjectDataResource=null)->bool:
 	if get_node_or_null(tabName)!=null:return false
-	newTab
 	add_child(newTab)
 	if tabData!=null:
 		newTab.loadContents(tabData)

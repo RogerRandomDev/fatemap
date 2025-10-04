@@ -7,7 +7,7 @@ var parameterTypes:PackedStringArray=[]
 var parameterDescriptions:PackedStringArray=[]
 var parameterValues:Array=[]
 
-func getParameterDefaults(includeDefaults:bool=true,overrideMatchingNames:bool=true)->Array[Dictionary]:
+func getParameterDefaults(_includeDefaults:bool=true,overrideMatchingNames:bool=true)->Array[Dictionary]:
 	var parameterList:Array[Dictionary]=[]
 	
 	for index in len(parameterNames):

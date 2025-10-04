@@ -5,7 +5,7 @@ class_name PhysicalObjectService
 
 
 
-static func buildMesh(object:ObjectPhysicalDataResource,instance:Node3D=null,makeSelectable:bool=true)->MeshInstance3D:
+static func buildMesh(object:ObjectPhysicalDataResource,instance:Node3D=null,_makeSelectable:bool=true)->MeshInstance3D:
 	#var mesh=object.mesh.create_trimesh_shape()
 	var mesh=object.mesh
 	var meshInstance=MeshInstance3D.new()

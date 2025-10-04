@@ -40,7 +40,7 @@ func _ready() -> void:
 	worldGrid.material_override=load("res://worldGrid.tres")
 	worldGrid.ignore_occlusion_culling=true
 
-func _process(delta: float) -> void:
+func _process(_delta: float) -> void:
 	var camPos=get_viewport().get_camera_3d().global_position
 	
 	

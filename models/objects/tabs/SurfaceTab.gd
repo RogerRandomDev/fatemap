@@ -53,8 +53,8 @@ func loadMaterialList()->void:
 		materialList.add_child(materialOption)
 
 func updateGridLayout()->void:
-	materialList.add_theme_constant_override("h_separation",materialOptionSpacing)
-	materialList.add_theme_constant_override("v_separation",materialOptionSpacing)
+	materialList.add_theme_constant_override("h_separation",int(materialOptionSpacing))
+	materialList.add_theme_constant_override("v_separation",int(materialOptionSpacing))
 	for materialOption in materialList.get_children():
 		materialOption.updateSpacings(optionExtraBorder)
 		materialOption.setIconSize(surfaceMaterialIconSize)

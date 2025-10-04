@@ -33,7 +33,6 @@ func buildTools()->void:
 	)
 	var ind=0
 	for item in selectorItems:
-		var itemMesh=selectorItems[item]
 		SelectorDropdown.add_item(item,ind)
 		ind+=1
 	SelectorDropdown.item_selected.connect(func(index):
@@ -61,7 +60,7 @@ func loadSpecials()->void:
 	sphereSpecials(SelectorDropdown)
 	
 
-func boxSpecials(SelectorDropdown)->void:
+func boxSpecials(_SelectorDropdown)->void:
 	GUIService.insertElement(
 		GUIService.createElement(
 			Control.new(),
@@ -108,8 +107,8 @@ func cylinderSpecials(SelectorDropdown)->void:
 		)
 	cylinder.add_child(halfRot)
 
-func prismSpecials(SelectorDropdown)->void:
-	var prism:HBoxContainer=GUIService.insertElement(
+func prismSpecials(_SelectorDropdown)->void:
+	var _prism:HBoxContainer=GUIService.insertElement(
 		GUIService.createElement(
 			HBoxContainer.new(),
 			&"MeshSelectorSpecialsPrism",
@@ -118,8 +117,8 @@ func prismSpecials(SelectorDropdown)->void:
 		)
 	).reference
 
-func sphereSpecials(SelectorDropdown)->void:
-	var sphere:HBoxContainer=GUIService.insertElement(
+func sphereSpecials(_SelectorDropdown)->void:
+	var _sphere:HBoxContainer=GUIService.insertElement(
 		GUIService.createElement(
 			HBoxContainer.new(),
 			&"MeshSelectorSpecialsSphere",

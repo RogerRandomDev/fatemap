@@ -15,7 +15,7 @@ func loadContents()->void:
 	#).reference as ToolbarMenuButton
 	#ToolMethodService.addToolMethod(&"TestScript",func():print("yeah it runs"))
 	
-	var ViewItem := GUIToolbarService.AddToolbarItem(
+	var _ViewItem := GUIToolbarService.AddToolbarItem(
 		ToolbarMenuButton.new(&"View",load("res://toolbarView.tres")),
 		&"ViewToolButton",
 		[&"View"],

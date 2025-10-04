@@ -39,21 +39,21 @@ func loadToolBar()->void:
 			[&"Layout",&"Style"],
 			self
 	))
-	var ToolBarHolders :=GUIService.insertElement(
+	var _ToolBarHolders :=GUIService.insertElement(
 		GUIService.createElement(
 			VBoxContainer.new(),
 			&"ToolBarHolders",
 			[&"Layout",&"Tools"],
 			&"ToolBarPanel"
 	))
-	var ToolBarTop := GUIService.insertElement(
+	var _ToolBarTop := GUIService.insertElement(
 		GUIService.createElement(
 			HBoxContainer.new(),
 			&"ToolBar",
 			[&"Layout",&"Tools"],
 			&"ToolBarHolders"
 	))
-	var ToolBarBottom := GUIService.insertElement(
+	var _ToolBarBottom := GUIService.insertElement(
 		GUIService.createElement(
 			HBoxContainer.new(),
 			&"ToolBarBottom",
@@ -106,3 +106,9 @@ func loadViewContainer()->void:
 	viewportInternal.reference.set_anchors_preset(Control.PRESET_FULL_RECT)
 	viewportInternal.reference.update_minimum_size()
 	viewportInternal.reference.mouse_filter=Control.MOUSE_FILTER_IGNORE
+
+func _input(_event: InputEvent) -> void:
+	if InputService.pressed(&"RedoAction",true):
+		UndoRedoService.redo()
+	elif InputService.pressed(&"UndoAction",true):
+		UndoRedoService.undo()

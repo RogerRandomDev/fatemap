@@ -18,7 +18,7 @@ func _ready() -> void:
 	primaryVertical.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	primaryVertical.size_flags_stretch_ratio=0.25
 	
-	var parameterLister = GUIService.insertElement(
+	var _parameterLister = GUIService.insertElement(
 		GUIService.createElement(
 			guiObjectParameterTabContainer.new(),
 			&"selectedParameterTabContainer",

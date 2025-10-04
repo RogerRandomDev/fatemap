@@ -6,7 +6,7 @@ class_name InputMapData
 var inputActionNames:PackedStringArray=[]
 var inputBinds:Array=[]
 
-func getParameterDefaults(includeDefaults:bool=true,includeInherited:bool=true,overrideMatchingNames:bool=true):
+func getParameterDefaults(_includeDefaults:bool=true,_includeInherited:bool=true,_overrideMatchingNames:bool=true):
 	var parameterList:Array[Dictionary]=[]
 	for index in len(inputActionNames):
 		#makes sure all parameter names are a unique value

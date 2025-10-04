@@ -59,8 +59,8 @@ func parameterEdited()->void:
 	
 
 func customEdited(mouse_button_index: int)->void:
-	var editedItem:TreeItem=tree.get_edited()
-	var editedParam:String=editedItem.get_metadata(0)
+	var _editedItem:TreeItem=tree.get_edited()
+	var _editedParam:String=_editedItem.get_metadata(0)
 	if mouse_button_index==MOUSE_BUTTON_LEFT:
 		pass
 	if mouse_button_index==MOUSE_BUTTON_RIGHT:
