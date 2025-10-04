@@ -19,6 +19,12 @@ func _init(oldObject:meshEditMode=null)->void:
 	editingPlane=oldObject.editingPlane
 	referenceFace=oldObject.referenceFace
 
+func localNormal()->Vector3:
+	return editingNormal*editingObject.global_basis.get_rotation_quaternion()
+func  localPos()->Vector3:
+	return editingNormal*editingObject.global_basis.get_rotation_quaternion()+editingObject.global_position
+
+
 ## clears all data so that you dont retain info from previous selections
 func clearData(clearObject:bool=false)->void:
 	if clearObject:editingObject=null
@@ -35,8 +41,8 @@ func updateEditingObject(object:ObjectModel)->void:
 
 ## updates the selected face we will use for the edit direction and location info
 func updateSelectedCleanFace(cleanFace:objectMeshModel.cleanedFace)->void:
-	editingNormal=cleanFace.getNormal()*editingObject.global_basis.get_rotation_quaternion()
-	editingOrigin=cleanFace.getCenter()+editingObject.global_position
+	editingNormal=cleanFace.getNormal()
+	editingOrigin=cleanFace.getCenter()
 	referenceFace=cleanFace
 	updatePlane()
 
@@ -46,16 +52,16 @@ func updateSelectedFaceSet(faces:Array[objectMeshModel.meshFace])->void:
 
 
 
-func updatePlane()->void:editingPlane=Plane(editingNormal,editingOrigin)
+func updatePlane()->void:editingPlane=Plane(localNormal(),localPos())
 
 ## returns  the plane we are editing along
 func getEditingPlane()->Plane:return editingPlane
 
 ## gets a point along a line segment
-func getPointAlongLine(from:Vector3,lineLength:float)->Vector3:return Geometry3D.get_closest_point_to_segment(from,editingOrigin,editingOrigin+editingNormal*lineLength)
+func getPointAlongLine(from:Vector3,lineLength:float)->Vector3:return Geometry3D.get_closest_point_to_segment(from,localPos(),localPos()+localNormal()*lineLength)
 
 ## gets a point along a line's axis without a capped start or end position
-func getPointAlongRay(from:Vector3)->Vector3:return Geometry3D.get_closest_point_to_segment_uncapped(from,editingOrigin,editingOrigin+editingNormal)
+func getPointAlongRay(from:Vector3)->Vector3:return Geometry3D.get_closest_point_to_segment_uncapped(from,localPos(),localPos()+localNormal())
 
 ## gets the point on a ray that intersects the editing plane
 func castRayOnPlane(from:Vector3,along:Vector3)->Vector3:

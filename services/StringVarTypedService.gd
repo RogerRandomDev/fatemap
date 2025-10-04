@@ -5,13 +5,13 @@ class_name StringVarTypedService
 static func toVar(input:String,mapType:String)->Variant:
 	mapType=mapType.to_lower()
 	match mapType:
-		"string":
+		"text":
 			return input
-		"bool":
+		"boolean":
 			return input.to_lower().strip_edges()==&"true"
 		"float":
 			return float(input.strip_edges())
-		"int":
+		"integer":
 			return int(input.strip_edges())
 		"vector2":
 			var splitNums = input.split(" ",false)

@@ -127,6 +127,18 @@ class editingMesh extends Resource:
 		for positionID in editingPositionIDs.keys():
 			mesh.positionIDs[positionID]=(mesh.positionIDs[positionID]+translateBy)
 	
+	func centerMesh()->void:
+		var aabb=AABB(mesh.positionIDs.values()[0],Vector3.ZERO)
+		for vertex in mesh.positionIDs.values():
+			aabb.position=aabb.position.min(vertex)
+			aabb.size=aabb.size.max(vertex)
+		aabb.size-=aabb.position
+		for vertex in mesh.positionIDs:
+			mesh.positionIDs[vertex]-=aabb.get_center()
+		meshObject.get_parent().position+=aabb.get_center()*meshObject.global_basis.get_rotation_quaternion().inverse()
+		mesh.globalTransform.origin-=aabb.get_center()
+		meshObject.get_parent().notification(Node3D.NOTIFICATION_TRANSFORM_CHANGED)
+	
 	func snapSelectedToGrid()->void:
 		if selectedVertices.size()==0:return
 		var editingPositionIDs={}

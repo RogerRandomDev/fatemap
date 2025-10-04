@@ -2,6 +2,7 @@ extends VBoxContainer
 class_name ParameterTab
 
 var tree:Tree=Tree.new()
+var editingResource:ObjectDataResource
 
 func _ready() -> void:
 	size_flags_vertical=Control.SIZE_EXPAND_FILL
@@ -21,6 +22,7 @@ func setupTree()->void:
 	
 
 func loadContents(contents:ObjectDataResource)->void:
+	editingResource=contents
 	tree.clear()
 	var rootItem=tree.create_item()
 	if contents==null:return
@@ -44,8 +46,17 @@ func loadContents(contents:ObjectDataResource)->void:
 
 func parameterEdited()->void:
 	var editedItem:TreeItem=tree.get_edited()
-	var editedParam:String=editedItem.get_text(0)
+	var editedParam:String=editedItem.get_metadata(0)
 	if editedItem.get_cell_mode(1)==TreeItem.CELL_MODE_CUSTOM:return
+	#actually sets the new data into the object
+	editingResource.setInstance(
+		editedParam,
+		StringVarTypedService.toVar(
+			editedItem.get_text(1),editedItem.get_metadata(1)
+		)
+	)
+	
+	
 
 func customEdited(mouse_button_index: int)->void:
 	var editedItem:TreeItem=tree.get_edited()

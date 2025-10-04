@@ -31,21 +31,21 @@ func updateMeshSelection()->void:
 	match(editMode):
 		MeshEditService.MeshEditMode.FACE:
 			for index in MeshEditService.editing.mesh.cleanedFaces:
-				var pointAt=index.getCenter()+MeshEditService.editing.meshObject.global_transform.origin
+				var pointAt=index.getCenter()*MeshEditService.editing.meshObject.mesh.globalTransform.basis*MeshEditService.editing.meshObject.global_transform.basis.inverse()+MeshEditService.editing.meshObject.global_transform.origin
 				renderPoints[pointAt]=index
 				renderPointFaces.push_back(index.faces)
 		MeshEditService.MeshEditMode.EDGE:
 			var cleanEdges=MeshEditService.editing.mesh.getTrueCleanEdges()
 			renderPoints={}
 			for edge in cleanEdges:
-				var pointAt=edge.getCenter()+MeshEditService.editing.meshObject.global_transform.origin
+				var pointAt=edge.getCenter()*MeshEditService.editing.meshObject.mesh.globalTransform.basis+MeshEditService.editing.meshObject.global_transform.origin
 				renderPoints[pointAt]=edge.edges[0]
 				renderPointEdges.push_back(edge)
 		MeshEditService.MeshEditMode.VERTEX:
 			var cleanVertices=MeshEditService.editing.mesh.getCleanVertices()
 			renderPoints={}
 			for vertex in cleanVertices:
-				var pointAt=vertex.position+MeshEditService.editing.meshObject.global_transform.origin
+				var pointAt=vertex.position*MeshEditService.editing.meshObject.mesh.globalTransform.basis+MeshEditService.editing.meshObject.global_transform.origin
 				renderPoints[pointAt]=vertex.vertices[0]
 				renderPointVertices.push_back(vertex)
 	updateEditPointRender()
@@ -142,7 +142,10 @@ func _get_snapped_direction(forward: Vector3) -> Vector3:
 func moveSelection(moveBy:Vector3,local:bool=true)->void:
 	if not MeshEditService.isEditing():return
 	moveBy*=ParameterService.getParam(&"snapDistance")
-	if MeshEditService.editing.selectedVertices.size()==0:MeshEditService.editing.dataObject.position+=moveBy
+	if MeshEditService.editing.selectedVertices.size()==0:
+		MeshEditService.editing.dataObject.position+=moveBy
+		if MeshEditService.editing.dataObject.has_method("transformed"):
+			MeshEditService.editing.dataObject.call("transformed")
 	MeshEditService.editing.translateSelection(moveBy,local)
 	MeshEditService.editing.mesh.rebuild(false)
 	PhysicalObjectService.updatePickableArea(MeshEditService.editing.dataObject)

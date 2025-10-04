@@ -4,12 +4,12 @@ class_name alongFaceNormal
 
 
 func updatePlane()->void:
-	var cameraDirection=editingOrigin.direction_to(camera.global_position)
+	var cameraDirection=localPos().direction_to(camera.global_position)
 	#we cut the ability of the plane to look at the normal of the face
 	#so it always intersects the normal ray along the axis
-	var planeNormal=cameraDirection-(cameraDirection*editingNormal.abs())
+	var planeNormal=cameraDirection-(cameraDirection*localNormal().abs())
 	planeNormal=planeNormal.normalized()
-	editingPlane=Plane(planeNormal,editingOrigin)
+	editingPlane=Plane(planeNormal,localPos())
 
 func getTargetFromMouse(mousePosition:Vector2)->Vector3:
 	var projectedOrigin:Vector3=camera.project_ray_origin(mousePosition)
@@ -27,10 +27,11 @@ func updateSelectionLocation(mousePosition:Vector2)->void:
 	#snap the slide location and push it back onto the ray afterwards
 	#targetSlideLocation=getPointAlongRay(targetSlideLocation.snappedf(ParameterService.getParam(&"snapDistance")))
 	
-	var currentEditLocation=referenceFace.getCenter()+editingObject.global_position
+	var currentEditLocation=referenceFace.getCenter()*editingObject.global_transform.basis.get_rotation_quaternion().inverse()+editingObject.global_position
 	
 	var slideBy=(targetSlideLocation-currentEditLocation)
 	slideBy=slideBy.normalized()*snappedf(slideBy.length(),ParameterService.getParam(&"snapDistance"))
-	
-	MeshEditService.editing.translateSelection(slideBy,false)
+	#slideBy*=editingObject.global_transform.basis.get_rotation_quaternion()
+	MeshEditService.editing.translateSelection(slideBy,true)
+	MeshEditService.editing.centerMesh()
 	editingMesh.rebuild()

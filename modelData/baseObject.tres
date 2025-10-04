@@ -4,9 +4,17 @@
 
 [resource]
 script = ExtResource("1_eov51")
-parameterCount = 1
-parameter_0/name = "rotation"
-parameter_0/description = "rotation of the object"
-parameter_0/type = "Vector3"
-parameter_0/value = Vector3(0, 0, 0)
+parameterCount = 3
+parameter_0/name = "positionRelativeToWorld"
+parameter_0/description = "aligns UV mapping relative to world"
+parameter_0/type = "Boolean"
+parameter_0/value = false
+parameter_1/name = "rotationRelativeToWorld"
+parameter_1/description = "aligns UV mapping relative to world"
+parameter_1/type = "Boolean"
+parameter_1/value = false
+parameter_2/name = "rotation_degrees"
+parameter_2/description = "rotation of the mesh in the world"
+parameter_2/type = "Vector3"
+parameter_2/value = null
 metadata/_custom_type_script = "uid://dmuurymqm5l"

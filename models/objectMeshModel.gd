@@ -288,7 +288,7 @@ class meshVertex extends RefCounted:
 			# Z is dominant project onto XY plane
 			axis_u = Vector3.RIGHT   # X
 			axis_v = Vector3.DOWN     # Y
-		var globalPos=_mesh.globalTransform.origin+position*_mesh.globalTransform.basis
+		var globalPos=position*_mesh.globalTransform.basis.get_rotation_quaternion()-_mesh.globalTransform.origin
 		uv=Vector2(globalPos.dot(axis_u),globalPos.dot(axis_v))
 		return uv
 	

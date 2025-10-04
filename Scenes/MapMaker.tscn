@@ -1,4 +1,4 @@
-[gd_scene load_steps=28 format=3 uid="uid://gq185wjg7pqu"]
+[gd_scene load_steps=29 format=3 uid="uid://gq185wjg7pqu"]
 
 [ext_resource type="Script" uid="uid://ctkdd8bryxxtr" path="res://Scenes/MapMaker/mapMaker.gd" id="1_cyx2k"]
 [ext_resource type="Theme" uid="uid://8cjq1xuuwswd" path="res://Scenes/MapMakerTheme.tres" id="1_ni7vo"]
@@ -8,6 +8,7 @@
 [ext_resource type="Script" uid="uid://dlyp3vs6kb3fw" path="res://Scenes/MapMaker/selectedFaceHighlighter.gd" id="6_04lqo"]
 [ext_resource type="Script" uid="uid://c53roq0p2neow" path="res://Scenes/MapMaker/toolbarMeshSelections.gd" id="6_ni25v"]
 [ext_resource type="Script" uid="uid://d2wj0xfk5yf0o" path="res://Scenes/MapMaker/WorldGrid.gd" id="7_6lnv8"]
+[ext_resource type="Script" uid="uid://5opik8fjlvc3" path="res://models/specializedCylinderMesh.gd" id="7_54ncs"]
 [ext_resource type="Script" uid="uid://cny0xd3e8lnt0" path="res://Scenes/MapMaker/ToolBarContents.gd" id="7_cn52i"]
 [ext_resource type="Script" uid="uid://bwfu3qiinbjdw" path="res://Scenes/MapMaker/WorldInteractions/EditPoints.gd" id="7_ni25v"]
 [ext_resource type="Shader" uid="uid://bi36atq3uupmr" path="res://Scenes/EditGrabPoint.gdshader" id="7_qtfr5"]
@@ -20,10 +21,13 @@
 
 [sub_resource type="BoxMesh" id="BoxMesh_ni25v"]
 
-[sub_resource type="CylinderMesh" id="CylinderMesh_bgu1o"]
-height = 1.0
-radial_segments = 8
-rings = 0
+[sub_resource type="ArrayMesh" id="ArrayMesh_ajyq3"]
+script = ExtResource("7_54ncs")
+sides = 8
+halfRot = false
+radius = 1.0
+height = 0.125
+metadata/_custom_type_script = "uid://5opik8fjlvc3"
 
 [sub_resource type="PrismMesh" id="PrismMesh_ysyqw"]
 
@@ -85,7 +89,7 @@ script = ExtResource("11_6lnv8")
 script = ExtResource("6_ni25v")
 selectorItems = {
 "Box": SubResource("BoxMesh_ni25v"),
-"Cylinder": SubResource("CylinderMesh_bgu1o"),
+"Cylinder": SubResource("ArrayMesh_ajyq3"),
 "Prism": SubResource("PrismMesh_ysyqw"),
 "Sphere": SubResource("SphereMesh_54ncs")
 }

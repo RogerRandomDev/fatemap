@@ -56,7 +56,7 @@ func loadExampleMesh()->void:
 	match highlightMesh.get_class():
 		"BoxMesh":
 			highlightMesh.size.y=ParameterService.getParam(&"snapDistance")
-		"CylinderMesh":
+		"ArrayMesh":
 			highlightMesh.height=ParameterService.getParam(&"snapDistance")
 	
 	highlight.mesh=highlightMesh
@@ -72,7 +72,7 @@ func updateExampleMesh()->void:
 		"BoxMesh":
 			highlight.mesh.size.x=editSize.x
 			highlight.mesh.size.z=editSize.z
-		"CylinderMesh":
+		"ArrayMesh":
 			var scaleAxis=editSize
 			highlight.scale=Vector3(scaleAxis.x,1,scaleAxis.z)
 			highlight.scale.y=1
@@ -84,7 +84,10 @@ func updateExampleMesh()->void:
 	#we make the outline edges into a mesh as well
 	#it helps with making it easier to see it
 	var m = ArrayMesh.new()
-	m.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,highlight.mesh.get_mesh_arrays())
+	if not highlight.mesh is ArrayMesh:
+		m.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,highlight.mesh.get_mesh_arrays())
+	else:
+		m = highlight.mesh
 	var dt:MeshDataTool=MeshDataTool.new()
 	dt.create_from_surface(m,0)
 	var st:=SurfaceTool.new()
@@ -115,8 +118,9 @@ func finalizeMesh()->void:
 	m.clear_surfaces()
 	dt.commit_to_surface(m)
 	data.mesh=m
+	
 	obj.objectData=data
 	get_parent().get_parent().get_node("PlacedObjects").add_child(obj)
 	obj.global_position=highlight.global_position
-	
+	(obj.get_node("MESH_OBJECT").mesh as objectMeshModel).globalTransform.origin=-obj.global_transform.origin
 	

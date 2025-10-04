@@ -24,6 +24,7 @@ var inheritedTags:PackedStringArray=[]
 
 var baseTags:PackedStringArray=[]
 
+signal parameterChanged(parameter:StringName,value:Variant)
 
 
 func getTagDefaults(includeInherited:bool=true)->PackedStringArray:
@@ -103,6 +104,17 @@ func updateInheritedParameters(skip_notify:bool=false)->void:
 #endregion
 
 #region custom property manager
+func findParam(param:StringName)->Variant:
+	var index:int=parameterNames.find(param)
+	if index!=-1:
+		return {
+			"name":parameterNames[index],
+			"type":parameterTypes[index],
+			"value":parameterValues[index],
+			"description":parameterDescriptions[index]
+		}
+	return {} if inheritedData==null else inheritedData.findParam(param)
+
 ## Converts the [param property] to the correlated parameter data section.[br]
 ## See [method getInheritedParameter] for parameters from [member inheritedData]
 func getOwnParameter(property: StringName):
@@ -131,6 +143,7 @@ func getInheritedParameter(property:StringName):
 			return inheritedParameterValues[index]
 		"source":
 			return inheritedParameterSource[index]
+	return null
 ## Gets the property list for editor view of [member inheritedData] object parameters.[br]
 ## See [member getCustomPropertyList] for parameters from Self.
 func getInheritedPropertyList() -> Array[Dictionary]:
@@ -253,4 +266,40 @@ func _get_property_list() -> Array[Dictionary]:
 	properties.append_array(getCustomPropertyList())
 	
 	return properties
+#endregion
+
+#region instance set/get management
+func setInstance(parameter:String,value:Variant)->void:
+	var index:int=parameterNames.find(parameter)
+	var inheritedParam=inheritedData.findParam(parameter)
+	#inherited and matching new value
+	if inheritedParam==null:return
+	if inheritedParam.value==value and index!=-1:
+		parameterNames.remove_at(index)
+		parameterTypes.remove_at(index)
+		parameterDescriptions.remove_at(index)
+		parameterValues.remove_at(index)
+	if inheritedParam.value!=value and inheritedParam!=null:
+		if index==-1:
+			parameterNames.push_back(parameter)
+			parameterTypes.push_back(inheritedParam.type)
+			parameterDescriptions.push_back(
+				"custom parameter" if inheritedParam == null else inheritedParam.description
+			)
+			parameterValues.push_back(value)
+		else:
+			parameterValues[index]=value
+	parameterChanged.emit(parameter,value)
+
+func addInstanceParam(parameter:String,value:Variant,type:String)->void:
+	var index:int=parameterNames.find(parameter)
+	var inheritedParam=inheritedData.findParam(parameter)
+	if index!=-1:return
+	parameterNames.push_back(parameter)
+	parameterTypes.push_back(type)
+	parameterDescriptions.push_back(
+		"custom parameter" if inheritedParam == null else inheritedParam.description
+	)
+	parameterValues.push_back(value)
+
 #endregion
