@@ -20,9 +20,9 @@ func _init(oldObject:meshEditMode=null)->void:
 	referenceFace=oldObject.referenceFace
 
 func localNormal()->Vector3:
-	return editingNormal*editingObject.global_basis.get_rotation_quaternion()
+	return editingNormal*editingObject.global_basis.get_rotation_quaternion().inverse()
 func  localPos()->Vector3:
-	return editingNormal*editingObject.global_basis.get_rotation_quaternion()+editingObject.global_position
+	return editingOrigin*editingObject.global_basis.get_rotation_quaternion().inverse()+editingObject.global_position
 
 
 ## clears all data so that you dont retain info from previous selections

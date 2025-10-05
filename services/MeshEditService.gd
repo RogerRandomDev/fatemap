@@ -18,11 +18,17 @@ static func setEditing(object:ObjectModel)->void:
 		return
 	var mesh=object.get_node_or_null("MESH_OBJECT")
 	if editing and editing.meshObject==mesh:return
+	
 	editor=alongFaceNormal.new();editor.camera=object.get_viewport().get_camera_3d()
 	editor.updateEditingObject(object)
 	
 	editing=editingMesh.new(object,mesh)
+	
+	
 	editing.mesh.preloadCleanFaces()
+
+static func getEditing():
+	return editing
 
 static func isEditing()->bool:return editing!=null
 
@@ -55,6 +61,7 @@ class editingMesh extends Resource:
 		dataObject=data
 		meshObject=meshInst
 	
+	
 	##initialize info to begin altering the mesh
 	func beginEdit(commitPast:bool=true)->void:
 		if editing:
@@ -68,10 +75,11 @@ class editingMesh extends Resource:
 		editing=true
 	
 	##clears selected arrays
-	func clearSelections()->void:
+	func clearSelections(_ignoreChange:bool=true)->void:
 		selectedFaces=[]
 		selectedEdges=[]
 		selectedVertices=[]
+		
 	
 	func deselectVertex(vertex:objectMeshModel.meshVertex)->void:
 		if not selectedVertices.has(vertex):return
@@ -84,6 +92,12 @@ class editingMesh extends Resource:
 		if not selectedFaces.has(face):return
 		selectedFaces.erase(face)
 		for edge in face.edges:deselectEdge(edge)
+	
+	func deselect(meshPart)->void:
+		if meshPart is objectMeshModel.meshVertex:deselectVertex(meshPart)
+		if meshPart is objectMeshModel.meshEdge:deselectEdge(meshPart)
+		if meshPart is objectMeshModel.meshFace:deselectFace(meshPart)
+		if meshPart is objectMeshModel.cleanedFace:for face in meshPart.faces:deselectFace(face)
 	
 	func selectVertex(vertex:objectMeshModel.meshVertex,toggleSelected:bool=false)->void:
 		if not mesh.vertices.has(vertex):return
@@ -108,7 +122,31 @@ class editingMesh extends Resource:
 		if meshPart is objectMeshModel.meshFace:selectFace(meshPart,toggleSelected)
 		if meshPart is objectMeshModel.cleanedFace:for face in meshPart.faces:selectFace(face,toggleSelected)
 	
-	
+	func updateSelectionTracked(ignore:bool=false)->void:
+		var changes=meshObject.mesh.updateSelection(
+			selectedVertices,selectedEdges,selectedFaces
+		)
+		if ignore:return
+		#we changed
+		if changes.values().any(func(v):return v.any(func(e):return e.size()>0)):
+			loadSelectionUndoRedo(changes)
+	func loadSelectionUndoRedo(changes:Dictionary)->void:
+		UndoRedoService.startAction(&"SelectMeshParts")
+		UndoRedoService.addDo(func():
+			var newEdit=MeshEditService.getEditing()
+			for i in 3:for selectable in changes[&"added"][i]:newEdit.select(selectable,false)
+			for i in 3:for selectable in changes[&"removed"][i]:newEdit.deselect(selectable)
+			newEdit.updateSelectionTracked(true)
+			signalService.emitSignal(&"meshSelectionChanged")
+			)
+		UndoRedoService.addUndo(func():
+			var newEdit=MeshEditService.getEditing()
+			for i in 3:for selectable in changes[&"added"][i]:newEdit.deselect(selectable)
+			for i in 3:for selectable in changes[&"removed"][i]:newEdit.select(selectable,false)
+			newEdit.updateSelectionTracked(true)
+			signalService.emitSignal(&"meshSelectionChanged")
+		)
+		UndoRedoService.commitAction()
 	
 	##obtains any face and connected vertex using info from clicking on the object
 	func selectByClickInfo(normal:Vector3,hitPosition:Vector3=Vector3.ZERO,keep:bool=false)->Array[objectMeshModel.meshFace]:
@@ -166,4 +204,3 @@ class editingMesh extends Resource:
 		
 		for face in selectedFaces:
 			face.setSurfaceMaterial(material)
-	

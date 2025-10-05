@@ -14,6 +14,7 @@ var cleanedFaces:Array[cleanedFace]=[]
 var cleanedEdges:Array[cleanedEdge]=[]
 var cleanedVertices:Array[cleanedVertex]=[]
 
+var trackedSelection:SelectionInfo=SelectionInfo.new([],[],[])
 
 const projectionAxis:PackedVector3Array=[
 	
@@ -227,7 +228,14 @@ func cleanZeroSurfaceFaces()->void:
 		if face.edges.any(func(edge):return edge.isZeroLength()):
 			face.remove()
 
-
+## updates the current selection indexing
+func updateSelection(_vertices,_edges,_faces,ignoreChange:bool=false)->Dictionary:
+	if ignoreChange:
+		trackedSelection.update(_vertices,_edges,_faces)
+		return {}
+	var changes = trackedSelection.getChanges(_vertices,_edges,_faces)
+	return changes
+	
 
 class meshVertex extends RefCounted:
 	var positionID:int
@@ -517,4 +525,59 @@ class cleanedFace extends cleanedVertexObject:
 			face.vertices[1].position,
 			face.vertices[2].position)
 		)
+	
+
+##used  for tracking selected faces/edges/vertices
+class SelectionInfo extends RefCounted:
+	var faces:Array
+	var edges:Array
+	var vertices:Array
+	
+	func _init(_vertices,_edges,_faces)->void:
+		faces=_faces
+		edges=_edges
+		vertices=_vertices
+	
+	func update(_vertices,_edges,_faces)->void:
+		faces=_faces
+		edges=_edges
+		vertices=_vertices
+	## returns a dictionary containing "added" and "removed" with
+	## the changed faces/edges/vertices
+	func getChanges(_vertices,_edges,_faces) -> Dictionary:
+		var changes:Dictionary={
+			&"added":[[],[],[]],
+			&"removed":[[],[],[]]
+			}
+		# we build lists of what vertices we care about right now
+		var fullVertexList={}
+		var fullEdgeList={}
+		var fullFaceList={}
+		_vertices.map(func(f):fullVertexList[f]=null)
+		vertices.map(func(f):fullVertexList[f]=null)
+		_edges.map(func(f):fullEdgeList[f]=null)
+		edges.map(func(f):fullEdgeList[f]=null)
+		_faces.map(func(f):fullFaceList[f]=null)
+		faces.map(func(f):fullFaceList[f]=null)
+		#we now check if it is in both or has changed
+		for vert in fullVertexList.keys():
+			var inSet=[_vertices.has(vert),vertices.has(vert)]
+			if inSet[0]&&inSet[1]:continue
+			if(inSet[0]):changes[&"added"][0].push_back(vert)
+			if(inSet[1]):changes[&"removed"][0].push_back(vert)
+		for edge in fullEdgeList.keys():
+			var inSet=[_edges.has(edge),edges.has(edge)]
+			if inSet[0]&&inSet[1]:continue
+			if(inSet[0]):changes[&"added"][1].push_back(edge)
+			if(inSet[1]):changes[&"removed"][1].push_back(edge)
+		for face in fullFaceList.keys():
+			var inSet=[_faces.has(face),faces.has(face)]
+			if inSet[0]&&inSet[1]:continue
+			if(inSet[0]):changes[&"added"][2].push_back(face)
+			if(inSet[1]):changes[&"removed"][2].push_back(face)
+		vertices=_vertices
+		edges=_edges
+		faces=_faces
+		
+		return changes
 	

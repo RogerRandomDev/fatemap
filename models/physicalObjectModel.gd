@@ -7,8 +7,14 @@ var objectData:ObjectPhysicalDataResource:
 		objectData=v
 	get:return objectData
 
-var positionRelativeToWorld:bool=false
-var rotationRelativeToWorld:bool=false
+var positionRelativeToWorld:bool=false:
+	set(v):
+		positionRelativeToWorld=v
+		transformed()
+var rotationRelativeToWorld:bool=false:
+	set(v):
+		rotationRelativeToWorld=v
+		transformed()
 
 
 func _ready() -> void:

@@ -1,4 +1,4 @@
-[gd_scene load_steps=29 format=3 uid="uid://gq185wjg7pqu"]
+[gd_scene load_steps=29 format=4 uid="uid://gq185wjg7pqu"]
 
 [ext_resource type="Script" uid="uid://ctkdd8bryxxtr" path="res://Scenes/MapMaker/mapMaker.gd" id="1_cyx2k"]
 [ext_resource type="Theme" uid="uid://8cjq1xuuwswd" path="res://Scenes/MapMakerTheme.tres" id="1_ni7vo"]
@@ -22,6 +22,16 @@
 [sub_resource type="BoxMesh" id="BoxMesh_ni25v"]
 
 [sub_resource type="ArrayMesh" id="ArrayMesh_ajyq3"]
+_surfaces = [{
+"aabb": AABB(-0.5, -0.0625, -0.5, 1, 0.125, 1),
+"format": 34359742465,
+"index_count": 96,
+"index_data": PackedByteArray("AAABAAIAAQADAAIABAABAAAABQACAAMAAQAGAAMABgAHAAMABAAGAAEABQADAAcABgAIAAcACAAJAAcABAAIAAYABQAHAAkACAAKAAkACgALAAkABAAKAAgABQAJAAsACgAMAAsADAANAAsABAAMAAoABQALAA0ADAAOAA0ADgAPAA0ABAAOAAwABQANAA8ADgAQAA8AEAARAA8ABAAQAA4ABQAPABEAEAAAABEAAAACABEABAAAABAABQARAAIA"),
+"primitive": 3,
+"uv_scale": Vector4(0, 0, 0, 0),
+"vertex_count": 18,
+"vertex_data": PackedByteArray("AAAAPwAAgD0AAAAADwu1PgAAgD0PC7W+AAAAPwAAgL0AAAAADwu1PgAAgL0PC7W+AAAAAAAAgD0AAAAAAAAAAAAAgL0AAAAAAAAAAAAAgD0AAAC/AAAAAAAAgL0AAAC/Dwu1vgAAgD0PC7W+Dwu1vgAAgL0PC7W+AAAAvwAAgD0AAAAAAAAAvwAAgL0AAAAADwu1vgAAgD0PC7U+Dwu1vgAAgL0PC7U+AAAAAAAAgD0AAAA/AAAAAAAAgL0AAAA/Dwu1PgAAgD0PC7U+Dwu1PgAAgL0PC7U+")
+}]
 script = ExtResource("7_54ncs")
 sides = 8
 halfRot = false

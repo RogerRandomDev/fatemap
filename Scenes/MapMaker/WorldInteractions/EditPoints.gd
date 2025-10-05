@@ -21,6 +21,7 @@ func _ready() -> void:
 	multimesh=get_child(0)
 
 func updateMeshSelection()->void:
+	multimesh.visible=not InputService.pressed(&"CreateMesh")
 	renderPoints={}
 	renderPointVertices=[]
 	renderPointEdges=[]
@@ -33,21 +34,21 @@ func updateMeshSelection()->void:
 	match(editMode):
 		MeshEditService.MeshEditMode.FACE:
 			for index in MeshEditService.editing.mesh.cleanedFaces:
-				var pointAt=index.getCenter()*MeshEditService.editing.meshObject.mesh.globalTransform.basis*MeshEditService.editing.meshObject.global_transform.basis.inverse()+MeshEditService.editing.meshObject.global_transform.origin
+				var pointAt=index.getCenter()*MeshEditService.editing.meshObject.global_transform.basis.inverse()+MeshEditService.editing.meshObject.global_transform.origin
 				renderPoints[pointAt]=index
 				renderPointFaces.push_back(index.faces)
 		MeshEditService.MeshEditMode.EDGE:
 			var cleanEdges=MeshEditService.editing.mesh.getTrueCleanEdges()
 			renderPoints={}
 			for edge in cleanEdges:
-				var pointAt=edge.getCenter()*MeshEditService.editing.meshObject.mesh.globalTransform.basis+MeshEditService.editing.meshObject.global_transform.origin
+				var pointAt=edge.getCenter()+MeshEditService.editing.meshObject.global_transform.origin
 				renderPoints[pointAt]=edge.edges[0]
 				renderPointEdges.push_back(edge)
 		MeshEditService.MeshEditMode.VERTEX:
 			var cleanVertices=MeshEditService.editing.mesh.getCleanVertices()
 			renderPoints={}
 			for vertex in cleanVertices:
-				var pointAt=vertex.position*MeshEditService.editing.meshObject.mesh.globalTransform.basis+MeshEditService.editing.meshObject.global_transform.origin
+				var pointAt=vertex.position+MeshEditService.editing.meshObject.global_transform.origin
 				renderPoints[pointAt]=vertex.vertices[0]
 				renderPointVertices.push_back(vertex)
 	updateEditPointRender()
@@ -98,6 +99,7 @@ func _handle_mouse_drag(event: InputEventMouseMotion) -> bool:
 		
 		if MeshEditService.editing.selectedFaces.size() == 0:return false
 		MeshEditService.editor.updateSelectionLocation(holder.get_local_mouse_position())
+		MeshEditService.editing.dataObject.call("transformed")
 		PhysicalObjectService.updatePickableArea(MeshEditService.editor.editingObject)
 		signalService.emitSignal(&"meshSelectionChanged")
 		return true
@@ -111,7 +113,9 @@ func _handle_mouse_click(event: InputEventMouseButton) -> bool:
 	if  event is InputEventMouseButton:get_tree().root.gui_release_focus()
 	
 	if MeshEditService.isEditing() and InputService.pressed(&"MouseLeft"):
-		if InputService.pressed(&"CreateMesh"):return false
+		if InputService.pressed(&"CreateMesh"):
+			MeshEditService.editing.updateSelectionTracked()
+			return false
 		if not InputService.pressed(&"SelectMultiple"):
 			MeshEditService.editing.clearSelections()
 			signalService.emitSignal(&"meshSelectionChanged")
@@ -119,8 +123,10 @@ func _handle_mouse_click(event: InputEventMouseButton) -> bool:
 			get_viewport().set_input_as_handled()
 			signalService.emitSignal(&"meshSelectionChanged")
 			dragSafe=true
+			MeshEditService.editing.updateSelectionTracked()
 			return true
 		else:
+			MeshEditService.editing.updateSelectionTracked()
 			dragSafe=false
 			
 	return false
