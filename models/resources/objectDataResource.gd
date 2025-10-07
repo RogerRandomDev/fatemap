@@ -24,6 +24,9 @@ var inheritedTags:PackedStringArray=[]
 
 var baseTags:PackedStringArray=[]
 
+var owner:Object=null
+
+
 signal parameterChanged(parameter:StringName,value:Variant)
 
 
@@ -269,6 +272,26 @@ func _get_property_list() -> Array[Dictionary]:
 #endregion
 
 #region instance set/get management
+func hasUndoRedoParams(parameter:String)->bool:
+	return owner!=null and owner.get("_undo_%s"%parameter)!=null
+
+#these two handle logic for special variables
+#mainly used for transform tracking in undo redo but
+#they might be useful for more
+func getUndoRedoParamValue(parameter:String)->Variant:
+	if owner==null:return null
+	return owner.get("_undo_%s"%parameter)
+func setUndoRedoParamValue(parameter:String,value:Variant)->void:
+	if owner==null:return
+	owner.set("_undo_%s"%parameter,value)
+
+
+func getInstance(parameter:String)->Variant:
+	var index:int=parameterNames.find(parameter)
+	var inheritedParam=inheritedData.findParam(parameter)
+	if index==-1:return null if inheritedParam==null else inheritedParam.value
+	return parameterValues[index]
+
 func setInstance(parameter:String,value:Variant)->void:
 	var index:int=parameterNames.find(parameter)
 	var inheritedParam=inheritedData.findParam(parameter)

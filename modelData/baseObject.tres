@@ -16,5 +16,5 @@ parameter_1/value = false
 parameter_2/name = "rotation_degrees"
 parameter_2/description = "rotation of the mesh in the world"
 parameter_2/type = "Vector3"
-parameter_2/value = null
+parameter_2/value = Vector3(0, 0, 0)
 metadata/_custom_type_script = "uid://dmuurymqm5l"

@@ -174,7 +174,7 @@ class editingMesh extends Resource:
 		for vertex in mesh.positionIDs:
 			mesh.positionIDs[vertex]-=aabb.get_center()
 		meshObject.get_parent().position+=aabb.get_center()*meshObject.global_basis.get_rotation_quaternion().inverse()
-		mesh.globalTransform.origin-=aabb.get_center()
+		mesh.globalTransform.origin+=aabb.get_center()*meshObject.global_basis.get_rotation_quaternion().inverse()
 		meshObject.get_parent().notification(Node3D.NOTIFICATION_TRANSFORM_CHANGED)
 	
 	func snapSelectedToGrid()->void:
@@ -197,6 +197,11 @@ class editingMesh extends Resource:
 			#)
 		#*alongAxis[positionAlongAxis[i]].getQuaternion(positionID)
 		pass
+	
+	func setMaterialOnFaces(material:MaterialService.materialModel,faces:Array[objectMeshModel.meshFace])->void:
+		if faces.size()==0:return
+		for face in faces:
+			face.setSurfaceMaterial(material)
 	
 	func setMaterial(material:MaterialService.materialModel,setAllIfNoneActive:bool=false)->void:
 		if setAllIfNoneActive and selectedFaces.size()==0:

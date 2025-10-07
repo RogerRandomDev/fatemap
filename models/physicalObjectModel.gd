@@ -7,6 +7,20 @@ var objectData:ObjectPhysicalDataResource:
 		objectData=v
 	get:return objectData
 
+@warning_ignore("unused_private_class_variable")
+var _undo_positionRelativeToWorld:Variant=true:
+	set(v):
+		objectDisplay.mesh.globalTransform.origin=v
+		#transformed.call_deferred()
+	get:return objectDisplay.mesh.globalTransform.origin
+@warning_ignore("unused_private_class_variable")
+var _undo_rotationRelativeToWorld:Variant=true:
+	set(v):
+		objectDisplay.mesh.globalTransform.basis=Basis.from_euler(v)
+		#transformed.call_deferred()
+	get:return objectDisplay.mesh.globalTransform.basis.get_euler()
+
+
 var positionRelativeToWorld:bool=false:
 	set(v):
 		positionRelativeToWorld=v
@@ -17,8 +31,11 @@ var rotationRelativeToWorld:bool=false:
 		transformed()
 
 
+
+
 func _ready() -> void:
 	objectType=objectTypes.MESH
+	objectData.owner=self
 	objectDisplay=PhysicalObjectService.buildMesh(objectData,self)
 	PhysicalObjectService.buildPickableArea(objectData,self,objectDisplay)
 	for face in objectDisplay.mesh.faces:
@@ -30,7 +47,7 @@ func getData():return objectData
 
 func setObjectData(data)->void:
 	if objectData!=null:objectData.parameterChanged.disconnect(paramChanged)
-	
+	data.owner=self
 	data.parameterChanged.connect(self.paramChanged)
 
 func transformed()->void:
@@ -39,9 +56,9 @@ func transformed()->void:
 		global_position if positionRelativeToWorld else Vector3.ZERO
 	)
 	if positionRelativeToWorld:
-		(objectDisplay.mesh as objectMeshModel).globalTransform.origin=-meshTransform.origin
+		(objectDisplay.mesh as objectMeshModel).globalTransform.origin=meshTransform.origin
 	if rotationRelativeToWorld:
-		(objectDisplay.mesh as objectMeshModel).globalTransform.basis=meshTransform.basis.inverse()
+		(objectDisplay.mesh as objectMeshModel).globalTransform.basis=meshTransform.basis
 	(objectDisplay.mesh as objectMeshModel).rebuild()
 
 func paramChanged(param:StringName,value:Variant)->void:

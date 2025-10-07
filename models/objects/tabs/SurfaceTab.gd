@@ -70,7 +70,22 @@ func optionEvent(event:InputEvent,option)->void:
 	if not MeshEditService.isEditing():return
 	if not event is InputEventMouseButton:return
 	if event.button_index==MOUSE_BUTTON_LEFT and event.is_pressed():
-		MeshEditService.editing.setMaterial(option.myMaterial,true)
+		
+		var originalMaterials = MeshEditService.editing.mesh.trackedSelection.getMaterials()
+		UndoRedoService.startAction(&"SetMaterialsOnFaces")
+		for mat in originalMaterials:
+			var onFaces=originalMaterials[mat]
+			for face in onFaces:
+				UndoRedoService.addMethods(
+					face.setSurfaceMaterial.bind(option.myMaterial),
+					face.setSurfaceMaterial.bind(mat)
+				)
+		var rebuild = MeshEditService.editing.mesh.rebuild
+		UndoRedoService.addMethods(
+			func():rebuild.call_deferred(),
+			func():rebuild.call_deferred()
+		)
+		UndoRedoService.commitAction(true)
 		MeshEditService.editing.mesh.rebuild()
 
 func recursiveToggleContents(from:Control,enable:bool=true)->void:

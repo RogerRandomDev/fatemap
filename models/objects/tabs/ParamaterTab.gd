@@ -48,15 +48,57 @@ func parameterEdited()->void:
 	var editedItem:TreeItem=tree.get_edited()
 	var editedParam:String=editedItem.get_metadata(0)
 	if editedItem.get_cell_mode(1)==TreeItem.CELL_MODE_CUSTOM:return
+	var newValue=StringVarTypedService.toVar(
+		editedItem.get_text(1),editedItem.get_metadata(1)
+	)
+	var oldValue=editingResource.getInstance(editedParam)
+	if newValue==null:newValue=oldValue
+	editedItem.set_text(
+		1,
+		StringVarTypedService.toStr(newValue)
+	)
+	var undoRedoValueOld=editingResource.getUndoRedoParamValue(editedParam)
+	
 	#actually sets the new data into the object
 	editingResource.setInstance(
 		editedParam,
-		StringVarTypedService.toVar(
-			editedItem.get_text(1),editedItem.get_metadata(1)
-		)
+		newValue
 	)
-	
-	
+	if newValue==oldValue:return
+	await get_tree().process_frame
+	var undoRedoValueNew=editingResource.getUndoRedoParamValue(editedParam)
+	#only if we are a new changed value
+	UndoRedoService.startAction(&"ObjectParamChanged")
+	UndoRedoService.addMethods(
+		func():
+			editingResource.setUndoRedoParamValue(
+				editedParam,
+				undoRedoValueNew
+			)
+			editingResource.setInstance(
+				editedParam,
+				newValue
+			)
+			var checkOn=tree.get_root().get_child(0)
+			while checkOn!=null && checkOn.get_metadata(0)!=editedParam:
+				checkOn=checkOn.get_next()
+			if checkOn!=null:checkOn.set_text(1,StringVarTypedService.toStr(newValue))
+			,
+		func():
+			editingResource.setUndoRedoParamValue(
+				editedParam,
+				undoRedoValueOld
+			)
+			editingResource.setInstance(
+				editedParam,
+				oldValue
+			)
+			var checkOn=tree.get_root().get_child(0)
+			while checkOn!=null && checkOn.get_metadata(0)!=editedParam:
+				checkOn=checkOn.get_next()
+			if checkOn!=null:checkOn.set_text(1,StringVarTypedService.toStr(oldValue))
+	)
+	UndoRedoService.commitAction()
 
 func customEdited(mouse_button_index: int)->void:
 	var _editedItem:TreeItem=tree.get_edited()

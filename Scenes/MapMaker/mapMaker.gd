@@ -107,7 +107,7 @@ func loadViewContainer()->void:
 	viewportInternal.reference.update_minimum_size()
 	viewportInternal.reference.mouse_filter=Control.MOUSE_FILTER_IGNORE
 
-func _input(_event: InputEvent) -> void:
+func _process(_delta: float) -> void:
 	if InputService.pressed(&"RedoAction",true):
 		UndoRedoService.redo()
 	elif InputService.pressed(&"UndoAction",true):

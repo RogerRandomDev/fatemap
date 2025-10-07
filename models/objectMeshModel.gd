@@ -282,21 +282,24 @@ class meshVertex extends RefCounted:
 		#return normal
 	
 	func updateUV()->Vector2:
-		var abs_normal=normal.abs()
+		var rot_normal = (normal*_mesh.globalTransform.basis.get_rotation_quaternion())
+		var abs_normal=rot_normal.abs()
 		var axis_u;var axis_v
 		if abs_normal.x > abs_normal.y and abs_normal.x > abs_normal.z:
 			# X is dominant project onto YZ plane
-			axis_u = Vector3.BACK      # Y
+			axis_u = Vector3.BACK   # Y
 			axis_v = Vector3.DOWN    # Z
 		elif abs_normal.y > abs_normal.z:
 			# Y is dominant project onto XZ plane
-			axis_u = Vector3.RIGHT * sign(normal.y)  # X
-			axis_v = Vector3.BACK  # Z
+			axis_u = Vector3.RIGHT * sign(rot_normal.y)  # X
+			axis_v = Vector3.BACK    # Z
 		else:
 			# Z is dominant project onto XY plane
 			axis_u = Vector3.RIGHT   # X
 			axis_v = Vector3.DOWN     # Y
-		var globalPos=position*_mesh.globalTransform.basis.get_rotation_quaternion()-_mesh.globalTransform.origin
+		#axis_u*=_mesh.globalTransform.basis.get_rotation_quaternion()
+		#axis_v*=_mesh.globalTransform.basis.get_rotation_quaternion()
+		var globalPos=position*_mesh.globalTransform.basis.get_rotation_quaternion().inverse()+_mesh.globalTransform.origin
 		uv=Vector2(globalPos.dot(axis_u),globalPos.dot(axis_v))
 		return uv
 	
@@ -580,4 +583,12 @@ class SelectionInfo extends RefCounted:
 		faces=_faces
 		
 		return changes
+	
+	func getMaterials()->Dictionary:
+		var matBinds:Dictionary={}
+		for face in faces:
+			var matBound=matBinds.get_or_add(face.surfaceMaterial,[])
+			matBound.push_back(face)
+		
+		return matBinds
 	
