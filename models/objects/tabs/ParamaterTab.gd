@@ -2,12 +2,16 @@ extends VBoxContainer
 class_name ParameterTab
 
 var tree:Tree=Tree.new()
+
 var editingResource:ObjectDataResource
+
+
 
 func _ready() -> void:
 	size_flags_vertical=Control.SIZE_EXPAND_FILL
+	add_theme_constant_override("separation",2)
 	setupTree()
-	
+	setupParamCreationBar()
 
 func setupTree()->void:
 	tree.size_flags_vertical=Control.SIZE_EXPAND_FILL
@@ -19,7 +23,45 @@ func setupTree()->void:
 	tree.item_edited.connect(parameterEdited)
 	tree.custom_item_clicked.connect(customEdited)
 	add_child(tree)
+
+func setupParamCreationBar()->void:
+	GUIService.insertElement(
+		GUIService.createElement(
+			HBoxContainer.new(),
+			&"ParameterCreateBar",
+			[&"Parameter",&"Tool",&"Object"],
+			self
+	))
+	var nameLine:LineEdit=GUIService.insertElement(
+		GUIService.createElement(
+			LineEdit.new(),
+			&"ParameterCreateName",
+			[&"Parameter",&"Tool",&"Object",&"Name"],
+			&"ParameterCreateBar"
+	)).reference
+	var paramTypeDropdown:OptionButton=GUIService.insertElement(
+		GUIService.createElement(
+			OptionButton.new(),
+			&"ParameterCreateTypeSelect",
+			[&"Parameter",&"Tool",&"Object",&"Type"],
+			&"ParameterCreateBar"
+	)).reference
 	
+	for paramType in ObjectParameters.parameterTypeMap.keys():
+		paramTypeDropdown.add_item(paramType)
+	
+	nameLine.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	nameLine.tooltip_text=&"Parameter name"
+	nameLine.text_changed.connect(func(text:String):
+		var columnAt=nameLine.caret_column
+		if text.is_valid_ascii_identifier() || text.is_empty():
+			nameLine.text=text
+			nameLine.set_meta(&"LastValidText",text)
+		else:
+			nameLine.text=nameLine.get_meta(&"LastValidText",&"")
+			columnAt-=1
+		nameLine.caret_column=columnAt
+	)
 
 func loadContents(contents:ObjectDataResource)->void:
 	editingResource=contents
@@ -32,7 +74,7 @@ func loadContents(contents:ObjectDataResource)->void:
 		var parameterItem = rootItem.create_child()
 		parameterItem.set_text(
 			0,
-			value.name.to_snake_case().replace("_"," ").capitalize()
+			value.name
 			)
 			
 		parameterItem.set_metadata(0,value.name)

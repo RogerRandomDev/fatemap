@@ -49,17 +49,21 @@ func getParameterDefaults(includeDefaults:bool=true,includeInherited:bool=true,o
 			inheritedData.getParameterDefaults(includeDefaults,includeInherited)
 		)
 	for index in len(parameterNames):
-		#makes sure all parameter names are a unique value
-		if overrideMatchingNames:
-			var removeParamIndex=parameterList.find_custom(func(param):return param.name==parameterNames[index])
-			if removeParamIndex>-1:parameterList.remove_at(removeParamIndex)
-		
-		parameterList.push_back({
+		var paramDictionary={
 			"name":parameterNames[index],
 			"type":parameterTypes[index],
 			"value":parameterValues[index],
 			"description":parameterDescriptions[index]
-		})
+		}
+		
+		
+		#makes sure all parameter names are a unique value
+		if overrideMatchingNames:
+			var removeParamIndex=parameterList.find_custom(func(param):return param.name==parameterNames[index])
+			if removeParamIndex>-1:
+				parameterList[removeParamIndex]=paramDictionary
+				continue
+		parameterList.push_back(paramDictionary)
 	
 	
 	return parameterList

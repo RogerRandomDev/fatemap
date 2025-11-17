@@ -11,6 +11,7 @@ func _ready() -> void:
 	camera = get_viewport().get_camera_3d()
 
 func _input(event: InputEvent) -> void:
+	
 	eventData.update(event)
 	for child in get_children():
 		if not child._check_valid(event):continue
@@ -18,6 +19,11 @@ func _input(event: InputEvent) -> void:
 		if event is InputEventMouseButton and child._handle_mouse_click(event): return
 		if event is InputEventMouseMotion and child._handle_mouse_drag(event): return
 		if event is InputEventMouseButton and child._handle_outside_click_deselect(event): return
+
+func _gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton:
+		if get_tree().root.gui_get_focus_owner()==null:return
+		get_tree().root.gui_get_focus_owner().release_focus()
 
 
 func getClickedModel():

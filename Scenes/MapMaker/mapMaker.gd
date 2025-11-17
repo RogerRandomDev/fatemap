@@ -8,8 +8,6 @@ func _enter_tree() -> void:ServiceInitializer.initializeAllServices()
 func _ready() -> void:
 	loadGUILayout()
 	
-	signalService.addSignal(&"mapObjectSelected")
-	
 	PhysicalObjectInputController.initializeInputController()
 	
 	var mt=StandardMaterial3D.new()
@@ -25,6 +23,7 @@ func _ready() -> void:
 		mt,
 		load("res://icon.svg")
 	)
+	
 
 func loadGUILayout()->void:
 	loadToolBar()

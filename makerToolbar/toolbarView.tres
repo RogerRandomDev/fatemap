@@ -1,9 +1,9 @@
-[gd_resource type="Resource" script_class="guiDropdownResource" load_steps=3 format=3 uid="uid://dr25645qk8jbv"]
+[gd_resource type="Resource" script_class="guiDropdownResource" load_steps=4 format=3 uid="uid://dr25645qk8jbv"]
 
-[ext_resource type="Script" uid="uid://56abiotdxm3f" path="res://models/resources/guiDropdownResource.gd" id="1_eetcp"]
+[ext_resource type="Script" uid="uid://56abiotdxm3f" path="res://models/resources/guiDropdownResource.gd" id="1_ob8md"]
 
 [sub_resource type="Resource" id="Resource_eetcp"]
-script = ExtResource("1_eetcp")
+script = ExtResource("1_ob8md")
 option_count = 6
 option_0/name = "Default"
 option_0/type = "default"
@@ -37,11 +37,25 @@ option_5/value = &"SetDebugViewMode"
 option_5/param = "24"
 metadata/_custom_type_script = "uid://56abiotdxm3f"
 
-[resource]
-script = ExtResource("1_eetcp")
+[sub_resource type="Resource" id="Resource_ob8md"]
+script = ExtResource("1_ob8md")
 option_count = 1
+option_0/name = "Object Origin"
+option_0/type = "checkbox"
+option_0/description = "Provides an indicator to the origin of an object"
+option_0/value = &""
+option_0/param = ""
+metadata/_custom_type_script = "uid://56abiotdxm3f"
+
+[resource]
+script = ExtResource("1_ob8md")
+option_count = 2
 option_0/name = "Debug Views"
 option_0/type = "submenu"
 option_0/description = "Special view modes for debuging/misc"
 option_0/value = SubResource("Resource_eetcp")
+option_1/name = "Toggle View"
+option_1/type = "submenu"
+option_1/description = "Toggle view of specific categories of objects."
+option_1/value = SubResource("Resource_ob8md")
 metadata/_custom_type_script = "uid://56abiotdxm3f"

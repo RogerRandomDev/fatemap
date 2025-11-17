@@ -14,7 +14,7 @@ var cleanedFaces:Array[cleanedFace]=[]
 var cleanedEdges:Array[cleanedEdge]=[]
 var cleanedVertices:Array[cleanedVertex]=[]
 
-var trackedSelection:SelectionInfo=SelectionInfo.new([],[],[])
+var trackedSelection:SelectionInfo=SelectionInfo.new([],[],[],self)
 
 const projectionAxis:PackedVector3Array=[
 	
@@ -505,6 +505,8 @@ class cleanedEdge extends cleanedVertexObject:
 		)
 		return quat
 	
+	func getCenter()->Vector3:
+		return positions.reduce(func(a,b):return a+b) / positions.size()
 
 class cleanedFace extends cleanedVertexObject:
 	var faces:Array[meshFace]=[]
@@ -535,11 +537,13 @@ class SelectionInfo extends RefCounted:
 	var faces:Array
 	var edges:Array
 	var vertices:Array
+	var mesh
 	
-	func _init(_vertices,_edges,_faces)->void:
+	func _init(_vertices,_edges,_faces,_mesh)->void:
 		faces=_faces
 		edges=_edges
 		vertices=_vertices
+		mesh=_mesh
 	
 	func update(_vertices,_edges,_faces)->void:
 		faces=_faces
@@ -586,7 +590,9 @@ class SelectionInfo extends RefCounted:
 	
 	func getMaterials()->Dictionary:
 		var matBinds:Dictionary={}
-		for face in faces:
+		var trackedFaces=faces
+		if faces.size()==0:trackedFaces=mesh.faces
+		for face in trackedFaces:
 			var matBound=matBinds.get_or_add(face.surfaceMaterial,[])
 			matBound.push_back(face)
 		

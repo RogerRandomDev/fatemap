@@ -3,13 +3,13 @@ class_name MeshEditService
 
 
 static var editing:editingMesh
-static var editMode:MeshEditMode=MeshEditMode.FACE
+static var editMode:MeshEditMode=MeshEditMode.FACE:
+	set(v):
+		editMode=v
+		signalService.emitSignal(&"EditModeChanged",[v])
 static var editor:meshEditMode
 
-static func initializeService()->void:
-	signalService.addSignal(&"meshSelectionChanged")
-	signalService.addSignal(&"UpdateEditingMesh")
-	signalService.addSignal(&"EditModeChanged")
+static func initializeService()->void:pass
 
 static func setEditing(object:ObjectModel)->void:
 	signalService.emitSignal.call_deferred(&"UpdateEditingMesh")
@@ -19,7 +19,9 @@ static func setEditing(object:ObjectModel)->void:
 	var mesh=object.get_node_or_null("MESH_OBJECT")
 	if editing and editing.meshObject==mesh:return
 	
-	editor=alongFaceNormal.new();editor.camera=object.get_viewport().get_camera_3d()
+	editor=ParameterService.getParam(&"CurrentMeshEditMode").new()
+	editor.camera=object.get_viewport().get_camera_3d()
+	
 	editor.updateEditingObject(object)
 	
 	editing=editingMesh.new(object,mesh)
@@ -34,6 +36,8 @@ static func isEditing()->bool:return editing!=null
 
 static func getEditMode()->MeshEditMode:return editMode
 
+static func changeEditor(newEditor)->void:
+	editor = newEditor.new(editor)
 
 enum MeshEditMode{
 	FACE=0,
@@ -121,6 +125,8 @@ class editingMesh extends Resource:
 		if meshPart is objectMeshModel.meshEdge:selectEdge(meshPart,toggleSelected)
 		if meshPart is objectMeshModel.meshFace:selectFace(meshPart,toggleSelected)
 		if meshPart is objectMeshModel.cleanedFace:for face in meshPart.faces:selectFace(face,toggleSelected)
+		if meshPart is objectMeshModel.cleanedEdge:for edge in meshPart.edges:selectEdge(edge,toggleSelected)
+		if meshPart is objectMeshModel.cleanedVertex:for vertex in meshPart.vertices:selectVertex(vertex,toggleSelected)
 	
 	func updateSelectionTracked(ignore:bool=false)->void:
 		var changes=meshObject.mesh.updateSelection(

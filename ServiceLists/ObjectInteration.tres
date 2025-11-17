@@ -1,12 +1,13 @@
-[gd_resource type="Resource" script_class="paramServiceParams" load_steps=3 format=3 uid="uid://bv3j7rvwisrkk"]
+[gd_resource type="Resource" script_class="paramServiceParams" load_steps=4 format=3 uid="uid://bv3j7rvwisrkk"]
 
 [ext_resource type="Script" uid="uid://v2l1xtifo1ch" path="res://models/resources/paramServiceResource.gd" id="1_6hccd"]
+[ext_resource type="Script" uid="uid://dfpcafjywduet" path="res://models/meshEditModes/alongFaceNormal.gd" id="1_rqjln"]
 
 [sub_resource type="BoxMesh" id="BoxMesh_vmo0g"]
 
 [resource]
 script = ExtResource("1_6hccd")
-parameterCount = 6
+parameterCount = 7
 parameter_0/name = "activeObject"
 parameter_0/description = "current active object for editing"
 parameter_0/type = "Object"
@@ -31,4 +32,8 @@ parameter_5/name = "newObjectShape"
 parameter_5/description = "shape for the new  object to be created"
 parameter_5/type = "Object"
 parameter_5/value = SubResource("BoxMesh_vmo0g")
+parameter_6/name = "CurrentMeshEditMode"
+parameter_6/description = "mesh edit mode default"
+parameter_6/type = "Object"
+parameter_6/value = ExtResource("1_rqjln")
 metadata/_custom_type_script = "uid://v2l1xtifo1ch"

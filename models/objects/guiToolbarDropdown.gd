@@ -14,11 +14,21 @@ func _ready() -> void:
 
 func buildFromResource(resource:guiDropdownResource,currentPopup:PopupMenu=get_popup())->void:
 	addMenuCallback(currentPopup)
+	currentPopup.hide_on_checkable_item_selection=false
 	for index in len(resource.optionNames):
 		var context=resource.getItemContext(index)
 		match(context.get("type")):
 			"default":
 				AddOption(
+					currentPopup,
+					context.get("name"),
+					context.get("value",&"") if not context.get("value",&"")==null else &"",
+					context.get("param",null),
+					context.get("description",null)
+				)
+				continue
+			"checkbox":
+				AddCheckOption(
 					currentPopup,
 					context.get("name"),
 					context.get("value",&"") if not context.get("value",&"")==null else &"",
@@ -47,8 +57,21 @@ func AddOption(popup:PopupMenu,option:StringName,callback:StringName=&"",special
 	popup.set_item_metadata(index,[callback,specialValue])
 	if description!="" and description!=null:
 		popup.set_item_tooltip(index,description)
-	
 	return true
+
+func AddCheckOption(popup:PopupMenu,option:StringName,callback:StringName=&"",specialValue:String="",description:String="")->bool:
+	var index=popup.item_count
+	popup.add_check_item(option,index)
+	popup.set_item_as_checkable(index,true)
+	#set to true by default if provided
+	popup.set_item_checked(index,description.ends_with("##true"))
+	description=description.trim_suffix("##true")
+	
+	popup.set_item_metadata(index,[callback,specialValue])
+	if description!="" and description!=null:
+		popup.set_item_tooltip(index,description)
+	return true
+
 
 ## Allows the menu to bind inputs without bulking the code elsewhere
 static func addMenuCallback(menu:PopupMenu)->void:
@@ -59,6 +82,16 @@ static func addMenuCallback(menu:PopupMenu)->void:
 ## Triggers a method stored in a popup item's metadata
 static func callIndexedMenuMethod(index:int=0,popup:PopupMenu=null)->void:
 	var meta_method = popup.get_item_metadata(index)
-	if meta_method[0]==&"":return
+	var checkableItem = popup.is_item_checkable(index)
+	
 	var meta_param=str_to_var(meta_method[1]) if meta_method[1]!=""else null
-	ToolMethodService.executeMethod(meta_method[0],[meta_param])
+	
+	if checkableItem:
+		var isChecked = !popup.is_item_checked(index)
+		popup.set_item_checked(index,isChecked)
+		ToolMethodService.executeMethod(meta_method[0],[
+			isChecked,
+			meta_param
+		])
+	else:
+		ToolMethodService.executeMethod(meta_method[0],[meta_param])

@@ -10,6 +10,9 @@ const dropdownTypeMap:Dictionary={
 	"default":{
 		"type":TYPE_STRING_NAME
 	},
+	"checkbox":{
+		"type":TYPE_STRING_NAME
+	},
 	"separator":{
 		"type":TYPE_NIL
 	},

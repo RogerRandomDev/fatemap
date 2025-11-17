@@ -42,15 +42,15 @@ func updateMeshSelection()->void:
 			renderPoints={}
 			for edge in cleanEdges:
 				var pointAt=edge.getCenter()+MeshEditService.editing.meshObject.global_transform.origin
-				renderPoints[pointAt]=edge.edges[0]
-				renderPointEdges.push_back(edge)
+				renderPoints[pointAt]=edge
+				renderPointEdges.push_back(edge.edges)
 		MeshEditService.MeshEditMode.VERTEX:
 			var cleanVertices=MeshEditService.editing.mesh.getCleanVertices()
 			renderPoints={}
 			for vertex in cleanVertices:
 				var pointAt=vertex.position+MeshEditService.editing.meshObject.global_transform.origin
-				renderPoints[pointAt]=vertex.vertices[0]
-				renderPointVertices.push_back(vertex)
+				renderPoints[pointAt]=vertex
+				renderPointVertices.push_back(vertex.vertices)
 	updateEditPointRender()
 	updateSelected()
 
@@ -97,7 +97,7 @@ func _handle_mouse_drag(event: InputEventMouseMotion) -> bool:
 	if InputService.pressed(&"CreateMesh"):return false
 	if event is InputEventMouseMotion and MeshEditService.isEditing() and InputService.pressed(&"MouseLeft"):
 		
-		if MeshEditService.editing.selectedFaces.size() == 0:return false
+		if MeshEditService.editing.selectedVertices.size() == 0:return false
 		MeshEditService.editor.updateSelectionLocation(holder.get_local_mouse_position())
 		MeshEditService.editing.dataObject.call("transformed")
 		PhysicalObjectService.updatePickableArea(MeshEditService.editor.editingObject)
@@ -175,8 +175,7 @@ func selectPointToChange(atPos:Vector2)->bool:
 	if sortedDistances[0]>pointSize*pointSize:return false
 	var _previousSelected=MeshEditService.editing.selectedVertices.size()
 	MeshEditService.editing.select(newPoint,InputService.pressed(&"CreateMesh"))
-	if newPoint is objectMeshModel.cleanedFace:
-		MeshEditService.editor.updateSelectedCleanFace(newPoint)
+	MeshEditService.editor.updateSelected(newPoint)
 	updateSelected()
 	return true
 	
@@ -198,13 +197,13 @@ func updateSelected()->void:
 			pointDeselected(index)
 	for index in len(renderPointEdges):
 		var edge=renderPointEdges[index]
-		if edge.edges.any(func(e):return MeshEditService.editing.selectedEdges.has(e)):
+		if edge.any(func(edg):return MeshEditService.editing.selectedEdges.has(edg)):
 			pointSelected(index)
 		else:
 			pointDeselected(index)
 	for index in len(renderPointVertices):
 		var vertex=renderPointVertices[index]
-		if vertex.vertices.any(func(vert):return MeshEditService.editing.selectedVertices.has(vert)):
+		if vertex.any(func(vert):return MeshEditService.editing.selectedVertices.has(vert)):
 			pointSelected(index)
 		else:
 			pointDeselected(index)

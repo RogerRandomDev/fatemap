@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="guiDropdownResource" load_steps=2 format=3 uid="uid://dixvr1gtpk8hu"]
+
+[ext_resource type="Script" uid="uid://56abiotdxm3f" path="res://models/resources/guiDropdownResource.gd" id="1_chr00"]
+
+[resource]
+script = ExtResource("1_chr00")
+option_count = 1
+option_0/name = "Export as GLB"
+option_0/type = "default"
+option_0/description = "Exports the current map as a GLB"
+option_0/value = &"ExportMapAsGLB"
+option_0/param = ""
+metadata/_custom_type_script = "uid://56abiotdxm3f"

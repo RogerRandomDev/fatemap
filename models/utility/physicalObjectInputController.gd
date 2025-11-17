@@ -14,9 +14,6 @@ static var hoveredObjects:
 
 
 static func initializeInputController()->void:
-	signalService.addSignal(&"MouseEnteredObject")
-	signalService.addSignal(&"MouseExitedObject")
-	signalService.addSignal(&"faceSelected")
 	
 	signalService.bindToSignal(&"MouseEnteredObject",onMouseEnterObject)
 	signalService.bindToSignal(&"MouseExitedObject",onMouseExitObject)
