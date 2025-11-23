@@ -330,3 +330,18 @@ func addInstanceParam(parameter:String,value:Variant,type:String)->void:
 	parameterValues.push_back(value)
 
 #endregion
+
+
+#region Compiler related methods
+func getParametersForCompiler()->Dictionary:
+	var neededParameters=getParameterDefaults(true,true,true)
+	var compiledParameters:Dictionary={}
+	for param in neededParameters:
+		var paramName:String = param.name
+		var type:String = param.type
+		var value = param.value
+		compiledParameters[paramName]=[type,value]
+	
+	return compiledParameters
+
+#endregion

@@ -41,4 +41,14 @@ func loadContents()->void:
 		f.store_buffer(glb.generate_buffer(state))
 		f.close()
 		)
+	ToolMethodService.addToolMethod(&"ExportMapCustom",
+	func(v=null):
+		var worldChecked = get_tree().current_scene.mapViewport
+		compilerService.compileMapData(worldChecked)
+		)
+	ToolMethodService.addToolMethod(&"LoadMapCustom",
+	func(v=null):
+		var worldChecked = get_tree().current_scene.mapViewport
+		compilerService.loadMapData(worldChecked.get_node("PlacedObjects"))
+		)
 	

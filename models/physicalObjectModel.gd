@@ -1,12 +1,6 @@
 extends ObjectModel
 class_name PhysicalObjectModel
 
-var objectData:ObjectPhysicalDataResource:
-	set(v):
-		setObjectData(v)
-		objectData=v
-	get:return objectData
-
 @warning_ignore("unused_private_class_variable")
 var _undo_positionRelativeToWorld:Variant=true:
 	set(v):
@@ -45,10 +39,11 @@ func _ready() -> void:
 
 func getData():return objectData
 
-func setObjectData(data)->void:
-	if objectData!=null:objectData.parameterChanged.disconnect(paramChanged)
-	data.owner=self
-	data.parameterChanged.connect(self.paramChanged)
+func getCompiledData(compiler:compilerService.precompileMapData)->Dictionary:
+	var compiledData=super.getCompiledData(compiler)
+	compiledData.set("Mesh",objectDisplay.mesh.getCompilerData(compiler))
+	
+	return compiledData
 
 func transformed()->void:
 	var meshTransform=Transform3D(

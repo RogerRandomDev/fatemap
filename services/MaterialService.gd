@@ -9,12 +9,12 @@ static func setDefaultMaterialBase(material:Material,params:Dictionary={})->void
 	basicMaterial=material
 	basicMaterialParams=params
 
-static func addMaterial(materialName:StringName,material:Material=null,texture:Texture=null,params:Dictionary={},tags:PackedStringArray=[])->bool:
+static func addMaterial(materialName:StringName,material:Material=null,texture:Texture=null,params:Dictionary={},tags:PackedStringArray=[],path:String="")->bool:
 	var ignoreBaseParams:bool=false
 	if material==null:material=basicMaterial
 	else:ignoreBaseParams=true
 	
-	var newMaterial=materialModel.new(materialName,params,ignoreBaseParams)
+	var newMaterial=materialModel.new(materialName,params,path,ignoreBaseParams)
 	if materialList.any(func(mat):return mat.checkConflict(newMaterial)):
 		return false
 	newMaterial.setMaterial(material)
@@ -33,6 +33,32 @@ static func getMaterial(materialName:StringName)->materialModel:
 	if index==-1:return null
 	return materialList[index]
 
+static func loadFMT(fmtPath:String)->bool:
+	if not FileAccess.file_exists(fmtPath):return false
+	var file = FileAccess.open(fmtPath,FileAccess.READ)
+	var contents = file.get_as_text().split("\n",true)
+	var values:Dictionary={}
+	for line in contents:
+		var lineContext = line.split("=")
+		if lineContext.size()<2:continue
+		var lineRepresents = lineContext[0].strip_edges()
+		var lineValue = lineContext[1].strip_edges()
+		values[lineRepresents] = lineValue
+	addMaterial(
+		values.get("name","NONE"),
+		load("res://Imported/"+values.get("material","Default/defaultMaterial.material")),
+		load("res://Imported/"+values.get("texture","Default/defaultTexture.png")),
+		{},#values.get("parameters",{})
+		[],#values.get("tags",[])
+		fmtPath
+	)
+	
+	
+	
+	
+	
+	return true
+
 
 
 
@@ -42,14 +68,17 @@ class materialModel extends Resource:
 	var materialTexture:Texture
 	var materialParameters:Dictionary={}
 	var materialTags:PackedStringArray=[]
+	var path:String
 	
-	
-	func _init(name:StringName=&"",params:Dictionary={},ignoreDefaultParams:bool=false):
+	func _init(name:StringName=&"",params:Dictionary={},_path:String="",ignoreDefaultParams:bool=false):
 		materialName=name
+		path=_path
 		if not ignoreDefaultParams:materialParameters=MaterialService.basicMaterialParams.duplicate(false)
 		for parameter in params:
 			materialParameters[parameter]=params[parameter]
 		updateMaterial()
+	
+	
 	
 	func setTexture(texture:Texture)->void:
 		materialTexture=texture

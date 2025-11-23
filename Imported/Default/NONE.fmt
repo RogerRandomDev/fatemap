@@ -1,0 +1,5 @@
+name = NONE
+material = Default/defaultMaterial.material
+texture = Default/None.tres
+parameters = {}
+tags = []

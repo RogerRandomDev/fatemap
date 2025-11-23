@@ -235,7 +235,48 @@ func updateSelection(_vertices,_edges,_faces,ignoreChange:bool=false)->Dictionar
 		return {}
 	var changes = trackedSelection.getChanges(_vertices,_edges,_faces)
 	return changes
+
+func getCompilerData(compiler:compilerService.precompileMapData)->Dictionary:
+	return {
+		"Materials":faceMaterialMap.keys().filter(func(mat):return faceMaterialMap[mat].size()>0),
+		"Surfaces":convertSurfacesToBinary(compiler)
+	}
+
+func convertSurfacesToBinary(compiler:compilerService.precompileMapData=null)->PackedByteArray:
+	var binarySurfaceData:PackedByteArray=[]
+	const BYTES_PER_FACE = 54
+	for mat in faceMaterialMap.keys():
+		if faceMaterialMap[mat].size()==0:continue
+		if compiler.materialList.has(mat):continue
+		compiler.materialList.push_back(mat)
 	
+	
+	var face_bytes:int=(
+		faces.size()*BYTES_PER_FACE
+	)
+	binarySurfaceData.resize(
+		face_bytes
+	)
+	var offset:int=0
+	const sub_offset = 10
+	for face in faces:
+		var compiledSurfaceId=compiler.materialList.find(face.surfaceMaterial)
+		
+		binarySurfaceData.encode_u16(offset,compiledSurfaceId)
+		for i in 3:
+			binarySurfaceData.encode_u16(offset+2+sub_offset*i,compiler.getPositionID(face.vertices[i].position))
+			binarySurfaceData.encode_float(offset+4+sub_offset*i,face.vertices[i].uv.x)
+			binarySurfaceData.encode_float(offset+8+sub_offset*i,face.vertices[i].uv.y)
+		binarySurfaceData.encode_u16(offset+32,compiler.getNormalID(face.normal))
+		binarySurfaceData.encode_float(offset+34,face.uvRotation)
+		binarySurfaceData.encode_float(offset+38,face.uvOffset.x)
+		binarySurfaceData.encode_float(offset+42,face.uvOffset.y)
+		binarySurfaceData.encode_float(offset+46,face.uvScale.x)
+		binarySurfaceData.encode_float(offset+50,face.uvScale.y)
+		offset+=BYTES_PER_FACE
+	
+	return binarySurfaceData
+
 
 class meshVertex extends RefCounted:
 	var positionID:int

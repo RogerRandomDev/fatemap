@@ -4,10 +4,20 @@
 
 [resource]
 script = ExtResource("1_chr00")
-option_count = 1
+option_count = 3
 option_0/name = "Export as GLB"
 option_0/type = "default"
 option_0/description = "Exports the current map as a GLB"
 option_0/value = &"ExportMapAsGLB"
 option_0/param = ""
+option_1/name = "Save Map"
+option_1/type = "default"
+option_1/description = "Saves the map in an editable format"
+option_1/value = &"ExportMapCustom"
+option_1/param = ""
+option_2/name = "Load Map"
+option_2/type = "default"
+option_2/description = "Loads a map save in an editable format"
+option_2/value = &"LoadMapCustom"
+option_2/param = ""
 metadata/_custom_type_script = "uid://56abiotdxm3f"

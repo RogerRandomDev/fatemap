@@ -7,23 +7,9 @@ func _enter_tree() -> void:ServiceInitializer.initializeAllServices()
 
 func _ready() -> void:
 	loadGUILayout()
-	
+	MaterialService.loadFMT("res://Imported/Default/NONE.fmt")
+	MaterialService.loadFMT("res://Imported/Default/Test.fmt")
 	PhysicalObjectInputController.initializeInputController()
-	
-	var mt=StandardMaterial3D.new()
-	mt.texture_filter=BaseMaterial3D.TEXTURE_FILTER_NEAREST
-	
-	MaterialService.addMaterial(
-		&"NONE",
-		mt,
-		load("res://new_placeholder_texture_2d.tres")
-	)
-	MaterialService.addMaterial(
-		&"TestExample",
-		mt,
-		load("res://icon.svg")
-	)
-	
 
 func loadGUILayout()->void:
 	loadToolBar()
