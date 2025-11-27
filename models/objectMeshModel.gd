@@ -72,6 +72,7 @@ func rebuild(replaceCleanFaces:bool=true)->void:
 		surface.commit_to_surface(self)
 	if replaceCleanFaces:preloadCleanFaces()
 
+
 func loadSurfacePool()->void:
 	surfacePool=[]
 	for surface in get_surface_count():
@@ -242,9 +243,9 @@ func getCompilerData(compiler:compilerService.precompileMapData)->Dictionary:
 		"Surfaces":convertSurfacesToBinary(compiler)
 	}
 
+const BYTES_PER_FACE = 54
 func convertSurfacesToBinary(compiler:compilerService.precompileMapData=null)->PackedByteArray:
 	var binarySurfaceData:PackedByteArray=[]
-	const BYTES_PER_FACE = 54
 	for mat in faceMaterialMap.keys():
 		if faceMaterialMap[mat].size()==0:continue
 		if compiler.materialList.has(mat):continue
@@ -276,6 +277,42 @@ func convertSurfacesToBinary(compiler:compilerService.precompileMapData=null)->P
 		offset+=BYTES_PER_FACE
 	
 	return binarySurfaceData
+
+func loadCompiledSurfaces(matList:Array=[],positions:Array=[],normals:Array=[],binary:PackedByteArray=[])->void:
+	var checkFrom:int=0
+	while true:
+		var faceData = binary.slice(checkFrom,checkFrom+BYTES_PER_FACE)
+		checkFrom+=BYTES_PER_FACE
+		if(faceData.size()<=0):break;
+		var surfaceUsed = matList[faceData.decode_u16(0)]
+		var faceVertexPositions:PackedVector3Array=[]
+		var faceVertexUVs:PackedVector2Array=[]
+		const sub_offset = 10
+		for i in 3:
+			faceVertexPositions.push_back(
+				positions[faceData.decode_u16(2+sub_offset*i)]
+				)
+			faceVertexUVs.push_back(
+				Vector2(
+					faceData.decode_float(4+sub_offset*i),
+					faceData.decode_float(8+sub_offset*i)
+					)
+				)
+		var faceNormal = getNormalID(normals[faceData.decode_u16(32)])
+		var face = meshFace.new(
+			self,faceVertexPositions,faceVertexUVs,
+			surfaceUsed)
+		face.uvRotation = faceData.decode_float(34)
+		face.uvOffset=Vector2(
+			faceData.decode_float(38),
+			faceData.decode_float(42))
+		face.uvScale=Vector2(
+			faceData.decode_float(46),
+			faceData.decode_float(50))
+		faces.push_back(face)
+		
+	rebuild(true)
+
 
 
 class meshVertex extends RefCounted:
@@ -404,7 +441,7 @@ class meshFace extends meshVertexObject:
 	var faceIndex:int
 	var surfaceIndex:int=0
 	
-	func _init(owner:objectMeshModel,vertexPosList:PackedVector3Array,uvs:PackedVector2Array)->void:
+	func _init(owner:objectMeshModel,vertexPosList:PackedVector3Array,uvs:PackedVector2Array,material:MaterialService.materialModel=null)->void:
 		_mesh=owner
 		for vertex in len(vertexPosList):
 			vertices.push_back(meshVertex.new(
@@ -423,7 +460,10 @@ class meshFace extends meshVertexObject:
 			))
 		
 		if _mesh==null:return
-		setSurfaceMaterial(MaterialService.getMaterial(&"NONE"))
+		if material==null:
+			setSurfaceMaterial(MaterialService.getMaterial(&"NONE"))
+		else:
+			setSurfaceMaterial(material)
 	
 	func setSurfaceMaterial(material:MaterialService.materialModel)->void:
 		if surfaceMaterial:

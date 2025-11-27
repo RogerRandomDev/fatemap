@@ -8,10 +8,11 @@ static func compileMapData(makerViewport:SubViewport)->PackedByteArray:
 	var objectList:Array[Node]=makerViewport.get_node("PlacedObjects").get_children()
 	var uncompiledData = precompileMapData.new(objectList)
 	compiledMap = uncompiledData.getBinary()
-	loadMapData(null,compiledMap)
+	loadMapData(makerViewport.get_node("PlacedObjects"),compiledMap)
 	return compiledMap
 
 static func loadMapData(loadOnto:Node,data:PackedByteArray=[])->void:
+	#this needs segmented still but the logic is mostly set up
 	var checkFrom:int=0
 	var fmtPaths:PackedStringArray=[]
 	while true:
@@ -35,19 +36,33 @@ static func loadMapData(loadOnto:Node,data:PackedByteArray=[])->void:
 		normals.push_back(
 			Vector3(data.decode_float(checkFrom),data.decode_float(checkFrom+4),data.decode_float(checkFrom+8)))
 		checkFrom+=12
+	var matList=[]
+	for mat in fmtPaths:
+		matList.push_back(MaterialService.loadFMT(mat))
+	while true:
+		var loadingObject = data.find(10,checkFrom+1)
+		if loadingObject == -1 or loadingObject-1<=checkFrom:break
+		var objectName = data.slice(checkFrom,loadingObject).get_string_from_ascii()
+		checkFrom=loadingObject+1
+		
+		var surfaceSize=data.decode_u32(checkFrom)
+		var objectMesh:objectMeshModel=objectMeshModel.new()
+		objectMesh.loadCompiledSurfaces(matList,positions,normals,data.slice(checkFrom+4,checkFrom+4+surfaceSize))
+		var obj = PhysicalObjectModel.new()
+		var objData = ObjectPhysicalDataResource.new()
+		objData.inheritedData=load("res://modelData/baseObject.tres")
+		objData.mesh=objectMesh
+		obj.objectData=objData
+		var placedObjects=loadOnto
+		placedObjects.add_child(obj)
+		obj.global_position=Vector3(16,4,16)
+		(obj.get_node("MESH_OBJECT").mesh as objectMeshModel).globalTransform.origin=-obj.global_transform.origin
+		obj.get_node("MESH_OBJECT").mesh = objectMesh
+		#have to get the encoded parameters out as well
+		break
 	
-	# we need to make this store the vectors for position and normal here
-	# since we only store a reference int to them in the surfaces
 	
-	#while true:
-		#var loadingObject = data.find(10,checkFrom)
-		#if loadingObject == -1 or loadingObject-1<=checkFrom:break
-		#var objectName = data.slice(checkFrom,loadingObject).get_string_from_ascii()
-		#
-	
-	
-	pass
-	
+
 
 
 class precompileMapData extends RefCounted:

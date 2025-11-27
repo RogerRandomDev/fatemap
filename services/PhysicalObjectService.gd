@@ -6,24 +6,27 @@ class_name PhysicalObjectService
 
 
 static func buildMesh(object:ObjectPhysicalDataResource,instance:Node3D=null,_makeSelectable:bool=true)->MeshInstance3D:
-	#var mesh=object.mesh.create_trimesh_shape()
 	var mesh=object.mesh
 	var meshInstance=MeshInstance3D.new()
-	var surfaceTool = SurfaceTool.new()
-	surfaceTool.create_from(mesh,0)
-	surfaceTool.set_smooth_group(-1)
-	surfaceTool.generate_normals()
-	
-	var arrayMesh:objectMeshModel=objectMeshModel.new()
-	arrayMesh.add_surface_from_arrays(
-		Mesh.PRIMITIVE_TRIANGLES,
-		surfaceTool.commit_to_arrays()
-		)
-	arrayMesh.initializeFaces()
-	arrayMesh.rebuild()
-	arrayMesh.updateNormals()
-	
-	meshInstance.mesh=arrayMesh
+	if not (object.mesh is objectMeshModel):
+		var surfaceTool = SurfaceTool.new()
+		surfaceTool.create_from(mesh,0)
+		surfaceTool.set_smooth_group(-1)
+		surfaceTool.generate_normals()
+		
+		var arrayMesh:objectMeshModel=objectMeshModel.new()
+		arrayMesh.add_surface_from_arrays(
+			Mesh.PRIMITIVE_TRIANGLES,
+			surfaceTool.commit_to_arrays()
+			)
+		arrayMesh.initializeFaces()
+		arrayMesh.rebuild()
+		arrayMesh.updateNormals()
+		
+		meshInstance.mesh=arrayMesh
+	else:
+		meshInstance.mesh=mesh
+		
 	if instance:
 		instance.add_child(meshInstance)
 	meshInstance.name="MESH_OBJECT"

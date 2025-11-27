@@ -33,8 +33,8 @@ static func getMaterial(materialName:StringName)->materialModel:
 	if index==-1:return null
 	return materialList[index]
 
-static func loadFMT(fmtPath:String)->bool:
-	if not FileAccess.file_exists(fmtPath):return false
+static func loadFMT(fmtPath:String)->materialModel:
+	if not FileAccess.file_exists(fmtPath):return null
 	var file = FileAccess.open(fmtPath,FileAccess.READ)
 	var contents = file.get_as_text().split("\n",true)
 	var values:Dictionary={}
@@ -53,11 +53,7 @@ static func loadFMT(fmtPath:String)->bool:
 		fmtPath
 	)
 	
-	
-	
-	
-	
-	return true
+	return getMaterial(values.get("name","NONE"))
 
 
 

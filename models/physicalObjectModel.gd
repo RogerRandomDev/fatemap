@@ -32,8 +32,7 @@ func _ready() -> void:
 	objectData.owner=self
 	objectDisplay=PhysicalObjectService.buildMesh(objectData,self)
 	PhysicalObjectService.buildPickableArea(objectData,self,objectDisplay)
-	for face in objectDisplay.mesh.faces:
-		face.setSurfaceMaterial(MaterialService.getMaterial(&"NONE"))
+	
 	for param in objectData.getParameterDefaults(true,true,true):paramChanged(param.name,param.value)
 	transformed.call_deferred()
 
