@@ -55,12 +55,20 @@ static func loadMapData(loadOnto:Node,data:PackedByteArray=[])->void:
 		obj.objectData=objData
 		var placedObjects=loadOnto
 		placedObjects.add_child(obj)
+		#TODO: store and get the actual position of the object instead of this shenanigan
 		obj.global_position=Vector3(16,4,16)
 		(obj.get_node("MESH_OBJECT").mesh as objectMeshModel).globalTransform.origin=-obj.global_transform.origin
 		obj.get_node("MESH_OBJECT").mesh = objectMesh
+		checkFrom+=surfaceSize+5
 		#have to get the encoded parameters out as well
-		break
-	
+		var paramBlockSize:int=data.decode_u32(checkFrom)
+		var paramData = bytes_to_var_with_objects(data.slice(checkFrom+4,checkFrom+4+paramBlockSize))
+		for param in paramData.keys():
+			objData.setInstance(param,paramData[param][1])
+		checkFrom+=paramBlockSize
+		# +4 later because the last part is the group
+		# we aren't going to handle that just yet
+		checkFrom+=4
 	
 
 
