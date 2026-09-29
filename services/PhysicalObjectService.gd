@@ -34,6 +34,36 @@ static func buildMesh(object:ObjectPhysicalDataResource,instance:Node3D=null,_ma
 	
 	return meshInstance
 
+static func buildPickableAreaForModel(object:Node3D,accurateBounds:bool=false)->StaticBody3D:
+	var bounds:Array[AABB] = []
+	for node in object.get_children():
+		if node is MeshInstance3D:
+			bounds.append(node.get_aabb())
+	bounds = bounds.filter(func(a:AABB):
+		return not bounds.any(func(b:AABB):
+			return a != b and b.encloses(a)
+		)
+	)
+	var area=StaticBody3D.new()
+	object.add_child(area)
+	area.name="PICKABLE_OBJECT"
+	for bound in bounds:
+		var body=CollisionShape3D.new()
+		body.shape=BoxShape3D.new()
+		body.shape.size=bound.size
+		body.position=bound.get_center()
+		area.add_child(body)
+	
+	
+	
+	
+	
+	
+	area.mouse_entered.connect(func():signalService.emitSignal(&"MouseEnteredObject",[object]))
+	area.mouse_exited.connect(func():signalService.emitSignal(&"MouseExitedObject",[object]))
+	#area.input_event.connect(PhysicalObjectInputController.objectInputEvent.bind(instance))
+	return area
+
 static func buildPickableArea(object:ObjectPhysicalDataResource,instance:Node3D,meshInstance:MeshInstance3D=null)->StaticBody3D:
 	
 	var mesh = object.mesh

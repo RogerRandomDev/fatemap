@@ -9,7 +9,6 @@ func loadPreview(object:Node3D)->void:
 
 func updateAABB()->void:
 	var aabb=get_global_aabb(obj)
-	print(aabb)
 	var center=aabb.get_center()
 	var aabb_size = aabb.size
 	var max_dim = max(aabb_size.x,max(aabb_size.y,aabb_size.z))
@@ -17,11 +16,6 @@ func updateAABB()->void:
 	var distance = (max_dim * 0.5 * 1.5) / tan(deg_to_rad(fov * 0.5))
 	var dir = $SubViewport/Camera3D.global_transform.basis.z.normalized()
 	$SubViewport/Camera3D.position=center + dir * distance
-
-func _process(delta: float) -> void:
-	if obj==null:return
-	obj.rotation_degrees.y+=delta*30
-
 
 func get_global_aabb(node: Node3D) -> AABB:
 	var total_aabb := AABB()

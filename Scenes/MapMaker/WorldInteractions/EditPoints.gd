@@ -28,7 +28,7 @@ func updateMeshSelection()->void:
 	renderPointFaces=[]
 	
 	var editMode:int=MeshEditService.getEditMode()
-	if not MeshEditService.isEditing():
+	if not MeshEditService.isEditing() or not ParameterService.getParam(&"activeObject") is ObjectModel:
 		updateEditPointRender()
 		return
 	match(editMode):

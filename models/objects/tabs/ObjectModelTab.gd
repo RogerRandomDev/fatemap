@@ -61,11 +61,15 @@ func loadContents(contents:ObjectDataResource)->void:
 	if contents==null:return
 
 func optionEvent(event:InputEvent,option)->void:
-	if not MeshEditService.isEditing():return
+	if MeshEditService.isEditing():return
 	if not event is InputEventMouseButton:return
 	if event.button_index==MOUSE_BUTTON_LEFT and event.is_pressed():
 		#lets you drag an object to place on the scene
-		pass
+		var newObject=option.myObject.instantiate()
+		
+		var placeOn:Node3D = get_tree().current_scene.mapViewport.get_node("PlacedObjects")
+		placeOn.add_child(newObject)
+		PhysicalObjectService.buildPickableAreaForModel(newObject,true)
 
 func recursiveToggleContents(from:Control,enable:bool=true)->void:
 	from.set("editable",enable)

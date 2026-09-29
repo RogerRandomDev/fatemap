@@ -11,9 +11,12 @@ static var editor:meshEditMode
 
 static func initializeService()->void:pass
 
-static func setEditing(object:ObjectModel)->void:
+static func setEditing(object)->void:
 	signalService.emitSignal.call_deferred(&"UpdateEditingMesh")
 	if object==null:
+		editing=null
+		return
+	if not object is ObjectModel:
 		editing=null
 		return
 	var mesh=object.get_node_or_null("MESH_OBJECT")
