@@ -164,12 +164,39 @@ class editingMesh extends Resource:
 		return hitFace
 	
 	func translateSelection(translateBy:Vector3,local:bool=true)->void:
-		if selectedVertices.size()==0:return
+		if selectedVertices.size()==0 or translateBy.is_zero_approx():return
 		if local:translateBy*=meshObject.global_transform.basis.get_rotation_quaternion()
 		var editingPositionIDs={}
-		for vertex in selectedVertices:editingPositionIDs[vertex.positionID]=null
-		for positionID in editingPositionIDs.keys():
-			mesh.positionIDs[positionID]=(mesh.positionIDs[positionID]+translateBy)
+		for vertex in selectedVertices:editingPositionIDs[vertex.positionID]=mesh.positionIDs[vertex.positionID]
+		#UndoRedoService.startAction(&"TranslateMeshPoints",UndoRedo.MERGE_ENDS)
+		UndoRedoService.startAction(&"TranslateMeshPoints",UndoRedo.MERGE_ALL)
+		#breaks if i re-center the mesh elsewhere cause it changes where everything is relative
+		#if i do MERGE_ALL and just add/subtract the change instead it works fine.
+		UndoRedoService.addMethods(
+			(func():
+				for positionID in editingPositionIDs.keys():
+					#mesh.positionIDs[positionID]=editingPositionIDs[positionID]+translateBy
+					mesh.positionIDs[positionID]+=translateBy
+				),
+			(func():
+				for positionID in editingPositionIDs.keys():
+					#mesh.positionIDs[positionID]=editingPositionIDs[positionID]
+					mesh.positionIDs[positionID]-=translateBy
+				)
+		)
+		var rebuild = MeshEditService.editing.mesh.rebuild
+		UndoRedoService.addMethods(
+			func():
+				rebuild.call_deferred()
+				signalService.emitSignal.call_deferred(&"meshSelectionChanged")
+				,
+			func():
+				rebuild.call_deferred()
+				signalService.emitSignal.call_deferred(&"meshSelectionChanged")
+		)
+		
+		
+		UndoRedoService.commitAction(true)
 	
 	func centerMesh()->void:
 		var aabb=AABB(mesh.positionIDs.values()[0],Vector3.ZERO)

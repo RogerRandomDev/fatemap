@@ -1,0 +1,51 @@
+[gd_scene load_steps=5 format=3 uid="uid://c7xgdqt0ka86f"]
+
+[ext_resource type="Script" uid="uid://cyqhr0kphrpqg" path="res://models/objects/ObjectGridOption.gd" id="1_0i76b"]
+[ext_resource type="Script" uid="uid://bk6s5ywpu78h6" path="res://models/objects/object_preview.gd" id="2_rh2hy"]
+
+[sub_resource type="Environment" id="Environment_rh2hy"]
+background_color = Color(1, 1, 1, 1)
+ambient_light_source = 2
+ambient_light_color = Color(1, 1, 1, 1)
+
+[sub_resource type="World3D" id="World3D_w1tp1"]
+environment = SubResource("Environment_rh2hy")
+
+[node name="ObjectGridOption" type="PanelContainer"]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -0.5
+offset_right = 0.5
+offset_bottom = 27.0
+grow_horizontal = 2
+size_flags_horizontal = 4
+size_flags_vertical = 0
+script = ExtResource("1_0i76b")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+
+[node name="ObjectPreview" type="SubViewportContainer" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+stretch = true
+script = ExtResource("2_rh2hy")
+
+[node name="SubViewport" type="SubViewport" parent="VBoxContainer/ObjectPreview"]
+own_world_3d = true
+world_3d = SubResource("World3D_w1tp1")
+transparent_bg = true
+handle_input_locally = false
+size = Vector2i(2, 2)
+
+[node name="Camera3D" type="Camera3D" parent="VBoxContainer/ObjectPreview/SubViewport"]
+current = true
+
+[node name="ObjectName" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+horizontal_alignment = 1
+clip_text = true
+text_overrun_behavior = 3

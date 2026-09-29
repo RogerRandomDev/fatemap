@@ -15,8 +15,8 @@ static func undo()->void:
 static func redo()->void:
 	if controller.has_redo():controller.redo()
 
-static func startAction(actionName:StringName)->bool:
-	controller.create_action(actionName,UndoRedo.MERGE_DISABLE,true)
+static func startAction(actionName:StringName,merge=UndoRedo.MERGE_DISABLE)->bool:
+	controller.create_action(actionName,merge,true)
 	return true
 
 static func commitAction(execute:bool=false)->bool:

@@ -33,10 +33,6 @@ _surfaces = [{
 "vertex_data": PackedByteArray("AAAAPwAAgD0AAAAADwu1PgAAgD0PC7W+AAAAPwAAgL0AAAAADwu1PgAAgL0PC7W+AAAAAAAAgD0AAAAAAAAAAAAAgL0AAAAAAAAAAAAAgD0AAAC/AAAAAAAAgL0AAAC/Dwu1vgAAgD0PC7W+Dwu1vgAAgL0PC7W+AAAAvwAAgD0AAAAAAAAAvwAAgL0AAAAADwu1vgAAgD0PC7U+Dwu1vgAAgL0PC7U+AAAAAAAAgD0AAAA/AAAAAAAAgL0AAAA/Dwu1PgAAgD0PC7U+Dwu1PgAAgL0PC7U+")
 }]
 script = ExtResource("7_54ncs")
-sides = 8
-halfRot = false
-radius = 1.0
-height = 0.125
 metadata/_custom_type_script = "uid://5opik8fjlvc3"
 
 [sub_resource type="PrismMesh" id="PrismMesh_ysyqw"]

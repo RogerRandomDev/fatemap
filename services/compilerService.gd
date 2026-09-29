@@ -196,5 +196,3 @@ class precompileMapData extends RefCounted:
 			normalIDs[normalIDs.size()]=norm
 			return normalIDs.size()-1
 		return normalIDs.values().find(norm)
-	
-	
