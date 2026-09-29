@@ -67,7 +67,7 @@ func loadContents(contents:ObjectDataResource)->void:
 	if contents==null:return
 
 func optionEvent(event:InputEvent,option)->void:
-	if not MeshEditService.isEditing():return
+	if not MeshEditService.isEditing() or not MeshEditService.editingType==ObjectModel.objectTypes.MESH:return
 	if not event is InputEventMouseButton:return
 	if event.button_index==MOUSE_BUTTON_LEFT and event.is_pressed():
 		

@@ -1,5 +1,4 @@
 extends meshEditMode
-class_name meshEditModeBasicVertices
 ##  a [meshEditMode] for dragging vertices along axes
 
 

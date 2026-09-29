@@ -109,8 +109,6 @@ class signalBind extends RefCounted:
 	func replaceCallBoundValue(valueIndex:int=0,newValue:Variant=null)->bool:
 		var originalBoundValues=bindCall.get_bound_arguments()
 		if originalBoundValues.size()<=valueIndex:return false
-		print(originalBoundValues)
 		originalBoundValues[valueIndex]=newValue
-		print(originalBoundValues)
 		
 		return true

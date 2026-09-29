@@ -1,5 +1,4 @@
 extends meshEditMode
-class_name alongFaceNormal
 ##  a [meshEditMode] for sliding along the face's normal direction exclusively
 
 

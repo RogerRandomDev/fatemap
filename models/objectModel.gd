@@ -8,7 +8,7 @@ enum objectTypes{
 	GROUP
 }
 
-var objectData:ObjectPhysicalDataResource:
+var objectData:ObjectDataResource:
 	set(v):
 		setObjectData(v)
 		objectData=v

@@ -7,30 +7,38 @@ static var editMode:MeshEditMode=MeshEditMode.FACE:
 	set(v):
 		editMode=v
 		signalService.emitSignal(&"EditModeChanged",[v])
+static var editingType:ObjectModel.objectTypes:
+	get:return -1 if editor.editingObject==null else editor.editingObject.objectType
+
 static var editor:meshEditMode
+
+
 
 static func initializeService()->void:pass
 
-static func setEditing(object)->void:
+static func setEditing(object:ObjectModel)->void:
 	signalService.emitSignal.call_deferred(&"UpdateEditingMesh")
 	if object==null:
 		editing=null
 		return
-	if not object is ObjectModel:
-		editing=null
-		return
-	var mesh=object.get_node_or_null("MESH_OBJECT")
-	if editing and editing.meshObject==mesh:return
+	
 	
 	editor=ParameterService.getParam(&"CurrentMeshEditMode").new()
 	editor.camera=object.get_viewport().get_camera_3d()
-	
 	editor.updateEditingObject(object)
-	
-	editing=editingMesh.new(object,mesh)
-	
-	
-	editing.mesh.preloadCleanFaces()
+	match object.objectType:
+		ObjectModel.objectTypes.OBJECT:
+			
+			editor=load("res://models/meshEditModes/basicObject.gd").new()
+			editor.camera=object.get_viewport().get_camera_3d()
+			editor.updateEditingObject(object)
+			editing=editingMesh.new(object,null)
+			return
+		ObjectModel.objectTypes.MESH:
+			var mesh=object.get_node_or_null("MESH_OBJECT")
+			if editing and editing.meshObject==mesh:return
+			editing=editingMesh.new(object,mesh)
+			editing.mesh.preloadCleanFaces()
 
 static func getEditing():
 	return editing
@@ -52,7 +60,7 @@ class editingMesh extends Resource:
 	var dataObject:ObjectModel
 	var meshObject:MeshInstance3D
 	var mesh:objectMeshModel:
-		get:return meshObject.mesh
+		get:return null if meshObject==null else meshObject.mesh
 	
 	#surface special info
 	#part selections
@@ -132,6 +140,7 @@ class editingMesh extends Resource:
 		if meshPart is objectMeshModel.cleanedVertex:for vertex in meshPart.vertices:selectVertex(vertex,toggleSelected)
 	
 	func updateSelectionTracked(ignore:bool=false)->void:
+		if meshObject==null:return
 		var changes=meshObject.mesh.updateSelection(
 			selectedVertices,selectedEdges,selectedFaces
 		)

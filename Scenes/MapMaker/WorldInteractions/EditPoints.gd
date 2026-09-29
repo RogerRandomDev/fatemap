@@ -31,6 +31,7 @@ func updateMeshSelection()->void:
 	if not MeshEditService.isEditing() or not ParameterService.getParam(&"activeObject") is ObjectModel:
 		updateEditPointRender()
 		return
+	if MeshEditService.editing.mesh==null:return
 	match(editMode):
 		MeshEditService.MeshEditMode.FACE:
 			for index in MeshEditService.editing.mesh.cleanedFaces:
@@ -153,15 +154,18 @@ func _get_snapped_direction(forward: Vector3) -> Vector3:
 	return _snapped
 
 func moveSelection(moveBy:Vector3,local:bool=true)->void:
-	if not MeshEditService.isEditing():return
+	var selectedObj = ParameterService.getParam(&"activeObject")
+	if selectedObj==null:return
 	moveBy*=ParameterService.getParam(&"snapDistance")
-	if MeshEditService.editing.selectedVertices.size()==0:
-		MeshEditService.editing.dataObject.position+=moveBy
-		if MeshEditService.editing.dataObject.has_method("transformed"):
-			MeshEditService.editing.dataObject.call("transformed")
-	MeshEditService.editing.translateSelection(moveBy,local)
-	MeshEditService.editing.mesh.rebuild(false)
-	PhysicalObjectService.updatePickableArea(MeshEditService.editing.dataObject)
+	#if its a normal object just offset its position
+	if MeshEditService.isEditing():
+		if MeshEditService.editing.selectedVertices.size()==0:
+			MeshEditService.editing.dataObject.position+=moveBy
+			if MeshEditService.editing.dataObject.has_method("transformed"):
+				MeshEditService.editing.dataObject.call("transformed")
+		MeshEditService.editing.translateSelection(moveBy,local)
+		MeshEditService.editing.mesh.rebuild(false)
+		PhysicalObjectService.updatePickableArea(MeshEditService.editing.dataObject)
 	signalService.emitSignal(&"meshSelectionChanged")
 	
 

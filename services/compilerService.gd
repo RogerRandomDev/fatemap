@@ -43,28 +43,41 @@ static func loadMapData(loadOnto:Node,data:PackedByteArray=[])->void:
 		var loadingObject = data.find(10,checkFrom+1)
 		if loadingObject == -1 or loadingObject-1<=checkFrom:break
 		var objectName = data.slice(checkFrom,loadingObject).get_string_from_ascii()
-		checkFrom=loadingObject+1
-		
-		var surfaceSize=data.decode_u32(checkFrom)
-		var objectMesh:objectMeshModel=objectMeshModel.new()
-		objectMesh.loadCompiledSurfaces(matList,positions,normals,data.slice(checkFrom+4,checkFrom+4+surfaceSize))
-		var obj = PhysicalObjectModel.new()
-		var objData = ObjectPhysicalDataResource.new()
-		objData.inheritedData=load("res://modelData/baseObject.tres")
-		objData.mesh=objectMesh
-		obj.objectData=objData
-		var placedObjects=loadOnto
-		placedObjects.add_child(obj)
-		#TODO: store and get the actual position of the object instead of this shenanigan
-		obj.global_position=Vector3(16,4,16)
-		(obj.get_node("MESH_OBJECT").mesh as objectMeshModel).globalTransform.origin=-obj.global_transform.origin
-		obj.get_node("MESH_OBJECT").mesh = objectMesh
-		checkFrom+=surfaceSize+5
+		var objectType = data.slice(loadingObject+1,loadingObject+2)[0]
+		checkFrom=loadingObject+2
+		var obj=ObjectModel.new()
+		var objData
+		match objectType:
+			ObjectModel.objectTypes.MESH:
+				var surfaceSize=data.decode_u32(checkFrom)
+				var objectMesh:objectMeshModel=objectMeshModel.new()
+				objectMesh.loadCompiledSurfaces(matList,positions,normals,data.slice(checkFrom+4,checkFrom+4+surfaceSize))
+				obj = PhysicalObjectModel.new()
+				obj.objectType=ObjectModel.objectTypes.MESH
+				objData = ObjectPhysicalDataResource.new()
+				objData.inheritedData=load("res://modelData/baseObject.tres")
+				objData.mesh=objectMesh
+				obj.objectData=objData
+				var placedObjects=loadOnto
+				placedObjects.add_child(obj)
+				#TODO: store and get the actual position of the object instead of this shenanigan
+				obj.global_position=Vector3(16,4,16)
+				(obj.get_node("MESH_OBJECT").mesh as objectMeshModel).globalTransform.origin=-obj.global_transform.origin
+				obj.get_node("MESH_OBJECT").mesh = objectMesh
+				checkFrom+=surfaceSize+5
+			ObjectModel.objectTypes.OBJECT:
+				obj.objectType=ObjectModel.objectTypes.OBJECT
+				objData = ObjectDataResource.new()
+				#TODO: parse and actually load OBJECT contents
+				var placedObjects=loadOnto
+				placedObjects.add_child(obj)
+				checkFrom+=1
 		#have to get the encoded parameters out as well
 		var paramBlockSize:int=data.decode_u32(checkFrom)
 		var paramData = bytes_to_var_with_objects(data.slice(checkFrom+4,checkFrom+4+paramBlockSize))
-		for param in paramData.keys():
-			objData.setInstance(param,paramData[param][1])
+		if paramData!=null:
+			for param in paramData.keys():
+				objData.setInstance(param,paramData[param][1])
 		checkFrom+=paramBlockSize
 		# +4 later because the last part is the group
 		# we aren't going to handle that just yet
@@ -138,13 +151,18 @@ class precompileMapData extends RefCounted:
 			var objectData = objects[object]
 			binary.append_array(object.to_ascii_buffer())
 			binary.push_back(10)
-			
-			surfaceSize.encode_u32(0,objectData.Surface.size())
-			binary.append_array(surfaceSize)
-			binary.append_array(objectData.Surface)
+			binary.append_array([objectData.get("Type")])
+			match objectData.get("Type"):
+				ObjectModel.objectTypes.MESH:
+					surfaceSize.encode_u32(0,objectData.Surface.size())
+					binary.append_array(surfaceSize)
+					binary.append_array(objectData.Surface)
+				ObjectModel.objectTypes.OBJECT:
+					#should have some way to get objectData mesh source/point
+					pass
 			binary.push_back(10)
 			
-			var params = var_to_bytes_with_objects(objectData.Parameters)
+			var params = var_to_bytes_with_objects(objectData.get("Parameters",null))
 			paramSize.encode_u32(0,params.size())
 			binary.append_array(paramSize)
 			binary.append_array(params)

@@ -34,7 +34,7 @@ static func buildMesh(object:ObjectPhysicalDataResource,instance:Node3D=null,_ma
 	
 	return meshInstance
 
-static func buildPickableAreaForModel(object:Node3D,accurateBounds:bool=false)->StaticBody3D:
+static func buildPickableAreaForModel(model:ObjectModel,object:Node3D)->StaticBody3D:
 	var bounds:Array[AABB] = []
 	for node in object.get_children():
 		if node is MeshInstance3D:
@@ -45,7 +45,7 @@ static func buildPickableAreaForModel(object:Node3D,accurateBounds:bool=false)->
 		)
 	)
 	var area=StaticBody3D.new()
-	object.add_child(area)
+	model.add_child(area)
 	area.name="PICKABLE_OBJECT"
 	for bound in bounds:
 		var body=CollisionShape3D.new()

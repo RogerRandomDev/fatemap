@@ -1,4 +1,4 @@
-[gd_scene load_steps=29 format=4 uid="uid://gq185wjg7pqu"]
+[gd_scene load_steps=30 format=4 uid="uid://gq185wjg7pqu"]
 
 [ext_resource type="Script" uid="uid://ctkdd8bryxxtr" path="res://Scenes/MapMaker/mapMaker.gd" id="1_cyx2k"]
 [ext_resource type="Theme" uid="uid://8cjq1xuuwswd" path="res://Scenes/MapMakerTheme.tres" id="1_ni7vo"]
@@ -17,6 +17,7 @@
 [ext_resource type="Script" uid="uid://dxjm221ox8g4l" path="res://Scenes/MapMaker/RightInspector.gd" id="9_nposp"]
 [ext_resource type="Script" uid="uid://bgtxjyyro3vut" path="res://Scenes/MapMaker/WorldInteractions/EditCreateMesh.gd" id="9_qtfr5"]
 [ext_resource type="Script" uid="uid://6sr3giptw1ue" path="res://Scenes/MapMaker/meshToolbar.gd" id="11_6lnv8"]
+[ext_resource type="Script" uid="uid://d276is10q1qdh" path="res://Scenes/MapMaker/WorldInteractions/EditObject.gd" id="14_ajyq3"]
 [ext_resource type="Script" uid="uid://chdkupotchpee" path="res://Scenes/MapMaker/WorldInteractions/EditInteractor.gd" id="14_qtfr5"]
 
 [sub_resource type="BoxMesh" id="BoxMesh_ni25v"]
@@ -133,6 +134,10 @@ script = ExtResource("9_qtfr5")
 metadata/_custom_type_script = "uid://bgtxjyyro3vut"
 
 [node name="newObjectHighlighter" type="Marker3D" parent="MapView/EditInteractions/EditCreateMesh"]
+
+[node name="EditObject" type="Node" parent="MapView/EditInteractions"]
+script = ExtResource("14_ajyq3")
+metadata/_custom_type_script = "uid://d276is10q1qdh"
 
 [node name="FaceHighlighter" type="Node" parent="MapView"]
 script = ExtResource("6_04lqo")

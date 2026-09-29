@@ -45,7 +45,7 @@ func _ready() -> void:
 	signalService.bindToSignal(&"meshSelectionChanged",updateWithSelectedObject)
 
 func updateWithSelectedObject()->void:
-	if not MeshEditService.isEditing():return
+	if not MeshEditService.isEditing() or MeshEditService.editing.mesh==null:return
 	var firstFace=MeshEditService.editing.mesh.faces[0]
 	if MeshEditService.editing.selectedFaces.size()!=0:
 		firstFace=MeshEditService.editing.selectedFaces[0]
@@ -59,6 +59,7 @@ func displaySelectedFaceInfo()->void:
 	var counters:Array=[0,0,0]
 	var selected:Array=[0,0,0]
 	if MeshEditService.isEditing():
+		if MeshEditService.editing.mesh==null:return
 		counters = [
 			MeshEditService.editing.mesh.faces.size(),
 			MeshEditService.editing.mesh.edges.size(),

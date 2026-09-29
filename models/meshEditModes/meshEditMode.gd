@@ -44,8 +44,11 @@ func clearData(clearObject:bool=false)->void:
 func updateEditingObject(object:ObjectModel)->void:
 	clearData(true)
 	editingObject=object
-	editingMesh=object.get_node_or_null("MESH_OBJECT").mesh
-
+	if object.objectType==ObjectModel.objectTypes.MESH:
+		editingMesh=object.get_node_or_null("MESH_OBJECT").mesh
+	else:
+		editingNormal=Vector3.UP
+		editingOrigin=object.global_position
 
 func updateSelected(cleanPoint:RefCounted)->void:
 	if cleanPoint is objectMeshModel.cleanedFace:
@@ -97,6 +100,9 @@ func castRayOnPlane(from:Vector3,along:Vector3)->Vector3:
 
 ## gets the location the edit mode intends to try and move the selection towards
 func getTargetFromMouse(_mousePosition:Vector2)->Vector3:return Vector3.INF
+
+## gets the point on the object that intersects the given mouse position
+func getPointFromMouse(_mousePosition:Vector2)->Vector3:return Vector3.INF
 
 ## uses the info it is provided to slide the selection along the given way this editMode uses
 func updateSelectionLocation(_mousePosition:Vector2)->void:pass
