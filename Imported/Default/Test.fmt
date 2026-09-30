@@ -1,5 +1,0 @@
-name = Test
-material = Default/defaultMaterial.material
-texture = Default/Test_0.png
-parameters = {}
-tags = []

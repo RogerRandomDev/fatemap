@@ -7,8 +7,9 @@ func _enter_tree() -> void:ServiceInitializer.initializeAllServices()
 
 func _ready() -> void:
 	loadGUILayout()
-	MaterialService.loadFMT("res://Imported/Default/NONE.fmt")
-	MaterialService.loadFMT("res://Imported/Default/Test.fmt")
+	for f in DirAccess.get_files_at("res://Imported/Materials/Default"):
+		if not f.ends_with(".fmt"):continue
+		MaterialService.loadFMT("res://Imported/Materials/Default/"+f)
 	PhysicalObjectInputController.initializeInputController()
 
 func loadGUILayout()->void:

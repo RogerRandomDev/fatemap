@@ -6,7 +6,7 @@ func updatePlane()->void:
 	var cameraDirection=localPos().direction_to(camera.global_position)
 	#we cut the ability of the plane to look at the normal of the face
 	#so it always intersects the normal ray along the axis
-	var planeNormal=cameraDirection-(cameraDirection*localNormal().abs())
+	var planeNormal=cameraDirection
 	planeNormal=planeNormal.normalized()
 	editingPlane=Plane(planeNormal,localPos())
 

@@ -1,0 +1,5 @@
+name = Tile 69
+material = Materials/Default/defaultMaterial.material
+texture = Materials/Default/Tiles069_1K-PNG_Color.png
+parameters = {}
+tags = []
