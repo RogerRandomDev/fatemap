@@ -5,7 +5,7 @@ var dragSafe:bool=false
 
 
 func _ready() -> void:
-	pass
+	signalService.bindToSignal(&"meshSelectionChanged",updateMeshSelection)
 
 func getScreenSpace(pointAt:Vector3)->Vector2:
 	return holder.camera.unproject_position(pointAt)
@@ -94,4 +94,26 @@ func moveSelection(moveBy:Vector3,_local:bool=true)->void:
 		)
 		UndoRedoService.commitAction(true)
 	signalService.emitSignal(&"meshSelectionChanged")
-	
+
+func updateMeshSelection()->void:
+	var activeObject=ParameterService.getParam(&"activeObject")
+	if not activeObject is ObjectModel:return
+	if not activeObject.has_meta("reposition"):return
+	activeObject.remove_meta("reposition")
+	if activeObject.objectType != ObjectModel.objectTypes.OBJECT:return
+	if InputService.pressed(&"MouseLeft"):
+		dragSafe=true
+		var target=Vector3.ZERO
+		#var target=MeshEditService.editor.getPointFromMouse(holder.get_local_mouse_position())
+		MeshEditService.editor.editingOrigin=target
+		MeshEditService.editor.updatePlane()
+		var targetPoint = holder.getMousePoint().snappedf(
+			ParameterService.getParam(&"snapDistance")
+		)
+		if not targetPoint.is_finite():
+			var projectedOrigin:Vector3=MeshEditService.editor.camera.project_ray_origin(holder.get_local_mouse_position())
+			var projectedNormal:Vector3=MeshEditService.editor.camera.project_ray_normal(holder.get_local_mouse_position())
+			targetPoint=(projectedOrigin+projectedNormal*16).snappedf(
+				ParameterService.getParam(&"snapDistance")
+			)
+		activeObject.global_position=targetPoint

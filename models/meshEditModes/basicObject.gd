@@ -3,12 +3,11 @@ extends meshEditMode
 
 
 func updatePlane()->void:
-	var cameraDirection=localPos().direction_to(camera.global_position)
+	var cameraDirection=camera.global_transform.basis.z.normalized()
 	editingNormal=_get_snapped_direction(cameraDirection)
 	#we cut the ability of the plane to look at the normal of the face
 	#so it always intersects the normal ray along the axis
 	var planeNormal=_get_snapped_direction(cameraDirection).abs()
-	
 	planeNormal=planeNormal.normalized()
 	editingPlane=Plane(planeNormal,localPos())
 

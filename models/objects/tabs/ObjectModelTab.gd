@@ -73,6 +73,16 @@ func optionEvent(event:InputEvent,option)->void:
 		holder.objectData=ObjectDataResource.new()
 		holder.objectData.inheritedData=load("res://modelData/baseObject.tres")
 		placeOn.add_child(holder)
+		holder.set_meta("reposition","")
+		ParameterService.setParam(&"activeObject",holder)
+		MeshEditService.setEditing(holder)
+		signalService.emitSignal.call_deferred(&"meshSelectionChanged")
+		var f:Callable
+		f=func(_event:InputEvent):
+			GUIService.getByName("PrimaryViewport").reference.get_child(0).get_child(0)._input(_event)
+			if InputService.pressed("MouseUp"):
+				option.gui_input.disconnect(f)
+		option.gui_input.connect(f)
 
 func recursiveToggleContents(from:Control,enable:bool=true)->void:
 	from.set("editable",enable)
