@@ -24,17 +24,23 @@ func getPointFromMouse(mousePosition:Vector2)->Vector3:
 	var projectedOrigin:Vector3=camera.project_ray_origin(mousePosition)
 	var projectedNormal:Vector3=camera.project_ray_normal(mousePosition)
 	var bounds:Array[AABB] = []
+	var boundTransforms:Array[Transform3D] = []
 	for node in editingObject.get_node("PICKABLE_OBJECT").get_children():
 		if node is CollisionShape3D:
-			var aabb=AABB(node.global_position-node.shape.size*0.5,node.shape.size)
+			var aabb=AABB(-node.shape.size*0.5,node.shape.size)
 			bounds.append(aabb)
+			boundTransforms.append(node.global_transform)
 	var closest=[null,67108864]
-	for bound in bounds:
-		var intersection=bound.intersects_ray(projectedOrigin,projectedNormal)
+	for i in len(bounds):
+		var bound = bounds[i]
+		var trans :Transform3D= boundTransforms[i]
+		var localOrigin = trans.affine_inverse() * projectedOrigin
+		var localDirection = trans.affine_inverse().basis * projectedNormal
+		var intersection=bound.intersects_ray(localOrigin,localDirection)
 		if intersection==null:continue
-		var distance_to=intersection.distance_squared_to(projectedOrigin)
+		var distance_to=intersection.distance_squared_to(localOrigin)
 		if closest[1]>distance_to:
-			closest[0]=intersection;closest[1]=distance_to
+			closest[0]=intersection+trans.origin;closest[1]=distance_to
 	if closest[0] ==null:return Vector3.INF
 	return closest[0]-editingObject.global_position
 

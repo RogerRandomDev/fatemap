@@ -61,7 +61,6 @@ func loadContents(contents:ObjectDataResource)->void:
 	if contents==null:return
 
 func optionEvent(event:InputEvent,option)->void:
-	if MeshEditService.isEditing():return
 	if not event is InputEventMouseButton:return
 	if event.button_index==MOUSE_BUTTON_LEFT and event.is_pressed():
 		#lets you drag an object to place on the scene
@@ -72,6 +71,7 @@ func optionEvent(event:InputEvent,option)->void:
 		holder.add_child(newObject)
 		holder.objectModelFile=option.myObject.resource_path
 		holder.objectData=ObjectDataResource.new()
+		holder.objectData.inheritedData=load("res://modelData/baseObject.tres")
 		placeOn.add_child(holder)
 
 func recursiveToggleContents(from:Control,enable:bool=true)->void:
