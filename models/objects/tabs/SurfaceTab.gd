@@ -1,7 +1,7 @@
 extends VSplitContainer
 class_name SurfaceTab
 
-var materialList:HFlowContainer
+var materialList:VBoxContainer
 var faceInfoList:Control
 var surfaceMaterialIconSize:float=96
 var materialOptionSpacing:float=4
@@ -25,14 +25,27 @@ func buildView()->void:
 			self
 		)
 	).reference
-	materialList=GUIService.insertElement(
+	var scrollMaterialList=GUIService.insertElement(
 		GUIService.createElement(
-			HFlowContainer.new(),
-			&"SurfaceTabMaterialList",
-			[&"List",&"Surface",&"Material"],
+			ScrollContainer.new(),
+			&"SurfaceTabMaterialListScrollContainer",
+			[&"Container",&"Scroll",&"Surface",&"Material",&"Face"],
 			self
 		)
 	).reference
+	scrollMaterialList.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED
+	scrollMaterialList.size_flags_vertical=Control.SIZE_EXPAND_FILL
+	scrollMaterialList.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	
+	materialList=GUIService.insertElement(
+		GUIService.createElement(
+			VBoxContainer.new(),
+			&"SurfaceTabMaterialList",
+			[&"List",&"Surface",&"Material"],
+			scrollMaterialList
+		)
+	).reference
+	materialList.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	
 	loadContents(null)
 
@@ -44,13 +57,28 @@ func clearMaterialList()->void:
 
 func loadMaterialList()->void:
 	var surfaceMaterialList:Array[MaterialService.materialModel]=MaterialService.getMaterialList()
+	var subGroups:Dictionary={}
 	for surfaceMaterial in surfaceMaterialList:
+		var materialPath = surfaceMaterial.path.split("Imported/Materials/",false,1)[1]
+		var materialGroup = materialPath.rsplit("/",false,1)[0]
+		#if no subgroup exists, create one
+		if not subGroups.has(materialGroup):
+			var subGroup=HFlowContainer.new()
+			var lbl=Label.new()
+			lbl.text=materialGroup
+			lbl.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+			lbl.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
+			materialList.add_child(lbl)
+			materialList.add_child(subGroup)
+			subGroup.tooltip_text=materialGroup
+			subGroups[materialGroup]=subGroup
+		
 		var materialOption = materialGridOption.instantiate()
 		materialOption.loadContext(surfaceMaterial)
 		materialOption.setIconSize(surfaceMaterialIconSize)
 		materialOption.updateSpacings(optionExtraBorder)
 		materialOption.gui_input.connect(optionEvent.bind(materialOption))
-		materialList.add_child(materialOption)
+		subGroups[materialGroup].add_child(materialOption)
 
 func updateGridLayout()->void:
 	materialList.add_theme_constant_override("h_separation",int(materialOptionSpacing))

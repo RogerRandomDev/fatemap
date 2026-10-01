@@ -238,9 +238,19 @@ func updateSelection(_vertices,_edges,_faces,ignoreChange:bool=false)->Dictionar
 	return changes
 
 func getCompilerData(compiler:compilerService.precompileMapData)->Dictionary:
+	var uvPos=PackedByteArray()
+	var transformRotation=globalTransform.basis.get_euler()
+	uvPos.resize(12*2)
+	uvPos.encode_float(0,globalTransform.origin.x)
+	uvPos.encode_float(4,globalTransform.origin.y)
+	uvPos.encode_float(8,globalTransform.origin.z)
+	uvPos.encode_float(12,transformRotation.x)
+	uvPos.encode_float(16,transformRotation.y)
+	uvPos.encode_float(20,transformRotation.z)
 	return {
 		"Materials":faceMaterialMap.keys().filter(func(mat):return faceMaterialMap[mat].size()>0),
-		"Surfaces":convertSurfacesToBinary(compiler)
+		"Surfaces":convertSurfacesToBinary(compiler),
+		"UVPosition":uvPos
 	}
 
 const BYTES_PER_FACE = 54

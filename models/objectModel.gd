@@ -22,6 +22,9 @@ func getData()->ObjectDataResource:return null
 
 func getCompiledData(compiler:compilerService.precompileMapData)->Dictionary:return {
 	"Identifier":name,
+	"Position":global_position,
+	"Rotation":global_rotation,
+	"Scale":global_basis.get_scale(),
 	"Parameters":objectData.getParametersForCompiler()
 }
 

@@ -53,7 +53,7 @@ fog_light_color = Color(0.1, 0.1, 0.1, 1)
 environment = SubResource("Environment_nposp")
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_qtfr5"]
-render_priority = 0
+render_priority = 127
 shader = ExtResource("7_qtfr5")
 
 [sub_resource type="QuadMesh" id="QuadMesh_mmgm2"]
@@ -127,6 +127,9 @@ script = ExtResource("7_ni25v")
 metadata/_custom_type_script = "uid://bwfu3qiinbjdw"
 
 [node name="MultiMeshInstance3D" type="MultiMeshInstance3D" parent="MapView/EditInteractions/EditPoints"]
+sorting_use_aabb_center = false
+cast_shadow = 0
+ignore_occlusion_culling = true
 multimesh = SubResource("MultiMesh_qtfr5")
 
 [node name="EditCreateMesh" type="Node" parent="MapView/EditInteractions"]

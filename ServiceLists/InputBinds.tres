@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="InputMapData" load_steps=26 format=3 uid="uid://bwk28degu8fgh"]
+[gd_resource type="Resource" script_class="InputMapData" load_steps=30 format=3 uid="uid://bwk28degu8fgh"]
 
 [ext_resource type="Script" uid="uid://pu05o4yiow38" path="res://models/resources/InputMapData.gd" id="1_m2dc3"]
 
@@ -35,6 +35,26 @@ unicode = 90
 
 [sub_resource type="Shortcut" id="Shortcut_631ao"]
 events = [SubResource("InputEventKey_mkkmf")]
+
+[sub_resource type="InputEventMouseButton" id="InputEventMouseButton_d1vtu"]
+button_mask = 8
+position = Vector2(131, 15)
+global_position = Vector2(140, 63)
+button_index = 4
+pressed = true
+
+[sub_resource type="Shortcut" id="Shortcut_mkkmf"]
+events = [SubResource("InputEventMouseButton_d1vtu")]
+
+[sub_resource type="InputEventMouseButton" id="InputEventMouseButton_631ao"]
+button_mask = 16
+position = Vector2(188, 16)
+global_position = Vector2(197, 64)
+button_index = 5
+pressed = true
+
+[sub_resource type="Shortcut" id="Shortcut_0y8c4"]
+events = [SubResource("InputEventMouseButton_631ao")]
 
 [sub_resource type="InputEventKey" id="InputEventKey_fmxf7"]
 device = -1
@@ -101,7 +121,7 @@ events = [SubResource("InputEventKey_w4slo")]
 
 [resource]
 script = ExtResource("1_m2dc3")
-inputCount = 12
+inputCount = 14
 input_0/ActionName = "Delete"
 input_0/bind = SubResource("Shortcut_m2dc3")
 input_1/ActionName = "MouseLeft"
@@ -126,4 +146,8 @@ input_10/ActionName = "UndoAction"
 input_10/bind = SubResource("Shortcut_6a7cp")
 input_11/ActionName = "RedoAction"
 input_11/bind = SubResource("Shortcut_631ao")
+input_12/ActionName = "ScrollUp"
+input_12/bind = SubResource("Shortcut_mkkmf")
+input_13/ActionName = "ScrollDown"
+input_13/bind = SubResource("Shortcut_0y8c4")
 metadata/_custom_type_script = "uid://pu05o4yiow38"

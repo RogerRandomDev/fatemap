@@ -21,13 +21,21 @@ func disableCreation(_arr)->void:
 	highlight.visible=false
 
 func _handle_mouse_click(_event: InputEventMouseButton) -> bool:
+	if InputService.pressed(&"ScrollUp") || InputService.pressed(&"ScrollDown") and editOrigin!=Vector3.INF:
+		if InputService.pressed(&"ScrollUp"):
+			editEnd.y+=ParameterService.getParam(&"snapDistance")
+			updateExampleMesh()
+		if InputService.pressed(&"ScrollDown"):
+			editEnd.y-=ParameterService.getParam(&"snapDistance")
+			updateExampleMesh()
+	
 	if InputService.pressed(&"MouseLeft")||InputService.released(&"MouseLeft",true):
 		if InputService.pressed(&"MouseLeft",true):
 			if not InputService.pressed(&"CreateMesh"):return false
 			editOrigin=holder.getMousePoint().snappedf(
 				ParameterService.getParam(&"snapDistance")
 			)
-			editEnd=editOrigin
+			editEnd=editOrigin+Vector3(0,ParameterService.getParam(&"snapDistance"),0)
 			loadExampleMesh()
 		else:
 			if InputService.pressed(&"MouseLeft"):return false
@@ -41,9 +49,11 @@ func _handle_mouse_click(_event: InputEventMouseButton) -> bool:
 
 func _handle_mouse_drag(_event: InputEventMouseMotion) -> bool:
 	if not editOrigin.is_finite():return false
+	var posY=editEnd.y
 	editEnd=holder.getMousePoint(true,Vector3(0,editOrigin.y,0)).snappedf(
 		ParameterService.getParam(&"snapDistance")
 	)
+	editEnd.y=posY
 	updateExampleMesh()
 	
 	return true
@@ -57,7 +67,7 @@ func loadExampleMesh()->void:
 		"BoxMesh":
 			highlightMesh.size.y=ParameterService.getParam(&"snapDistance")
 		"ArrayMesh":
-			highlightMesh.height=ParameterService.getParam(&"snapDistance")
+			highlightMesh.height=1
 	
 	highlight.mesh=highlightMesh
 	
@@ -71,15 +81,14 @@ func updateExampleMesh()->void:
 	match highlight.mesh.get_class():
 		"BoxMesh":
 			highlight.mesh.size.x=editSize.x
+			highlight.mesh.size.y=editSize.y
 			highlight.mesh.size.z=editSize.z
 		"ArrayMesh":
 			var scaleAxis=editSize
-			highlight.scale=Vector3(scaleAxis.x,1,scaleAxis.z)
-			highlight.scale.y=1
+			highlight.scale=scaleAxis
 	
 	highlight.global_position=(
-		editOrigin-(editOrigin-editEnd)*0.5+
-		Vector3(0,ParameterService.getParam(&"snapDistance")*0.5,0)
+		editOrigin-(editOrigin-editEnd)*0.5
 		)
 	#we make the outline edges into a mesh as well
 	#it helps with making it easier to see it

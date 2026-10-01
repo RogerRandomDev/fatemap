@@ -8,7 +8,6 @@ static func compileMapData(makerViewport:SubViewport)->PackedByteArray:
 	var objectList:Array[Node]=makerViewport.get_node("PlacedObjects").get_children()
 	var uncompiledData = precompileMapData.new(objectList)
 	compiledMap = uncompiledData.getBinary()
-	loadMapData(makerViewport.get_node("PlacedObjects"),compiledMap)
 	return compiledMap
 
 static func loadMapData(loadOnto:Node,data:PackedByteArray=[])->void:
@@ -44,34 +43,66 @@ static func loadMapData(loadOnto:Node,data:PackedByteArray=[])->void:
 		if loadingObject == -1 or loadingObject-1<=checkFrom:break
 		var objectName = data.slice(checkFrom,loadingObject).get_string_from_ascii()
 		var objectType = data.slice(loadingObject+1,loadingObject+2)[0]
-		checkFrom=loadingObject+2
-		var obj=ObjectModel.new()
+		checkFrom=loadingObject+3
+		# 2 vector3s 12*2 bytes
+		var objectTransform = data.slice(checkFrom,checkFrom+36)
+		checkFrom+=36
+		var decodedTransform:Transform3D=Transform3D()
+		# applies position|rotation|scale
+		decodedTransform.origin=Vector3(objectTransform.decode_float(0),objectTransform.decode_float(4),objectTransform.decode_float(8))
+		decodedTransform.basis=Basis.from_euler(Vector3(objectTransform.decode_float(12),objectTransform.decode_float(16),objectTransform.decode_float(20)))
+		decodedTransform.basis.scaled(Vector3(objectTransform.decode_float(24),objectTransform.decode_float(28),objectTransform.decode_float(32)))
+		
+		var obj:ObjectModel
 		var objData
 		match objectType:
 			ObjectModel.objectTypes.MESH:
 				var surfaceSize=data.decode_u32(checkFrom)
 				var objectMesh:objectMeshModel=objectMeshModel.new()
+				
+				var UVTransform=data.slice(checkFrom+4+surfaceSize,checkFrom+surfaceSize+28)
+				objectMesh.globalTransform=Transform3D(
+					Basis.from_euler(Vector3(
+						UVTransform.decode_float(12),
+						UVTransform.decode_float(16),
+						UVTransform.decode_float(20)
+					)),Vector3(
+						UVTransform.decode_float(0),
+						UVTransform.decode_float(4),
+						UVTransform.decode_float(8)))
 				objectMesh.loadCompiledSurfaces(matList,positions,normals,data.slice(checkFrom+4,checkFrom+4+surfaceSize))
+				checkFrom+=surfaceSize+4+25
 				obj = PhysicalObjectModel.new()
 				obj.objectType=ObjectModel.objectTypes.MESH
 				objData = ObjectPhysicalDataResource.new()
 				objData.inheritedData=load("res://modelData/baseObject.tres")
 				objData.mesh=objectMesh
+				
+				
 				obj.objectData=objData
 				var placedObjects=loadOnto
 				placedObjects.add_child(obj)
-				#TODO: store and get the actual position of the object instead of this shenanigan
-				obj.global_position=Vector3(16,4,16)
-				(obj.get_node("MESH_OBJECT").mesh as objectMeshModel).globalTransform.origin=-obj.global_transform.origin
 				obj.get_node("MESH_OBJECT").mesh = objectMesh
-				checkFrom+=surfaceSize+5
+				
 			ObjectModel.objectTypes.OBJECT:
+				obj=load("res://models/modelObjectModel.gd").new()
 				obj.objectType=ObjectModel.objectTypes.OBJECT
 				objData = ObjectDataResource.new()
+				obj.objectData=objData
 				#TODO: parse and actually load OBJECT contents
+				var objectSize:int=data.decode_u16(checkFrom)
+				var objectLoaded=data.slice(checkFrom+2,checkFrom+2+objectSize).get_string_from_ascii()
+				obj.objectModelFile=objectLoaded
+				obj.add_child(load(objectLoaded).instantiate())
+				
+				checkFrom+=objectSize+2
+				
 				var placedObjects=loadOnto
 				placedObjects.add_child(obj)
 				checkFrom+=1
+		#set object transform we already calculated
+		obj.global_transform=decodedTransform
+		
 		#have to get the encoded parameters out as well
 		var paramBlockSize:int=data.decode_u32(checkFrom)
 		var paramData = bytes_to_var_with_objects(data.slice(checkFrom+4,checkFrom+4+paramBlockSize))
@@ -145,23 +176,41 @@ class precompileMapData extends RefCounted:
 	func getObjectsBinary() -> PackedByteArray:
 		var binary : PackedByteArray = []
 		
-		var surfaceSize = PackedByteArray([0,0,0,0])
 		var paramSize = PackedByteArray([0,0,0,0])
 		for object in objects:
 			var objectData = objects[object]
 			binary.append_array(object.to_ascii_buffer())
 			binary.push_back(10)
 			binary.append_array([objectData.get("Type")])
+			binary.push_back(10)
+			#object transform info
+			var transformInfo:PackedByteArray=[]
+			transformInfo.resize(12*3) # 3 vector3 stored as floats. position|rotation|scale
+			transformInfo.encode_float(0,objectData.get("Position").x)
+			transformInfo.encode_float(4,objectData.get("Position").y)
+			transformInfo.encode_float(8,objectData.get("Position").z)
+			transformInfo.encode_float(12,objectData.get("Rotation").x)
+			transformInfo.encode_float(16,objectData.get("Rotation").y)
+			transformInfo.encode_float(20,objectData.get("Rotation").z)
+			transformInfo.encode_float(24,objectData.get("Scale").x)
+			transformInfo.encode_float(28,objectData.get("Scale").y)
+			transformInfo.encode_float(32,objectData.get("Scale").z)
+			binary.append_array(transformInfo)
+			#no gap as it isnt necessary
+			
 			match objectData.get("Type"):
 				ObjectModel.objectTypes.MESH:
+					var surfaceSize = PackedByteArray([0,0,0,0])
 					surfaceSize.encode_u32(0,objectData.Surface.size())
 					binary.append_array(surfaceSize)
 					binary.append_array(objectData.Surface)
+					binary.append_array(objectData.get("UV"))
 				ObjectModel.objectTypes.OBJECT:
-					#should have some way to get objectData mesh source/point
-					pass
+					var objectSize = PackedByteArray([0,0])
+					objectSize.encode_u16(0,objectData.get("Model").size())
+					binary.append_array(objectSize)
+					binary.append_array(objectData.get("Model"))
 			binary.push_back(10)
-			
 			var params = var_to_bytes_with_objects(objectData.get("Parameters",null))
 			paramSize.encode_u32(0,params.size())
 			binary.append_array(paramSize)
@@ -186,6 +235,10 @@ class precompileMapData extends RefCounted:
 				objects[compiledObjectData.Identifier]={
 					"Type":ObjectModel.objectTypes.MESH,
 					"Surface":compiledObjectData.Mesh.Surfaces,
+					"UV":compiledObjectData.Mesh.UVPosition,
+					"Position":compiledObjectData.Position,
+					"Rotation":compiledObjectData.Rotation,
+					"Scale":compiledObjectData.Scale,
 					"Parameters":compiledObjectData.Parameters,
 					"Group":currentGroup
 					}
@@ -194,6 +247,11 @@ class precompileMapData extends RefCounted:
 				var compiledObjectData = object.getCompiledData(self)
 				objects[compiledObjectData.Identifier]={
 					"Type":ObjectModel.objectTypes.OBJECT,
+					"Position":compiledObjectData.Position,
+					"Rotation":compiledObjectData.Rotation,
+					"Scale":compiledObjectData.Scale,
+					"Model":compiledObjectData.get("Object"),
+					"Parameters":compiledObjectData.Parameters,
 					"Group":currentGroup
 					}
 			ObjectModel.objectTypes.DATA:

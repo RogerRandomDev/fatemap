@@ -1,5 +1,6 @@
 shader_type spatial;
-render_mode depth_test_disabled, unshaded;
+render_mode depth_test_disabled, unshaded,depth_draw_never;
+
 
 global uniform vec4 EditGrabPoint :source_color;
 global uniform vec4 EditGrabPointOutline :source_color;
@@ -36,6 +37,7 @@ void vertex() {
 		MODELVIEW_MATRIX[1] *= sc;
 		MODELVIEW_MATRIX[2] *= sc;
 	}
+	
 }
 
 void fragment() {

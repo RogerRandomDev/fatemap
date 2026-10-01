@@ -67,12 +67,12 @@ func optionEvent(event:InputEvent,option)->void:
 		#lets you drag an object to place on the scene
 		var newObject=option.myObject.instantiate()
 		var placeOn:Node3D = get_tree().current_scene.mapViewport.get_node("PlacedObjects")
-		var holder=ObjectModel.new()
+		var holder=load("res://models/modelObjectModel.gd").new()
 		holder.objectType=ObjectModel.objectTypes.OBJECT
 		holder.add_child(newObject)
+		holder.objectModelFile=option.myObject.resource_path
 		holder.objectData=ObjectDataResource.new()
 		placeOn.add_child(holder)
-		PhysicalObjectService.buildPickableAreaForModel(holder,newObject)
 
 func recursiveToggleContents(from:Control,enable:bool=true)->void:
 	from.set("editable",enable)

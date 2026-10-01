@@ -1,6 +1,7 @@
 extends Node
 
-
+## placeholder that should be removed for an actual file at some point
+var mapData=null
 
 
 func _ready() -> void:
@@ -44,11 +45,11 @@ func loadContents()->void:
 	ToolMethodService.addToolMethod(&"ExportMapCustom",
 	func(v=null):
 		var worldChecked = get_tree().current_scene.mapViewport
-		compilerService.compileMapData(worldChecked)
+		mapData = compilerService.compileMapData(worldChecked)
 		)
 	ToolMethodService.addToolMethod(&"LoadMapCustom",
 	func(v=null):
 		var worldChecked = get_tree().current_scene.mapViewport
-		compilerService.loadMapData(worldChecked.get_node("PlacedObjects"))
+		compilerService.loadMapData(worldChecked.get_node("PlacedObjects"),mapData)
 		)
 	
