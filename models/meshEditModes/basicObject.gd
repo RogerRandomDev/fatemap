@@ -55,7 +55,7 @@ func updateSelectionLocation(mousePosition:Vector2)->void:
 	slideBy=slideBy.snappedf(ParameterService.getParam(&"snapDistance"))
 	if slideBy.is_zero_approx():return
 	#slideBy*=editingObject.global_transform.basis.get_rotation_quaternion()
-	UndoRedoService.startAction("MoveObject")
+	UndoRedoService.startAction("MoveObject",UndoRedo.MERGE_DISABLE)
 	UndoRedoService.addDoProperty(editingObject,"global_position",editingObject.global_position+slideBy)
 	UndoRedoService.addUndoProperty(editingObject,"global_position",editingObject.global_position)
 	UndoRedoService.addMethods(

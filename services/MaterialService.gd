@@ -2,6 +2,7 @@ extends RefCounted
 class_name MaterialService
 
 static var materialList:Array[materialModel]=[]
+static var materialHashes:Dictionary={}
 static var basicMaterial:Material=null
 static var basicMaterialParams:Dictionary={}
 
@@ -13,10 +14,10 @@ static func addMaterial(materialName:StringName,material:Material=null,texture:T
 	var ignoreBaseParams:bool=false
 	if material==null:material=basicMaterial
 	else:ignoreBaseParams=true
-	
 	var newMaterial=materialModel.new(materialName,params,path,ignoreBaseParams)
 	if materialList.any(func(mat):return mat.checkConflict(newMaterial)):
 		return false
+	materialHashes[newMaterial.materialHash]=newMaterial
 	newMaterial.setMaterial(material)
 	newMaterial.setTexture(texture)
 	newMaterial.setTags(tags)
@@ -32,6 +33,9 @@ static func getMaterial(materialName:StringName)->materialModel:
 	
 	if index==-1:return null
 	return materialList[index]
+
+static func getMaterialByHash(materialHash:int)->materialModel:
+	return materialHashes.get(materialHash,null)
 
 static func loadFMT(fmtPath:String)->materialModel:
 	if not FileAccess.file_exists(fmtPath):return null
@@ -64,11 +68,13 @@ class materialModel extends Resource:
 	var materialTexture:Texture
 	var materialParameters:Dictionary={}
 	var materialTags:PackedStringArray=[]
+	var materialHash:int=0
 	var path:String
 	
 	func _init(name:StringName=&"",params:Dictionary={},_path:String="",ignoreDefaultParams:bool=false):
 		materialName=name
 		path=_path
+		materialHash=hash(_path)
 		if not ignoreDefaultParams:materialParameters=MaterialService.basicMaterialParams.duplicate(false)
 		for parameter in params:
 			materialParameters[parameter]=params[parameter]
@@ -130,5 +136,6 @@ class materialModel extends Resource:
 	##check that the check material isn't conflicting with anything in this material
 	func checkConflict(check:materialModel):
 		return (
-			check.materialName==materialName
+			check.materialHash==materialHash
+			#check.materialName==materialName # old method
 		)

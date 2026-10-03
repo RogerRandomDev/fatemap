@@ -46,10 +46,15 @@ func loadContents()->void:
 	func(v=null):
 		var worldChecked = get_tree().current_scene.mapViewport
 		mapData = compilerService.compileMapData(worldChecked)
+		#temporary file
+		var f=FileAccess.open_compressed("user://test.fatemap",FileAccess.WRITE,FileAccess.COMPRESSION_GZIP)
+		f.store_buffer(mapData)
+		f.close()
 		)
 	ToolMethodService.addToolMethod(&"LoadMapCustom",
 	func(v=null):
 		var worldChecked = get_tree().current_scene.mapViewport
-		compilerService.loadMapData(worldChecked.get_node("PlacedObjects"),mapData)
+		var f=FileAccess.open_compressed("user://test.fatemap",FileAccess.READ,FileAccess.COMPRESSION_GZIP)
+		compilerService.loadMapData(worldChecked.get_node("PlacedObjects"),f.get_buffer(f.get_length()))
 		)
 	

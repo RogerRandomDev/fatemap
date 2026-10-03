@@ -2,7 +2,42 @@ extends Node
 class_name compilerService
 ##used to compile/decompile a map into its own file
 
+const SEPARATOR_BYTE:int=0
 
+#region general utilities
+
+### ENCODERS
+
+static func encodeVector3Float(vector:Vector3)->PackedByteArray:
+	var arr=PackedByteArray([0,0,0,0,0,0,0,0,0,0,0,0])
+	arr.encode_float(0,vector.x)
+	arr.encode_float(4,vector.y)
+	arr.encode_float(8,vector.z)
+	return arr
+
+static func encodeVector3FloatToArray(vector:Vector3,binary:PackedByteArray,at:int=-1)->void:
+	if at<0:
+		binary.append_array(encodeVector3Float(vector))
+		return
+	binary.encode_float(at,vector.x)
+	binary.encode_float(at+4,vector.y)
+	binary.encode_float(at+8,vector.z)
+
+
+
+### DECODERS
+
+static func decodeVector3Float(from:int=0,data:PackedByteArray=[])->Vector3:
+	return Vector3(
+		data.decode_float(from),
+		data.decode_float(from+4),
+		data.decode_float(from+8)
+	)
+
+#endregion
+
+
+#region Editor Compile/Decompile
 static func compileMapData(makerViewport:SubViewport)->PackedByteArray:
 	var compiledMap:PackedByteArray=[]
 	var objectList:Array[Node]=makerViewport.get_node("PlacedObjects").get_children()
@@ -13,13 +48,19 @@ static func compileMapData(makerViewport:SubViewport)->PackedByteArray:
 static func loadMapData(loadOnto:Node,data:PackedByteArray=[])->void:
 	#this needs segmented still but the logic is mostly set up
 	var checkFrom:int=0
-	var fmtPaths:PackedStringArray=[]
-	while true:
-		var matToLoad=data.find(10,checkFrom)
-		if matToLoad==-1 or matToLoad-1<=checkFrom:break
-		var materialFMTPath = data.slice(checkFrom,matToLoad).get_string_from_ascii()
-		fmtPaths.push_back(materialFMTPath)
-		checkFrom = matToLoad+1
+	var fmtPaths:PackedInt64Array=[]
+	#while true:
+		#var matToLoad=data.find(SEPARATOR_BYTE,checkFrom)
+		#if matToLoad==-1 or matToLoad-1<=checkFrom:break
+		#var materialFMTPath = data.slice(checkFrom,matToLoad).get_string_from_ascii()
+		#fmtPaths.push_back(materialFMTPath)
+		#checkFrom = matToLoad+1
+	#hash instead
+	checkFrom=4
+	for i in data.decode_u32(0):
+		#print(data.slice(checkFrom,checkFrom+4))
+		fmtPaths.push_back(data.decode_u32(checkFrom))
+		checkFrom+=4
 	checkFrom+=1
 	var idList = data.slice(checkFrom,checkFrom+8)
 	checkFrom+=8
@@ -28,18 +69,18 @@ static func loadMapData(loadOnto:Node,data:PackedByteArray=[])->void:
 	var positions:Array=[]
 	var normals:Array=[]
 	for pos in positionIdCount:
-		positions.push_back(
-			Vector3(data.decode_float(checkFrom),data.decode_float(checkFrom+4),data.decode_float(checkFrom+8)))
+		positions.push_back(decodeVector3Float(checkFrom,data))
 		checkFrom+=12
 	for norm in normalIdCount:
-		normals.push_back(
-			Vector3(data.decode_float(checkFrom),data.decode_float(checkFrom+4),data.decode_float(checkFrom+8)))
+		normals.push_back(decodeVector3Float(checkFrom,data))
 		checkFrom+=12
 	var matList=[]
+	print(MaterialService.materialHashes.keys())
 	for mat in fmtPaths:
-		matList.push_back(MaterialService.loadFMT(mat))
+		print(mat)
+		matList.push_back(MaterialService.getMaterialByHash(mat))
 	while true:
-		var loadingObject = data.find(10,checkFrom+1)
+		var loadingObject = data.find(SEPARATOR_BYTE,checkFrom+1)
 		if loadingObject == -1 or loadingObject-1<=checkFrom:break
 		var objectName = data.slice(checkFrom,loadingObject).get_string_from_ascii()
 		var objectType = data.slice(loadingObject+1,loadingObject+2)[0]
@@ -49,9 +90,9 @@ static func loadMapData(loadOnto:Node,data:PackedByteArray=[])->void:
 		checkFrom+=36
 		var decodedTransform:Transform3D=Transform3D()
 		# applies position|rotation|scale
-		decodedTransform.origin=Vector3(objectTransform.decode_float(0),objectTransform.decode_float(4),objectTransform.decode_float(8))
-		decodedTransform.basis=Basis.from_euler(Vector3(objectTransform.decode_float(12),objectTransform.decode_float(16),objectTransform.decode_float(20)))
-		decodedTransform.basis.scaled(Vector3(objectTransform.decode_float(24),objectTransform.decode_float(28),objectTransform.decode_float(32)))
+		decodedTransform.origin=decodeVector3Float(0,objectTransform)
+		decodedTransform.basis=Basis.from_euler(decodeVector3Float(12,objectTransform))
+		decodedTransform.basis.scaled(decodeVector3Float(24,objectTransform))
 		
 		var obj:ObjectModel
 		var objData
@@ -62,14 +103,9 @@ static func loadMapData(loadOnto:Node,data:PackedByteArray=[])->void:
 				
 				var UVTransform=data.slice(checkFrom+4+surfaceSize,checkFrom+surfaceSize+28)
 				objectMesh.globalTransform=Transform3D(
-					Basis.from_euler(Vector3(
-						UVTransform.decode_float(12),
-						UVTransform.decode_float(16),
-						UVTransform.decode_float(20)
-					)),Vector3(
-						UVTransform.decode_float(0),
-						UVTransform.decode_float(4),
-						UVTransform.decode_float(8)))
+					Basis.from_euler(decodeVector3Float(12,UVTransform)),Vector3(
+					decodeVector3Float(0,UVTransform)))
+				
 				objectMesh.loadCompiledSurfaces(matList,positions,normals,data.slice(checkFrom+4,checkFrom+4+surfaceSize))
 				checkFrom+=surfaceSize+4+25
 				obj = PhysicalObjectModel.new()
@@ -137,19 +173,25 @@ class precompileMapData extends RefCounted:
 	func getBinary()->PackedByteArray:
 		var binary:PackedByteArray=[]
 		binary.append_array(getMaterialBinary())
-		binary.push_back(10) #ASCII buffer \n
+		binary.push_back(SEPARATOR_BYTE) #ASCII buffer \n
 		binary.append_array(getIDListBinary())
-		binary.push_back(10) #ASCII buffer \n
+		binary.push_back(SEPARATOR_BYTE) #ASCII buffer \n
 		binary.append_array(getObjectsBinary())
 		return binary
 	
 	func getMaterialBinary()->PackedByteArray:
-		var binary:PackedByteArray=[]
+		var binary:PackedByteArray=[0,0,0,0]
 		for material in materialList:
 			#material = material as MaterialService.materialModel
-			binary.append_array(
-				String(material.path+"\n").to_ascii_buffer()
-				)
+			#binary.append_array(
+				#String(material.path.trim_prefix("res://Imported/Materials/")).to_ascii_buffer()
+				#)
+			var bn=PackedByteArray([0,0,0,0])
+			bn.encode_u32(0,material.materialHash)
+			binary.append_array(bn)
+			#binary.append(SEPARATOR_BYTE)
+		print(binary.decode_u32(4))
+		binary.encode_u32(0,materialList.size())
 		return binary
 	
 	func getIDListBinary()->PackedByteArray:
@@ -160,17 +202,10 @@ class precompileMapData extends RefCounted:
 		idCounts.encode_u32(4,normalIDs.size())
 		binary.append_array(idCounts)
 		
-		var vectorBinary=PackedByteArray([0,0,0,0,0,0,0,0,0,0,0,0])
 		for pos in positionIDs.values():
-			vectorBinary.encode_float(0,pos.x)
-			vectorBinary.encode_float(4,pos.y)
-			vectorBinary.encode_float(8,pos.z)
-			binary.append_array(vectorBinary)
+			binary.append_array(compilerService.encodeVector3Float(pos))
 		for pos in normalIDs.values():
-			vectorBinary.encode_float(0,pos.x)
-			vectorBinary.encode_float(4,pos.y)
-			vectorBinary.encode_float(8,pos.z)
-			binary.append_array(vectorBinary)
+			binary.append_array(compilerService.encodeVector3Float(pos))
 		return binary
 	
 	func getObjectsBinary() -> PackedByteArray:
@@ -180,22 +215,13 @@ class precompileMapData extends RefCounted:
 		for object in objects:
 			var objectData = objects[object]
 			binary.append_array(object.to_ascii_buffer())
-			binary.push_back(10)
+			binary.push_back(SEPARATOR_BYTE)
 			binary.append_array([objectData.get("Type")])
-			binary.push_back(10)
-			#object transform info
-			var transformInfo:PackedByteArray=[]
-			transformInfo.resize(12*3) # 3 vector3 stored as floats. position|rotation|scale
-			transformInfo.encode_float(0,objectData.get("Position").x)
-			transformInfo.encode_float(4,objectData.get("Position").y)
-			transformInfo.encode_float(8,objectData.get("Position").z)
-			transformInfo.encode_float(12,objectData.get("Rotation").x)
-			transformInfo.encode_float(16,objectData.get("Rotation").y)
-			transformInfo.encode_float(20,objectData.get("Rotation").z)
-			transformInfo.encode_float(24,objectData.get("Scale").x)
-			transformInfo.encode_float(28,objectData.get("Scale").y)
-			transformInfo.encode_float(32,objectData.get("Scale").z)
-			binary.append_array(transformInfo)
+			binary.push_back(SEPARATOR_BYTE)
+			#object transform info. POSITION|ROTATION|SCALE
+			binary.append_array(compilerService.encodeVector3Float(objectData.get("Position")))
+			binary.append_array(compilerService.encodeVector3Float(objectData.get("Rotation")))
+			binary.append_array(compilerService.encodeVector3Float(objectData.get("Scale")))
 			#no gap as it isnt necessary
 			
 			match objectData.get("Type"):
@@ -210,11 +236,12 @@ class precompileMapData extends RefCounted:
 					objectSize.encode_u16(0,objectData.get("Model").size())
 					binary.append_array(objectSize)
 					binary.append_array(objectData.get("Model"))
-			binary.push_back(10)
-			var params = var_to_bytes_with_objects(objectData.get("Parameters",null))
-			paramSize.encode_u32(0,params.size())
+			binary.push_back(SEPARATOR_BYTE)
+			#var params = var_to_bytes_with_objects(objectData.get("Parameters",null))
+			paramSize.encode_u32(0,4)
 			binary.append_array(paramSize)
-			binary.append_array(params)
+			#binary.append_array(params)
+			binary.append_array([0,0,0,0])
 			binary.push_back(objectData.Group)
 		
 		
@@ -272,3 +299,6 @@ class precompileMapData extends RefCounted:
 			normalIDs[normalIDs.size()]=norm
 			return normalIDs.size()-1
 		return normalIDs.values().find(norm)
+#endregion
+
+#region final compile/decompile
