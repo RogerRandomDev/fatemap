@@ -8,15 +8,8 @@ func _enter_tree() -> void:ServiceInitializer.initializeAllServices()
 func _ready() -> void:
 	loadGUILayout()
 	
-	loadAllFMT("res://Imported/Materials")
+	MaterialService.loadAllFMT("res://Imported/Materials")
 	PhysicalObjectInputController.initializeInputController()
-
-func loadAllFMT(path:String)->void:
-	for d in DirAccess.get_directories_at(path):
-		loadAllFMT(path+"/"+d)
-	for f in DirAccess.get_files_at(path):
-		if not f.ends_with(".fmt"):continue
-		MaterialService.loadFMT(path+"/"+f)
 
 func loadGUILayout()->void:
 	loadToolBar()

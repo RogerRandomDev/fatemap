@@ -2,7 +2,7 @@ extends EditInteractionBase
 class_name EditObject
 
 var dragSafe:bool=false
-
+var hasDragged:bool=false
 
 func _ready() -> void:
 	signalService.bindToSignal(&"meshSelectionChanged",updateMeshSelection)
@@ -37,7 +37,7 @@ func _handle_mouse_drag(event: InputEventMouseMotion) -> bool:
 	if get_viewport().is_input_handled():return false
 	if event is InputEventMouseMotion and MeshEditService.isEditing() and InputService.pressed(&"MouseLeft"):
 		if not MeshEditService.editor.editingOrigin.is_finite():return false
-		MeshEditService.editor.updateSelectionLocation(holder.get_local_mouse_position())
+		hasDragged = MeshEditService.editor.updateSelectionLocation(holder.get_local_mouse_position(),hasDragged) || hasDragged
 		signalService.emitSignal(&"meshSelectionChanged")
 		return true
 	return false
@@ -45,6 +45,7 @@ func _handle_mouse_drag(event: InputEventMouseMotion) -> bool:
 func _handle_mouse_click(event: InputEventMouseButton) -> bool:
 	if MeshEditService.isEditing() and InputService.pressed(&"MouseLeft"):
 		signalService.emitSignal(&"meshSelectionChanged")
+	if not InputService.pressed(&"MouseLeft"):hasDragged=false
 	#clear focus from outside the area if you click in here
 	if  event is InputEventMouseButton:get_tree().root.gui_release_focus()
 	
@@ -85,7 +86,7 @@ func moveSelection(moveBy:Vector3,_local:bool=true)->void:
 	moveBy*=ParameterService.getParam(&"snapDistance")
 	#if its a normal object just offset its position
 	if MeshEditService.isEditing():
-		UndoRedoService.startAction("MoveObject")
+		UndoRedoService.startAction("MoveObject",UndoRedo.MERGE_ALL if hasDragged else UndoRedo.MERGE_DISABLE)
 		UndoRedoService.addDoProperty(selectedObj,"global_position",selectedObj.global_position+moveBy)
 		UndoRedoService.addUndoProperty(selectedObj,"global_position",selectedObj.global_position)
 		UndoRedoService.addMethods(

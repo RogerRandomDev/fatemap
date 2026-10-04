@@ -9,6 +9,7 @@ var renderPointVertices:Array=[]
 var selectedPoints:PackedInt32Array=[]
 
 var dragSafe:bool=false
+var hasDragged:bool=false
 
 const pointSize:float=8
 
@@ -26,9 +27,11 @@ func updateMeshSelection()->void:
 	renderPointVertices=[]
 	renderPointEdges=[]
 	renderPointFaces=[]
-	
+	var activeObj=ParameterService.getParam(&"activeObject")
+	if activeObj!=null and activeObj.objectType!=ObjectModel.objectTypes.MESH:
+		multimesh.visible=false;return
 	var editMode:int=MeshEditService.getEditMode()
-	if not MeshEditService.isEditing() or not ParameterService.getParam(&"activeObject") is ObjectModel:
+	if not MeshEditService.isEditing():
 		updateEditPointRender()
 		return
 	if MeshEditService.editing.mesh==null:return
@@ -97,9 +100,8 @@ func _handle_mouse_drag(event: InputEventMouseMotion) -> bool:
 	if get_viewport().is_input_handled():return false
 	if InputService.pressed(&"CreateMesh"):return false
 	if event is InputEventMouseMotion and MeshEditService.isEditing() and InputService.pressed(&"MouseLeft"):
-		
 		if MeshEditService.editing.selectedVertices.size() == 0:return false
-		MeshEditService.editor.updateSelectionLocation(holder.get_local_mouse_position())
+		hasDragged=MeshEditService.editor.updateSelectionLocation(holder.get_local_mouse_position(),hasDragged) || hasDragged
 		MeshEditService.editing.dataObject.call("transformed")
 		PhysicalObjectService.updatePickableArea(MeshEditService.editor.editingObject)
 		signalService.emitSignal(&"meshSelectionChanged")
@@ -112,6 +114,8 @@ func _handle_mouse_click(event: InputEventMouseButton) -> bool:
 		signalService.emitSignal(&"meshSelectionChanged")
 	#clear focus from outside the area if you click in here
 	if  event is InputEventMouseButton:get_tree().root.gui_release_focus()
+	if not InputService.pressed(&"MouseLeft"):
+		hasDragged=false
 	
 	if MeshEditService.isEditing() and InputService.pressed(&"MouseLeft"):
 		if InputService.pressed(&"CreateMesh"):

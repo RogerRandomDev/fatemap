@@ -53,6 +53,8 @@ func _handle_mouse_drag(_event: InputEventMouseMotion) -> bool:
 	editEnd=holder.getMousePoint(true,Vector3(0,editOrigin.y,0)).snappedf(
 		ParameterService.getParam(&"snapDistance")
 	)
+	
+	
 	editEnd.y=posY
 	updateExampleMesh()
 	

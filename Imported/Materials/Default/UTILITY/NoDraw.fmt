@@ -2,4 +2,4 @@ name = NoDraw
 material = Materials/Default/defaultTransparent.material
 texture = Materials/Default/UTILITY/nodraw.png
 parameters = {}
-tags = [ignore_render]
+tags = ignore_render

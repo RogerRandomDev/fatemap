@@ -71,6 +71,12 @@ func updateSelectedCleanEdge(cleanEdge:objectMeshModel.cleanedEdge)->void:
 	referenceEdge=cleanEdge
 	updatePlane()
 
+func updateReferences()->void:
+	if referenceEdge!=null:
+		updateSelectedCleanEdge(referenceEdge)
+	if referenceFace!=null:
+		updateSelectedCleanFace(referenceFace)
+
 
 func updateSelectedFaceSet(faces:Array[objectMeshModel.meshFace])->void:
 	var cleanFace=objectMeshModel.cleanedFace.new(faces)
@@ -105,7 +111,7 @@ func getTargetFromMouse(_mousePosition:Vector2)->Vector3:return Vector3.INF
 func getPointFromMouse(_mousePosition:Vector2)->Vector3:return Vector3.INF
 
 ## uses the info it is provided to slide the selection along the given way this editMode uses
-func updateSelectionLocation(_mousePosition:Vector2)->void:pass
+func updateSelectionLocation(_mousePosition:Vector2,_mergeMoves:bool=false)->bool:return true
 
 
 func _get_snapped_direction(forward: Vector3) -> Vector3:

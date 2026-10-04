@@ -24,13 +24,14 @@ static func buildMesh(object:ObjectPhysicalDataResource,instance:Node3D=null,_ma
 		arrayMesh.updateNormals()
 		
 		meshInstance.mesh=arrayMesh
+		mesh=arrayMesh
 	else:
 		meshInstance.mesh=mesh
 		
 	if instance:
 		instance.add_child(meshInstance)
 	meshInstance.name="MESH_OBJECT"
-	
+	mesh.ownerInstance=meshInstance
 	
 	return meshInstance
 

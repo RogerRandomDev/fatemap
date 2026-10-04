@@ -4,7 +4,7 @@
 
 [resource]
 script = ExtResource("1_chr00")
-option_count = 3
+option_count = 4
 option_0/name = "Export as GLB"
 option_0/type = "default"
 option_0/description = "Exports the current map as a GLB"
@@ -20,4 +20,9 @@ option_2/type = "default"
 option_2/description = "Loads a map save in an editable format"
 option_2/value = &"LoadMapCustom"
 option_2/param = ""
+option_3/name = "Test Full Compile"
+option_3/type = "default"
+option_3/description = "testing compile for finalized maps if it works."
+option_3/value = &"TestingFullCompile"
+option_3/param = ""
 metadata/_custom_type_script = "uid://56abiotdxm3f"

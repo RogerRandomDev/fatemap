@@ -298,7 +298,7 @@ func getInstance(parameter:String)->Variant:
 
 func setInstance(parameter:String,value:Variant)->void:
 	var index:int=parameterNames.find(parameter)
-	var inheritedParam=inheritedData.findParam(parameter)
+	var inheritedParam=null if inheritedData == null else inheritedData.findParam(parameter)
 	#inherited and matching new value
 	if inheritedParam==null:return
 	if inheritedParam.value==value and index!=-1:

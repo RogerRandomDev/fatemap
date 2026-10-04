@@ -1,0 +1,9 @@
+[gd_scene load_steps=2 format=3 uid="uid://blklka1o5ijhc"]
+
+[ext_resource type="Script" uid="uid://whoevay6xrwu" path="res://Scenes/FateMapLoader.gd" id="1_bqyd2"]
+
+[node name="Testing" type="Node3D"]
+
+[node name="Node3D" type="Node3D" parent="."]
+script = ExtResource("1_bqyd2")
+mapFile = "user://test.fatemap"

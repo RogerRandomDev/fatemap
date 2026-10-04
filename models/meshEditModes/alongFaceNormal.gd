@@ -3,6 +3,7 @@ extends meshEditMode
 
 
 func updatePlane()->void:
+	
 	var cameraDirection=localPos().direction_to(camera.global_position)
 	#we cut the ability of the plane to look at the normal of the face
 	#so it always intersects the normal ray along the axis
@@ -19,10 +20,11 @@ func getTargetFromMouse(mousePosition:Vector2)->Vector3:
 	
 	return alongNormalAxisLine
 
-func updateSelectionLocation(mousePosition:Vector2)->void:
+func updateSelectionLocation(mousePosition:Vector2,mergeMoves:bool=false)->bool:
+	updateReferences()
 	updatePlane()
 	var targetSlideLocation=getTargetFromMouse(mousePosition)
-	if not targetSlideLocation.is_finite():return
+	if not targetSlideLocation.is_finite():return false
 	#snap the slide location and push it back onto the ray afterwards
 	#targetSlideLocation=getPointAlongRay(targetSlideLocation.snappedf(ParameterService.getParam(&"snapDistance")))
 	
@@ -31,6 +33,7 @@ func updateSelectionLocation(mousePosition:Vector2)->void:
 	var slideBy=(targetSlideLocation-currentEditLocation)
 	slideBy=slideBy.normalized()*snappedf(slideBy.length(),ParameterService.getParam(&"snapDistance"))
 	#slideBy*=editingObject.global_transform.basis.get_rotation_quaternion()
-	MeshEditService.editing.translateSelection(slideBy,true)
+	MeshEditService.editing.translateSelection(slideBy,true,mergeMoves)
 	MeshEditService.editing.centerMesh()
 	editingMesh.rebuild()
+	return not slideBy.is_zero_approx()

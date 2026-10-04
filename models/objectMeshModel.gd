@@ -20,8 +20,10 @@ const projectionAxis:PackedVector3Array=[
 	
 ]
 var globalTransform:Transform3D=Transform3D()
+var scaler:float=1.0 #extra scaling. used by the loader for finalized maps
 
 
+var ownerInstance:MeshInstance3D
 
 func  initializeFaces()->void:
 	var dt:MeshDataTool=MeshDataTool.new()
@@ -237,7 +239,7 @@ func updateSelection(_vertices,_edges,_faces,ignoreChange:bool=false)->Dictionar
 	var changes = trackedSelection.getChanges(_vertices,_edges,_faces)
 	return changes
 
-func getCompilerData(compiler:compilerService.precompileMapData)->Dictionary:
+func getCompilerData(compiler:compilerService.compilerMapData,full:bool=false)->Dictionary:
 	var uvPos=PackedByteArray()
 	var transformRotation=globalTransform.basis.get_euler()
 	uvPos.resize(12*2)
@@ -249,12 +251,13 @@ func getCompilerData(compiler:compilerService.precompileMapData)->Dictionary:
 	uvPos.encode_float(20,transformRotation.z)
 	return {
 		"Materials":faceMaterialMap.keys().filter(func(mat):return faceMaterialMap[mat].size()>0),
-		"Surfaces":convertSurfacesToBinary(compiler),
+		"Surfaces":convertSurfacesToBinary(compiler,full),
+		"Collision":null if not full else getCollisionFaces(compiler),
 		"UVPosition":uvPos
 	}
 
-const BYTES_PER_FACE = 54
-func convertSurfacesToBinary(compiler:compilerService.precompileMapData=null)->PackedByteArray:
+const BYTES_PER_FACE = 62
+func convertSurfacesToBinary(compiler:compilerService.compilerMapData=null,full:bool=false)->PackedByteArray:
 	var binarySurfaceData:PackedByteArray=[]
 	for mat in faceMaterialMap.keys():
 		if faceMaterialMap[mat].size()==0:continue
@@ -269,56 +272,74 @@ func convertSurfacesToBinary(compiler:compilerService.precompileMapData=null)->P
 		face_bytes
 	)
 	var offset:int=0
-	const sub_offset = 10
+	const sub_offset = 12
 	for face in faces:
 		var compiledSurfaceId=compiler.materialList.find(face.surfaceMaterial)
+		if full and face.surfaceMaterial.materialTags.has("ignore_render"):continue
 		
 		binarySurfaceData.encode_u16(offset,compiledSurfaceId)
 		for i in 3:
-			binarySurfaceData.encode_u16(offset+2+sub_offset*i,compiler.getPositionID(face.vertices[i].position))
-			binarySurfaceData.encode_float(offset+4+sub_offset*i,face.vertices[i].uv.x)
-			binarySurfaceData.encode_float(offset+8+sub_offset*i,face.vertices[i].uv.y)
-		binarySurfaceData.encode_u16(offset+32,compiler.getNormalID(face.normal))
-		binarySurfaceData.encode_float(offset+34,face.uvRotation)
-		binarySurfaceData.encode_float(offset+38,face.uvOffset.x)
-		binarySurfaceData.encode_float(offset+42,face.uvOffset.y)
-		binarySurfaceData.encode_float(offset+46,face.uvScale.x)
-		binarySurfaceData.encode_float(offset+50,face.uvScale.y)
+			binarySurfaceData.encode_u32(offset+2+sub_offset*i,compiler.getPositionID(face.vertices[i].position))
+			binarySurfaceData.encode_float(offset+6+sub_offset*i,face.vertices[i].uv.x)
+			binarySurfaceData.encode_float(offset+10+sub_offset*i,face.vertices[i].uv.y)
+		binarySurfaceData.encode_u32(offset+38,compiler.getNormalID(face.normal))
+		binarySurfaceData.encode_float(offset+42,face.uvRotation)
+		binarySurfaceData.encode_float(offset+46,face.uvOffset.x)
+		binarySurfaceData.encode_float(offset+50,face.uvOffset.y)
+		binarySurfaceData.encode_float(offset+54,face.uvScale.x)
+		binarySurfaceData.encode_float(offset+58,face.uvScale.y)
 		offset+=BYTES_PER_FACE
-	
+	binarySurfaceData.resize(offset)
 	return binarySurfaceData
 
-func loadCompiledSurfaces(matList:Array=[],positions:Array=[],normals:Array=[],binary:PackedByteArray=[])->void:
+const BYTES_PER_COLLISION_FACE:int=12
+func getCollisionFaces(compiler:compilerService.compilerMapData=null)->PackedByteArray:
+	var collisionBinary:PackedByteArray=[]
+	collisionBinary.resize(faces.size()*BYTES_PER_COLLISION_FACE)
+	var keptFaces:int=0
+	var offset:int=0
+	for face in faces:
+		if face.surfaceMaterial.materialTags.has("ignore_collision"):continue
+		for i in 3:
+			collisionBinary.encode_u32(offset,compiler.getPositionID(face.vertices[i].position+ownerInstance.global_position))
+			offset+=4
+		keptFaces+=1
+	collisionBinary.resize(keptFaces*BYTES_PER_COLLISION_FACE)
+	
+	return collisionBinary
+
+func loadCompiledSurfaces(matList:Array=[],positions:Array=[],normals:Array=[],binary:PackedByteArray=[],scaled:float=1.0)->void:
 	var checkFrom:int=0
+	scaler=scaled
 	while true:
 		var faceData = binary.slice(checkFrom,checkFrom+BYTES_PER_FACE)
 		checkFrom+=BYTES_PER_FACE
-		if(faceData.size()<=0):break;
+		if(faceData.size()<BYTES_PER_FACE):break;
 		var surfaceUsed = matList[faceData.decode_u16(0)]
 		var faceVertexPositions:PackedVector3Array=[]
 		var faceVertexUVs:PackedVector2Array=[]
-		const sub_offset = 10
+		const sub_offset = 12
 		for i in 3:
 			faceVertexPositions.push_back(
-				positions[faceData.decode_u16(2+sub_offset*i)]
+				positions[faceData.decode_u32(2+sub_offset*i)]/scaler
 				)
 			faceVertexUVs.push_back(
 				Vector2(
-					faceData.decode_float(4+sub_offset*i),
-					faceData.decode_float(8+sub_offset*i)
+					faceData.decode_float(6+sub_offset*i),
+					faceData.decode_float(10+sub_offset*i)
 					)
 				)
-		var faceNormal = getNormalID(normals[faceData.decode_u16(32)])
+		var faceNormal = getNormalID(normals[faceData.decode_u32(38)])
 		var face = meshFace.new(
 			self,faceVertexPositions,faceVertexUVs,
 			surfaceUsed)
-		face.uvRotation = faceData.decode_float(34)
+		face.uvRotation = faceData.decode_float(42)
 		face.uvOffset=Vector2(
-			faceData.decode_float(38),
-			faceData.decode_float(42))
-		face.uvScale=Vector2(
 			faceData.decode_float(46),
 			faceData.decode_float(50))
+		face.uvScale=Vector2(
+			faceData.decode_float(54),
+			faceData.decode_float(58))
 		faces.push_back(face)
 		
 	rebuild(true)
@@ -388,7 +409,7 @@ class meshVertex extends RefCounted:
 		#axis_u*=_mesh.globalTransform.basis.get_rotation_quaternion()
 		#axis_v*=_mesh.globalTransform.basis.get_rotation_quaternion()
 		var globalPos=position*_mesh.globalTransform.basis.get_rotation_quaternion().inverse()+_mesh.globalTransform.origin
-		uv=Vector2(globalPos.dot(axis_u),globalPos.dot(axis_v))
+		uv=Vector2(globalPos.dot(axis_u),globalPos.dot(axis_v))*_mesh.scaler
 		return uv
 	
 	func matches(checkAgainst:meshVertex)->bool:
@@ -549,7 +570,7 @@ class cleanedVertexObject extends RefCounted:
 		return centerPos/positionIDs.size()
 	
 	func getNormal()->Vector3:
-		return _mesh.normalIDs[normalID]
+		return _mesh.normalIDs.get(normalID,Vector3.UP)
 
 class  cleanedVertex extends RefCounted:
 	var positionID:int

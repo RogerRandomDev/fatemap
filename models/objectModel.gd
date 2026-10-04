@@ -20,7 +20,7 @@ var objectDisplay:Node3D
 
 func getData()->ObjectDataResource:return null
 
-func getCompiledData(compiler:compilerService.precompileMapData)->Dictionary:return {
+func getCompiledData(compiler:compilerService.compilerMapData,full:bool=false)->Dictionary:return {
 	"Identifier":name,
 	"Position":global_position,
 	"Rotation":global_rotation,

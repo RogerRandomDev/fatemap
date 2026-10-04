@@ -12,8 +12,8 @@ func _ready() -> void:
 
 func getData():return objectData
 
-func getCompiledData(compiler:compilerService.precompileMapData)->Dictionary:
-	var compiledData=super.getCompiledData(compiler)
+func getCompiledData(compiler:compilerService.compilerMapData,full:bool=false)->Dictionary:
+	var compiledData=super.getCompiledData(compiler,full)
 	#temp. should do something better later
 	compiledData.set("Object",objectModelFile.to_ascii_buffer())
 	

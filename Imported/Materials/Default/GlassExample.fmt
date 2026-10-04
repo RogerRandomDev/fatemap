@@ -1,0 +1,5 @@
+name = TransparentExample
+material = Materials/Default/TransparentExample.material
+texture = Materials/Default/None.tres
+parameters = {}
+tags = []

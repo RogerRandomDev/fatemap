@@ -2,4 +2,4 @@ name = Exclude
 material = Materials/Default/defaultTransparent.material
 texture = Materials/Default/UTILITY/exclude.png
 parameters = {}
-tags = [ignore_collision,ignore_render]
+tags = ignore_collision,ignore_render

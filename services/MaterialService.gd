@@ -37,6 +37,13 @@ static func getMaterial(materialName:StringName)->materialModel:
 static func getMaterialByHash(materialHash:int)->materialModel:
 	return materialHashes.get(materialHash,null)
 
+static func loadAllFMT(path:String)->void:
+	for d in DirAccess.get_directories_at(path):
+		loadAllFMT(path+"/"+d)
+	for f in DirAccess.get_files_at(path):
+		if not f.ends_with(".fmt"):continue
+		loadFMT(path+"/"+f)
+
 static func loadFMT(fmtPath:String)->materialModel:
 	if not FileAccess.file_exists(fmtPath):return null
 	var file = FileAccess.open(fmtPath,FileAccess.READ)
@@ -53,7 +60,7 @@ static func loadFMT(fmtPath:String)->materialModel:
 		load("res://Imported/"+values.get("material","Default/defaultMaterial.material")),
 		load("res://Imported/"+values.get("texture","Default/defaultTexture.png")),
 		{},#values.get("parameters",{})
-		[],#values.get("tags",[])
+		values.get("tags","").split(","),
 		fmtPath
 	)
 	
@@ -127,8 +134,8 @@ class materialModel extends Resource:
 					func(param):return param.name.begins_with("shader_parameter/")
 				).map(func(param):return param.name.trim_prefix("shader_parameter/"))
 			)
-			if shaderParameterList.has("albedoTexture"):
-				materialMat.set_shader_parameter(&"albedoTexture",materialTexture)
+			if shaderParameterList.has("albedo_texture"):
+				materialMat.set_shader_parameter(&"albedo_texture",materialTexture)
 			for param in materialParameters:
 				if not shaderParameterList.has(param):continue
 				materialMat.set_shader_parameter(param,materialParameters[param])

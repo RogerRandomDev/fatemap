@@ -22,13 +22,11 @@ static func setEditing(object:ObjectModel)->void:
 		editing=null
 		return
 	
-	
 	editor=ParameterService.getParam(&"CurrentMeshEditMode").new()
 	editor.camera=object.get_viewport().get_camera_3d()
 	editor.updateEditingObject(object)
 	match object.objectType:
 		ObjectModel.objectTypes.OBJECT:
-			
 			editor=load("res://models/meshEditModes/basicObject.gd").new()
 			editor.camera=object.get_viewport().get_camera_3d()
 			editor.updateEditingObject(object)
@@ -175,13 +173,13 @@ class editingMesh extends Resource:
 		for face in  hitFace:selectFace(face,keep)
 		return hitFace
 	
-	func translateSelection(translateBy:Vector3,local:bool=true)->void:
+	func translateSelection(translateBy:Vector3,local:bool=true,mergeMove:bool=false)->void:
 		if selectedVertices.size()==0 or translateBy.is_zero_approx():return
 		if local:translateBy*=meshObject.global_transform.basis.get_rotation_quaternion()
 		var editingPositionIDs={}
 		for vertex in selectedVertices:editingPositionIDs[vertex.positionID]=mesh.positionIDs[vertex.positionID]
 		#UndoRedoService.startAction(&"TranslateMeshPoints",UndoRedo.MERGE_ENDS)
-		UndoRedoService.startAction(&"TranslateMeshPoints",UndoRedo.MERGE_ALL)
+		UndoRedoService.startAction(&"TranslateMeshPoints",UndoRedo.MERGE_ALL if mergeMove else UndoRedo.MERGE_DISABLE)
 		#breaks if i re-center the mesh elsewhere cause it changes where everything is relative
 		#if i do MERGE_ALL and just add/subtract the change instead it works fine.
 		UndoRedoService.addMethods(
@@ -199,11 +197,11 @@ class editingMesh extends Resource:
 		var rebuild = MeshEditService.editing.mesh.rebuild
 		UndoRedoService.addMethods(
 			func():
-				rebuild.call_deferred()
+				MeshEditService.editing.mesh.rebuild(false)
 				signalService.emitSignal.call_deferred(&"meshSelectionChanged")
 				,
 			func():
-				rebuild.call_deferred()
+				MeshEditService.editing.mesh.rebuild.call_deferred(false)
 				signalService.emitSignal.call_deferred(&"meshSelectionChanged")
 		)
 		
