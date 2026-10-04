@@ -67,9 +67,9 @@ func loadObjects(loadOnto:Node,data:PackedByteArray)->void:
 		currentSeek+=36
 		var decodedTransform:Transform3D=Transform3D()
 		# applies position|rotation|scale
-		decodedTransform.origin=compilerService.decodeVector3Float(0,objectTransform)/size
+		decodedTransform.origin=compilerService.decodeVector3Float(0,objectTransform)
 		decodedTransform.basis=Basis.from_euler(compilerService.decodeVector3Float(12,objectTransform))
-		decodedTransform.basis=decodedTransform.basis.scaled_local(compilerService.decodeVector3Float(24,objectTransform)/size)
+		decodedTransform.basis=decodedTransform.basis.scaled_local(compilerService.decodeVector3Float(24,objectTransform))
 		
 		var obj:ObjectModel
 		var objData
@@ -157,7 +157,7 @@ func fullLoad(loadOnto:Node,data:PackedByteArray=[])->void:
 		currentSeek+=4
 		for i in range(0,thisSize,4):
 			var pID:int=data.decode_u32(currentSeek)
-			st.add_vertex(positions[pID])
+			st.add_vertex(positions[pID]/size)
 			currentSeek+=4
 	var c=CollisionShape3D.new()
 	#var m=

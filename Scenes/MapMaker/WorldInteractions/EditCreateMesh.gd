@@ -85,6 +85,12 @@ func updateExampleMesh()->void:
 			highlight.mesh.size.x=editSize.x
 			highlight.mesh.size.y=editSize.y
 			highlight.mesh.size.z=editSize.z
+		"SphereMesh":
+			var scaleAxis=editSize
+			if highlight.mesh.get_meta("KeepEqual",false):
+				var scaleMax=max(scaleAxis.x,max(scaleAxis.y,scaleAxis.z))
+				scaleAxis=Vector3(scaleMax,scaleMax,scaleMax)
+			highlight.scale=scaleAxis
 		"ArrayMesh":
 			var scaleAxis=editSize
 			highlight.scale=scaleAxis

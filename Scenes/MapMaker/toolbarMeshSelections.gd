@@ -103,7 +103,6 @@ func cylinderSpecials(SelectorDropdown)->void:
 		ParameterService.setParam(&"newObjectShape",shape)
 		var key = selectorItems.keys()[SelectorDropdown.get_selected_id()]
 		selectorItems[key]=shape
-		
 		)
 	cylinder.add_child(halfRot)
 
@@ -118,7 +117,7 @@ func prismSpecials(_SelectorDropdown)->void:
 	).reference
 
 func sphereSpecials(_SelectorDropdown)->void:
-	var _sphere:HBoxContainer=GUIService.insertElement(
+	var sphere:HBoxContainer=GUIService.insertElement(
 		GUIService.createElement(
 			HBoxContainer.new(),
 			&"MeshSelectorSpecialsSphere",
@@ -126,3 +125,12 @@ func sphereSpecials(_SelectorDropdown)->void:
 			&"MeshSelectorSpecials"
 		)
 	).reference
+	var scaleConstant:CheckBox=CheckBox.new()
+	scaleConstant.text="Keep Equal"
+	scaleConstant.toggled.connect(func(newValue):
+		var shape=ParameterService.getParam(&"newObjectShape")
+		if not shape is SphereMesh:return
+		shape.set_meta("KeepEqual",newValue)
+		ParameterService.setParam(&"newObjectShape",shape)
+		)
+	sphere.add_child(scaleConstant)
