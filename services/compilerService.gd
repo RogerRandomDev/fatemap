@@ -245,7 +245,7 @@ static func loadMapData(loadOnto:Node,data:PackedByteArray=[])->void:
 				objectMesh.globalTransform=Transform3D(
 					Basis.from_euler(decodeVector3Float(12,UVTransform)),Vector3(
 					decodeVector3Float(0,UVTransform)))
-				objectMesh.loadCompiledSurfaces(matList,positions,normals,data.slice(checkFrom+4,checkFrom+4+surfaceSize),1.0,decodedTransform.origin)
+				objectMesh.loadCompiledSurfaces(matList,positions,normals,data.slice(checkFrom+4,checkFrom+4+surfaceSize),1.0)
 				checkFrom+=surfaceSize+4+25
 				obj = PhysicalObjectModel.new()
 				obj.objectType=ObjectModel.objectTypes.MESH
@@ -544,10 +544,16 @@ class fullCompileMapData extends compilerMapData:
 			match objectData.get("Type"):
 				ObjectModel.objectTypes.MESH:
 					var surfaceSize = PackedByteArray([0,0,0,0])
+					var collisionSize = PackedByteArray([0,0])
 					surfaceSize.encode_u32(0,objectData.Surface.size())
 					binary.append_array(surfaceSize)
 					binary.append_array(objectData.Surface)
-					binary.append_array(objectData.get("UV"))
+					binary.append_array(objectData.UV)
+					collisionSize.encode_u16(0,objectData.Collision.size())
+					binary.append_array(collisionSize)
+					binary.append_array(objectData.Collision)
+					
+					
 				ObjectModel.objectTypes.OBJECT:
 					var objectSize = PackedByteArray([0,0,0,0])
 					objectSize.encode_u32(0,objectData.get("Model").size())

@@ -8,6 +8,12 @@ extends Node3D
 		reloadMap()
 	get:return false
 
+signal fmt_loaded
+signal id_loaded
+signal objects_loaded
+signal finished
+
+
 ### DATA FOR PARSING OUT THE MAP
 var currentSeek:int=0
 var positions:PackedVector3Array=[]
@@ -89,13 +95,21 @@ func loadObjects(loadOnto:Node,data:PackedByteArray)->void:
 					Basis.from_euler(compilerService.decodeVector3Float(12,UVTransform)),
 					compilerService.decodeVector3Float(0,UVTransform))
 				
-				objectMesh.loadCompiledSurfaces(matList,positions,normals,data.slice(currentSeek+4,currentSeek+4+surfaceSize),size,decodedTransform.origin)
-				currentSeek+=surfaceSize+4+25
+				objectMesh.loadCompiledSurfaces(matList,positions,normals,data.slice(currentSeek+4,currentSeek+4+surfaceSize),size)
+				currentSeek+=surfaceSize+28
+				var collisionSize:int=data.decode_u16(currentSeek)
+				currentSeek+=2
+				var objectColliderST = loadObjectCollision(data.slice(currentSeek,currentSeek+collisionSize))
+				currentSeek+=collisionSize+1
 				obj = PhysicalObjectModel.new()
 				obj.objectType=ObjectModel.objectTypes.MESH
 				objData = ObjectPhysicalDataResource.new()
 				objData.inheritedData=load("res://modelData/baseObject.tres")
 				objData.mesh=objectMesh
+				(func():
+					await objects_loaded
+					attachObjectCollision(obj,objectColliderST)
+				).call()
 				
 				
 				obj.objectData=objData
@@ -153,49 +167,75 @@ func loadObjects(loadOnto:Node,data:PackedByteArray)->void:
 		# we aren't going to handle that just yet
 		#currentSeek+=4
 
+func loadObjectCollision(collision:PackedByteArray)->SurfaceTool:
+	var st:SurfaceTool=SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var curAt:int=0
+	while curAt<collision.size():
+		var pID=collision.decode_u32(curAt)
+		curAt+=4
+		st.add_vertex(positions[pID]/size)
+	return st
+
+func attachObjectCollision(obj:ObjectModel,collisionST:SurfaceTool)->void:
+	var body=StaticBody3D.new()
+	var collider=CollisionShape3D.new()
+	if obj.objectData.baseTags.has("convex_collision"):
+		collider.shape=collisionST.commit().create_convex_shape()
+	else:
+		collider.shape=collisionST.commit().create_trimesh_shape()
+	body.add_child(collider)
+	obj.add_child(body)
+	body.owner=get_tree().edited_scene_root
+	collider.owner=get_tree().edited_scene_root
+
+
 func fullLoad(loadOnto:Node,data:PackedByteArray=[])->void:
 	currentSeek=0
 	loadFMTS(data)
+	fmt_loaded.emit()
 	currentSeek+=1
 	#get position/normal IDS
 	loadVectorIDS(data)
+	id_loaded.emit()
 	currentSeek+=1
 	#load object data
 	loadObjects(loadOnto,data)
+	objects_loaded.emit()
 	currentSeek+=1
-	#get collision data
-	var collisionSize:int=data.decode_u32(currentSeek)
-	
-	currentSeek+=4
-	var collisionEnd:int=currentSeek+collisionSize
-	while currentSeek<collisionEnd:
-		var thisGroup:int=data.decode_u16(currentSeek)
-		var thisSize:int=data.decode_u16(currentSeek+2)
-		if not collisionSets.has(thisGroup):
-			var st_n=SurfaceTool.new()
-			st_n.begin(Mesh.PRIMITIVE_TRIANGLES)
-			collisionSets[thisGroup]=st_n
-		var st=collisionSets.get(thisGroup)
-		currentSeek+=4
-		for i in range(0,thisSize,4):
-			var pID:int=data.decode_u32(currentSeek)
-			st.add_vertex(positions[pID]/size)
-			currentSeek+=4
-	for group in collisionSets:
-		var c=CollisionShape3D.new()
-		var attachTo:Node=loadOnto if group==65535 else objectList[group]
-		if attachTo is ObjectModel and attachTo.objectData.baseTags.has("convex_collision"):
-			c.shape=collisionSets[group].commit().create_convex_shape()
-		else:
-			c.shape=collisionSets[group].commit().create_trimesh_shape()
-		var e=StaticBody3D.new()
-		e.add_child(c)
-		
-		attachTo.add_child(e)
-		e.global_position=Vector3.ZERO
-		e.owner=attachTo
-		e.owner=get_tree().edited_scene_root
-		c.owner=get_tree().edited_scene_root
+	##get collision data
+	#var collisionSize:int=data.decode_u32(currentSeek)
+	#
+	#currentSeek+=4
+	#var collisionEnd:int=currentSeek+collisionSize
+	#while currentSeek<collisionEnd:
+		#var thisGroup:int=data.decode_u16(currentSeek)
+		#var thisSize:int=data.decode_u16(currentSeek+2)
+		#if not collisionSets.has(thisGroup):
+			#var st_n=SurfaceTool.new()
+			#st_n.begin(Mesh.PRIMITIVE_TRIANGLES)
+			#collisionSets[thisGroup]=st_n
+		#var st=collisionSets.get(thisGroup)
+		#currentSeek+=4
+		#for i in range(0,thisSize,4):
+			#var pID:int=data.decode_u32(currentSeek)
+			#st.add_vertex(positions[pID]/size)
+			#currentSeek+=4
+	#for group in collisionSets:
+		#var c=CollisionShape3D.new()
+		#var attachTo:Node=loadOnto if group==65535 else objectList[group]
+		#if attachTo is ObjectModel and attachTo.objectData.baseTags.has("convex_collision"):
+			#c.shape=collisionSets[group].commit().create_convex_shape()
+		#else:
+			#c.shape=collisionSets[group].commit().create_trimesh_shape()
+		#var e=StaticBody3D.new()
+		#e.add_child(c)
+		#
+		#attachTo.add_child(e)
+		#e.global_position=Vector3.ZERO
+		#e.owner=attachTo
+		#e.owner=get_tree().edited_scene_root
+		#c.owner=get_tree().edited_scene_root
 	collisionSets={}
 	objectList=[]
 	
