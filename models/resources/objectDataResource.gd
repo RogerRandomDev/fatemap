@@ -344,4 +344,12 @@ func getParametersForCompiler()->Dictionary:
 	
 	return compiledParameters
 
+func getTagsForCompiler()->PackedByteArray:
+	var tagList=getTagDefaults(true)
+	var compiledTags:PackedByteArray=[]
+	for tag in tagList:
+		compiledTags.append_array(tag.to_ascii_buffer())
+		compiledTags.append(compilerService.SEPARATOR_BYTE)
+	return compiledTags
+
 #endregion

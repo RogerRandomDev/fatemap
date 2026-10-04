@@ -13,6 +13,8 @@ var currentSeek:int=0
 var positions:PackedVector3Array=[]
 var normals:PackedVector3Array=[]
 var matList:Array[MaterialService.materialModel]=[]
+var objectList:Array=[]
+var collisionSets:Dictionary={}
 
 
 func _ready() -> void:
@@ -95,7 +97,8 @@ func loadObjects(loadOnto:Node,data:PackedByteArray)->void:
 				obj.objectData=objData
 				var placedObjects=loadOnto
 				placedObjects.add_child(obj)
-				obj.owner=self
+				#obj.owner=self
+				obj.owner=get_tree().edited_scene_root
 				obj.get_node("MESH_OBJECT").owner=obj.owner
 				obj.get_node("MESH_OBJECT").mesh = objectMesh
 				
@@ -112,12 +115,12 @@ func loadObjects(loadOnto:Node,data:PackedByteArray)->void:
 				obj.add_child(childModel)
 				#childModel.scale=scaleVector
 				currentSeek+=objectSize+4
-				
 				var placedObjects=loadOnto
 				placedObjects.add_child(obj)
 				currentSeek+=1
 				decodedTransform=decodedTransform.scaled_local(scaleVector)
-				
+				obj.owner=get_tree().edited_scene_root
+				childModel.owner=get_tree().edited_scene_root
 				
 		#set object transform we already calculated
 		obj.global_transform=decodedTransform
@@ -129,11 +132,22 @@ func loadObjects(loadOnto:Node,data:PackedByteArray)->void:
 		if paramData!=null:
 			for param in paramData.keys():
 				objData.setInstance(param,paramData[param][1])
-		currentSeek+=paramBlockSize
-		
+		currentSeek+=paramBlockSize+4
+		#load the tag list in
+		var tagBlockSize:int=data.decode_u16(currentSeek)
+		currentSeek+=2
+		var startingFrom:int=currentSeek
+		while true:
+			var tagEnd:int=data.find(compilerService.SEPARATOR_BYTE,currentSeek+1)
+			if tagEnd==-1||tagEnd>tagBlockSize+startingFrom:break
+			var tagName=data.slice(currentSeek,tagEnd).get_string_from_ascii()
+			objData.baseTags.push_back(tagName)
+			currentSeek=tagEnd+1
+		currentSeek=startingFrom+tagBlockSize
+		objectList.push_back(obj)
 		# +4 later because the last part is the group
 		# we aren't going to handle that just yet
-		currentSeek+=4
+		#currentSeek+=4
 
 func fullLoad(loadOnto:Node,data:PackedByteArray=[])->void:
 	currentSeek=0
@@ -150,22 +164,34 @@ func fullLoad(loadOnto:Node,data:PackedByteArray=[])->void:
 	
 	currentSeek+=4
 	var collisionEnd:int=currentSeek+collisionSize
-	var st=SurfaceTool.new()
-	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	while currentSeek<collisionEnd:
-		var thisSize:int=data.decode_u32(currentSeek)
+		var thisGroup:int=data.decode_u16(currentSeek)
+		var thisSize:int=data.decode_u16(currentSeek+2)
+		if not collisionSets.has(thisGroup):
+			var st_n=SurfaceTool.new()
+			st_n.begin(Mesh.PRIMITIVE_TRIANGLES)
+			collisionSets[thisGroup]=st_n
+		var st=collisionSets.get(thisGroup)
 		currentSeek+=4
 		for i in range(0,thisSize,4):
 			var pID:int=data.decode_u32(currentSeek)
 			st.add_vertex(positions[pID]/size)
 			currentSeek+=4
-	var c=CollisionShape3D.new()
-	#var m=
-	c.shape=st.commit().create_trimesh_shape()
-	var e=StaticBody3D.new()
-	e.add_child(c)
-	
-	loadOnto.add_child(e)
-	e.owner=loadOnto
-	c.owner=e.owner
+	for group in collisionSets:
+		var c=CollisionShape3D.new()
+		var attachTo:Node=loadOnto if group==65535 else objectList[group]
+		if attachTo is ObjectModel and attachTo.objectData.baseTags.has("convex_collision"):
+			c.shape=collisionSets[group].commit().create_convex_shape()
+		else:
+			c.shape=collisionSets[group].commit().create_trimesh_shape()
+		var e=StaticBody3D.new()
+		e.add_child(c)
+		
+		attachTo.add_child(e)
+		e.global_position=Vector3.ZERO
+		e.owner=attachTo
+		e.owner=get_tree().edited_scene_root
+		c.owner=get_tree().edited_scene_root
+	collisionSets={}
+	objectList=[]
 	

@@ -285,10 +285,21 @@ static func loadMapData(loadOnto:Node,data:PackedByteArray=[])->void:
 		if paramData!=null:
 			for param in paramData.keys():
 				objData.setInstance(param,paramData[param][1])
-		checkFrom+=paramBlockSize
+		checkFrom+=paramBlockSize+4
+		#load the tag list in
+		var tagBlockSize:int=data.decode_u16(checkFrom)
+		checkFrom+=2
+		var startingFrom:int=checkFrom
+		while true:
+			var tagEnd:int=data.find(compilerService.SEPARATOR_BYTE,checkFrom+1)
+			if tagEnd==-1||tagEnd>tagBlockSize+startingFrom:break
+			var tagName=data.slice(checkFrom,tagEnd).get_string_from_ascii()
+			objData.baseTags.push_back(tagName)
+			checkFrom=tagEnd+1
+		checkFrom=startingFrom+tagBlockSize
 		# +4 later because the last part is the group
 		# we aren't going to handle that just yet
-		checkFrom+=4
+		#checkFrom+=4
 	
 
 
@@ -394,6 +405,10 @@ class precompileMapData extends compilerMapData:
 			paramSize.encode_u32(0,params.size())
 			binary.append_array(paramSize)
 			binary.append_array(params)
+			var tagSize:=PackedByteArray([0,0])
+			tagSize.encode_u16(0,objectData.get("Tags").size())
+			binary.append_array(tagSize)
+			binary.append_array(objectData.get("Tags"))
 			binary.push_back(objectData.Group)
 		
 		
@@ -413,6 +428,7 @@ class precompileMapData extends compilerMapData:
 					materialList.push_back(mat)
 				objects[compiledObjectData.Identifier]={
 					"Type":ObjectModel.objectTypes.MESH,
+					"Tags":compiledObjectData.Tags,
 					"Surface":compiledObjectData.Mesh.Surfaces,
 					"UV":compiledObjectData.Mesh.UVPosition,
 					"Position":compiledObjectData.Position,
@@ -426,6 +442,7 @@ class precompileMapData extends compilerMapData:
 				var compiledObjectData = object.getCompiledData(self)
 				objects[compiledObjectData.Identifier]={
 					"Type":ObjectModel.objectTypes.OBJECT,
+					"Tags":compiledObjectData.Tags,
 					"Position":compiledObjectData.Position,
 					"Rotation":compiledObjectData.Rotation,
 					"Scale":compiledObjectData.Scale,
@@ -500,7 +517,8 @@ class fullCompileMapData extends compilerMapData:
 			var data=objects[object]
 			var collision=data.get("Collision",[])
 			fullSize+=collision.size()+4
-			individualSize.encode_u32(0,collision.size())
+			individualSize.encode_u16(2,collision.size())
+			individualSize.encode_u16(0,data.get("Group"))
 			binary.append_array(individualSize)
 			binary.append_array(collision)
 		binary.encode_u32(0,fullSize)
@@ -540,6 +558,10 @@ class fullCompileMapData extends compilerMapData:
 			paramSize.encode_u32(0,params.size())
 			binary.append_array(paramSize)
 			binary.append_array(params)
+			var tagSize:=PackedByteArray([0,0])
+			tagSize.encode_u16(0,objectData.get("Tags").size())
+			binary.append_array(tagSize)
+			binary.append_array(objectData.get("Tags"))
 			#binary.push_back(objectData.Group)
 		
 		
@@ -559,6 +581,7 @@ class fullCompileMapData extends compilerMapData:
 					materialList.push_back(mat)
 				objects[compiledObjectData.Identifier]={
 					"Type":ObjectModel.objectTypes.MESH,
+					"Tags":compiledObjectData.Tags,
 					"Surface":compiledObjectData.Mesh.Surfaces,
 					"Collision":compiledObjectData.Mesh.Collision,
 					"UV":compiledObjectData.Mesh.UVPosition,
@@ -566,7 +589,7 @@ class fullCompileMapData extends compilerMapData:
 					"Rotation":compiledObjectData.Rotation,
 					"Scale":compiledObjectData.Scale,
 					"Parameters":compiledObjectData.Parameters,
-					"Group":currentGroup
+					"Group":objects.size() if object.objectData.baseTags.has("no_group") else currentGroup
 					}
 				objectGroups.get_or_add(currentGroup,[]).push_back(compiledObjectData.Identifier)
 				
@@ -574,12 +597,13 @@ class fullCompileMapData extends compilerMapData:
 				var compiledObjectData = object.getCompiledData(self)
 				objects[compiledObjectData.Identifier]={
 					"Type":ObjectModel.objectTypes.OBJECT,
+					"Tags":compiledObjectData.Tags,
 					"Position":compiledObjectData.Position,
 					"Rotation":compiledObjectData.Rotation,
 					"Scale":compiledObjectData.Scale,
 					"Model":compiledObjectData.get("Object"),
 					"Parameters":compiledObjectData.Parameters,
-					"Group":currentGroup
+					"Group":objects.size() if object.objectData.baseTags.has("no_group") else currentGroup
 					}
 				objectGroups.get_or_add(currentGroup,[]).push_back(compiledObjectData.Identifier)
 			ObjectModel.objectTypes.DATA:

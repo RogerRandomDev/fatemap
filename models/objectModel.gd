@@ -25,6 +25,7 @@ func getCompiledData(compiler:compilerService.compilerMapData,full:bool=false)->
 	"Position":global_position,
 	"Rotation":global_rotation,
 	"Scale":global_basis.get_scale(),
+	"Tags":objectData.getTagsForCompiler(),
 	"Parameters":objectData.getParametersForCompiler()
 }
 
