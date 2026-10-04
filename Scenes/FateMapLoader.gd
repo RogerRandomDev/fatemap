@@ -29,6 +29,10 @@ func reloadMap()->void:
 	var data=f.get_buffer(f.get_length())
 	currentSeek=0
 	fullLoad(self,data)
+	#if in editor remove any processing to prevent problems
+	if not Engine.is_editor_hint():return
+	for child in get_children():
+		child.process_mode=Node.PROCESS_MODE_DISABLED
 
 
 func decodeVectorList(data:PackedByteArray,updateSeek:bool=false)->PackedVector3Array:
@@ -85,7 +89,7 @@ func loadObjects(loadOnto:Node,data:PackedByteArray)->void:
 					Basis.from_euler(compilerService.decodeVector3Float(12,UVTransform)),
 					compilerService.decodeVector3Float(0,UVTransform))
 				
-				objectMesh.loadCompiledSurfaces(matList,positions,normals,data.slice(currentSeek+4,currentSeek+4+surfaceSize),size)
+				objectMesh.loadCompiledSurfaces(matList,positions,normals,data.slice(currentSeek+4,currentSeek+4+surfaceSize),size,decodedTransform.origin)
 				currentSeek+=surfaceSize+4+25
 				obj = PhysicalObjectModel.new()
 				obj.objectType=ObjectModel.objectTypes.MESH

@@ -232,7 +232,7 @@ static func loadMapData(loadOnto:Node,data:PackedByteArray=[])->void:
 		# applies position|rotation|scale
 		decodedTransform.origin=decodeVector3Float(0,objectTransform)
 		decodedTransform.basis=Basis.from_euler(decodeVector3Float(12,objectTransform))
-		decodedTransform.basis.scaled(decodeVector3Float(24,objectTransform))
+		decodedTransform.basis=decodedTransform.basis.scaled_local(decodeVector3Float(24,objectTransform))
 		
 		var obj:ObjectModel
 		var objData
@@ -245,7 +245,7 @@ static func loadMapData(loadOnto:Node,data:PackedByteArray=[])->void:
 				objectMesh.globalTransform=Transform3D(
 					Basis.from_euler(decodeVector3Float(12,UVTransform)),Vector3(
 					decodeVector3Float(0,UVTransform)))
-				objectMesh.loadCompiledSurfaces(matList,positions,normals,data.slice(checkFrom+4,checkFrom+4+surfaceSize))
+				objectMesh.loadCompiledSurfaces(matList,positions,normals,data.slice(checkFrom+4,checkFrom+4+surfaceSize),1.0,decodedTransform.origin)
 				checkFrom+=surfaceSize+4+25
 				obj = PhysicalObjectModel.new()
 				obj.objectType=ObjectModel.objectTypes.MESH

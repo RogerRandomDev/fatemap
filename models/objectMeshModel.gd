@@ -279,7 +279,7 @@ func convertSurfacesToBinary(compiler:compilerService.compilerMapData=null,full:
 		
 		binarySurfaceData.encode_u16(offset,compiledSurfaceId)
 		for i in 3:
-			binarySurfaceData.encode_u32(offset+2+sub_offset*i,compiler.getPositionID(face.vertices[i].position))
+			binarySurfaceData.encode_u32(offset+2+sub_offset*i,compiler.getPositionID(face.vertices[i].position+ownerInstance.global_position))
 			binarySurfaceData.encode_float(offset+6+sub_offset*i,face.vertices[i].uv.x)
 			binarySurfaceData.encode_float(offset+10+sub_offset*i,face.vertices[i].uv.y)
 		binarySurfaceData.encode_u32(offset+38,compiler.getNormalID(face.normal))
@@ -308,7 +308,7 @@ func getCollisionFaces(compiler:compilerService.compilerMapData=null)->PackedByt
 	
 	return collisionBinary
 
-func loadCompiledSurfaces(matList:Array=[],positions:Array=[],normals:Array=[],binary:PackedByteArray=[],scaled:float=1.0)->void:
+func loadCompiledSurfaces(matList:Array=[],positions:Array=[],normals:Array=[],binary:PackedByteArray=[],scaled:float=1.0,offset:Vector3=Vector3.ZERO)->void:
 	var checkFrom:int=0
 	scaler=scaled
 	while true:
@@ -321,7 +321,7 @@ func loadCompiledSurfaces(matList:Array=[],positions:Array=[],normals:Array=[],b
 		const sub_offset = 12
 		for i in 3:
 			faceVertexPositions.push_back(
-				positions[faceData.decode_u32(2+sub_offset*i)]/scaler
+				(positions[faceData.decode_u32(2+sub_offset*i)]-offset)/scaler
 				)
 			faceVertexUVs.push_back(
 				Vector2(

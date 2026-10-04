@@ -3,6 +3,7 @@ extends ObjectModel
 var objectModelFile:String
 
 func _ready() -> void:
+	if objectData==null:return
 	objectType=objectTypes.OBJECT
 	objectData.owner=self
 	objectDisplay=get_child(0)

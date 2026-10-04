@@ -8,8 +8,9 @@ static func toVar(input:String,mapType:String)->Variant:
 		"text":
 			return input
 		"boolean":
-			if not (input.to_lower().strip_edges()==&"true"||input.to_lower().strip_edges()==&"false"):return null
-			return input.to_lower().strip_edges()==&"true"
+			var boolean_val=[&"true",&"t",&"1"].has(input.to_lower().strip_edges())
+			if not (boolean_val||[&"false",&"f",&"0"].has(input.to_lower().strip_edges())):return null
+			return boolean_val
 		"float":
 			return float(input.strip_edges())
 		"integer":

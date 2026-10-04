@@ -140,6 +140,7 @@ func getOwnParameter(property: StringName):
 ## Gets the [param property] to the correlated parameter data section.[br]
 ## See [method getOwnParameter] for parameters from Self.
 func getInheritedParameter(property:StringName):
+	if property.split("parameter_").size()<2:return null
 	var index=property.split("parameter_")[1].split("/")[0]
 	if str(index.to_int()) != index:return null
 	index = index.to_int()
