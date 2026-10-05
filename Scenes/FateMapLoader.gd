@@ -163,7 +163,7 @@ func loadObjectCollision(collision:PackedByteArray)->SurfaceTool:
 	while curAt<collision.size():
 		var pID=collision.decode_u32(curAt)
 		curAt+=4
-		st.add_vertex(positions[pID]/size)
+		st.add_vertex(positions[pID])
 	return st
 
 func attachObjectCollision(obj:Node,mode:int,collisionST:SurfaceTool)->void:
@@ -235,4 +235,9 @@ func fullLoad(loadOnto:Node,data:PackedByteArray=[])->void:
 		#c.owner=get_tree().edited_scene_root
 	collisionSets={}
 	objectList=[]
-	
+	if Engine.is_editor_hint():
+		for child in get_children():att(child)
+
+func att(n):
+	n.owner=get_tree().edited_scene_root
+	for child in n.get_children():att(child)
