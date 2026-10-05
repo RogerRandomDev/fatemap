@@ -1,4 +1,5 @@
 extends Node
+class_name EditInteractionBase
 
 @onready var holder:Control=get_parent()
 

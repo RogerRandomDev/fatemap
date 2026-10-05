@@ -1,17 +1,18 @@
 extends RefCounted
+class_name guiPlaceholderElements
 
 
-static var noMatch:FateMap.GUIService.guiElement=FateMap.GUIService.guiElement.new(
+static var noMatch:guiElement=guiElement.new(
 	null,
 	&"",
 	[&"FailedAction",&"NoMatch"],
 )
-static var alreadyExists:FateMap.GUIService.guiElement=FateMap.GUIService.guiElement.new(
+static var alreadyExists:guiElement=guiElement.new(
 	null,
 	&"",
 	[&"FailedAction",&"AlreadyExists"],
 )
-static var generalFail:FateMap.GUIService.guiElement=FateMap.GUIService.guiElement.new(
+static var generalFail:guiElement=guiElement.new(
 	null,
 	&"",
 	[&"FailedAction",&"UnSpecified"],

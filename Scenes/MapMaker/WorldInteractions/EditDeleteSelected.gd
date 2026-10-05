@@ -1,30 +1,30 @@
-extends "res://Scenes/MapMaker/WorldInteractions/BaseEditScripts.gd"
+extends EditInteractionBase
 
 
 
 func _handle_keyboard_input(_event: InputEventKey) -> bool:
-	if not FateMap.InputService.pressed(&"Delete",true):return false
-	var activeObj=FateMap.ParameterService.getParam(&"activeObject")
+	if not InputService.pressed(&"Delete",true):return false
+	var activeObj=ParameterService.getParam(&"activeObject")
 	if activeObj==null:return false
 	var _holder = activeObj.get_parent()
-	FateMap.UndoRedoService.startAction(&"DeleteObject")
-	FateMap.UndoRedoService.addUndoRef(activeObj)
-	FateMap.UndoRedoService.addMethods(
+	UndoRedoService.startAction(&"DeleteObject")
+	UndoRedoService.addUndoRef(activeObj)
+	UndoRedoService.addMethods(
 	(func():
 		_holder.remove_child(activeObj)
-		FateMap.ParameterService.setParam(&"activeObject",null)
-		FateMap.MeshEditService.setEditing(null)
-		FateMap.signalService.emitSignal(&"meshSelectionChanged")
-		FateMap.signalService.emitSignal(&"mapObjectSelected",[])
+		ParameterService.setParam(&"activeObject",null)
+		MeshEditService.setEditing(null)
+		signalService.emitSignal(&"meshSelectionChanged")
+		signalService.emitSignal(&"mapObjectSelected",[])
 		),
 	(func():
 		_holder.add_child(activeObj)
-		FateMap.signalService.emitSignal(&"mapObjectSelected",[activeObj])
-		FateMap.ParameterService.setParam(&"activeObject",activeObj)
-		FateMap.MeshEditService.setEditing(activeObj)
-		FateMap.signalService.emitSignal(&"meshSelectionChanged")
+		signalService.emitSignal(&"mapObjectSelected",[activeObj])
+		ParameterService.setParam(&"activeObject",activeObj)
+		MeshEditService.setEditing(activeObj)
+		signalService.emitSignal(&"meshSelectionChanged")
 		)
 	)
-	FateMap.UndoRedoService.commitAction(true)
+	UndoRedoService.commitAction(true)
 	
 	return true

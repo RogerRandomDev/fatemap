@@ -5,7 +5,7 @@ extends Node3D
 @export var size:float=1.0
 @export var reload:bool=false:
 	set(v):
-		if v:reloadMap()
+		reloadMap()
 	get:return false
 
 signal fmt_loaded
@@ -18,16 +18,16 @@ signal finished
 var currentSeek:int=0
 var positions:PackedVector3Array=[]
 var normals:PackedVector3Array=[]
-var matList:Array[Resource]=[]
+var matList:Array[MaterialService.materialModel]=[]
 var objectList:Array=[]
+var collisionSets:Dictionary={}
 
 
 func _ready() -> void:
-	if not Engine.is_editor_hint():
-		reloadMap()
+	reloadMap()
 
 func reloadMap()->void:
-	FateMap.MaterialService.loadAllFMT("res://Imported/Materials")
+	MaterialService.loadAllFMT("res://Imported/Materials")
 	for child in get_children():
 		child.queue_free()
 	if mapFile.is_empty():return
@@ -41,11 +41,11 @@ func reloadMap()->void:
 		child.process_mode=Node.PROCESS_MODE_DISABLED
 
 
-func decodeVectorList(data:PackedByteArray,updateSeek:bool=false,scaler:float=1.0)->PackedVector3Array:
+func decodeVectorList(data:PackedByteArray,updateSeek:bool=false)->PackedVector3Array:
 	var arr=PackedVector3Array()
 	var offset:int=0
 	while offset<data.size():
-		arr.push_back(FateMap.compilerService.decodeVector3Float(offset,data)*scaler)
+		arr.push_back(compilerService.decodeVector3Float(offset,data))
 		offset+=12
 	if updateSeek:currentSeek+=offset
 	return arr
@@ -55,13 +55,13 @@ func loadFMTS(data:PackedByteArray=[])->void:
 	matList=[] #emptied before filling with new materials grabbed
 	currentSeek=4
 	for i in data.decode_u32(0):
-		matList.push_back(FateMap.MaterialService.getMaterialByHash(data.decode_u32(currentSeek)))
+		matList.push_back(MaterialService.getMaterialByHash(data.decode_u32(currentSeek)))
 		currentSeek+=4
 
 func loadVectorIDS(data:PackedByteArray)->void:
 	var idList = data.slice(currentSeek,currentSeek+8)
 	currentSeek+=8
-	positions=decodeVectorList(data.slice(currentSeek,currentSeek+idList.decode_u32(0)*12),true,1.0/size)
+	positions=decodeVectorList(data.slice(currentSeek,currentSeek+idList.decode_u32(0)*12),true)
 	normals=decodeVectorList(data.slice(currentSeek,currentSeek+idList.decode_u32(4)*12),true)
 
 func loadObjects(loadOnto:Node,data:PackedByteArray)->void:
@@ -70,7 +70,7 @@ func loadObjects(loadOnto:Node,data:PackedByteArray)->void:
 	var scaleVector:Vector3=Vector3(1.0/size,1.0/size,1.0/size)
 	
 	for i in objectCount:
-		var loadingObject = data.find(0,currentSeek+1)
+		var loadingObject = data.find(compilerService.SEPARATOR_BYTE,currentSeek+1)
 		var objectName = data.slice(currentSeek,loadingObject).get_string_from_ascii()
 		var objectType = data.slice(loadingObject+1,loadingObject+2)[0]
 		currentSeek=loadingObject+3
@@ -79,58 +79,66 @@ func loadObjects(loadOnto:Node,data:PackedByteArray)->void:
 		currentSeek+=36
 		var decodedTransform:Transform3D=Transform3D()
 		# applies position|rotation|scale
-		decodedTransform.origin=FateMap.compilerService.decodeVector3Float(0,objectTransform)
-		decodedTransform.basis=Basis.from_euler(FateMap.compilerService.decodeVector3Float(12,objectTransform))
-		decodedTransform.basis=decodedTransform.basis.scaled_local(FateMap.compilerService.decodeVector3Float(24,objectTransform))
+		decodedTransform.origin=compilerService.decodeVector3Float(0,objectTransform)
+		decodedTransform.basis=Basis.from_euler(compilerService.decodeVector3Float(12,objectTransform))
+		decodedTransform.basis=decodedTransform.basis.scaled_local(compilerService.decodeVector3Float(24,objectTransform))
 		
-		var obj:=CompiledObjectModel.ObjectModelData.new()
+		var obj:ObjectModel
 		var objData
 		match objectType:
-			FateMap.ObjectModel.objectTypes.MESH:
+			ObjectModel.objectTypes.MESH:
 				var surfaceSize=data.decode_u32(currentSeek)
-				var objectMesh:ArrayMesh
-				if surfaceSize!=0:
-					objectMesh=CompiledObjectModel.ObjectMesh.loadCompiledMesh(
-					matList,
-					positions,
-					normals,
-					data.slice(currentSeek+4,currentSeek+4+surfaceSize)
-				)
+				var objectMesh:objectMeshModel=objectMeshModel.new()
 				
+				var UVTransform=data.slice(currentSeek+4+surfaceSize,currentSeek+surfaceSize+28)
+				objectMesh.globalTransform=Transform3D(
+					Basis.from_euler(compilerService.decodeVector3Float(12,UVTransform)),
+					compilerService.decodeVector3Float(0,UVTransform))
+				
+				objectMesh.loadCompiledSurfaces(matList,positions,normals,data.slice(currentSeek+4,currentSeek+4+surfaceSize),size)
 				currentSeek+=surfaceSize+28
 				var collisionSize:int=data.decode_u16(currentSeek)
 				currentSeek+=2
 				var objectColliderST = loadObjectCollision(data.slice(currentSeek,currentSeek+collisionSize))
 				currentSeek+=collisionSize+1
-				obj.objectType=FateMap.ObjectModel.objectTypes.MESH
-				objData = FateMap.ObjectPhysicalDataResource.new()
+				obj = PhysicalObjectModel.new()
+				obj.objectType=ObjectModel.objectTypes.MESH
+				objData = ObjectPhysicalDataResource.new()
 				objData.inheritedData=load("res://modelData/baseObject.tres")
 				objData.mesh=objectMesh
-				obj.objectData=objData
-				var placedObjects=loadOnto
-				var builtObj=obj.build()
-				if objectMesh==null:
-					builtObj.set_meta("replace",true)
-				placedObjects.add_child(builtObj)
 				(func():
 					await objects_loaded
-					var mode = int(obj.objectData.baseTags.has("convex_collision"))
-					attachObjectCollision(builtObj,mode,objectColliderST)
+					attachObjectCollision(obj,objectColliderST)
 				).call()
 				
-			FateMap.ObjectModel.objectTypes.OBJECT:
-				obj.objectType=FateMap.ObjectModel.objectTypes.OBJECT
-				objData = FateMap.ObjectDataResource.new()
-				obj.objectData=objData
-				var objectSize:int=data.decode_u32(currentSeek)
-				obj.objectTargetFile=data.slice(currentSeek+4,currentSeek+4+objectSize).get_string_from_ascii()
-				currentSeek+=objectSize+4
 				
+				obj.objectData=objData
 				var placedObjects=loadOnto
-				var builtObj=obj.build()
-				placedObjects.add_child(builtObj)
+				placedObjects.add_child(obj)
+				#obj.owner=self
+				obj.owner=get_tree().edited_scene_root
+				obj.get_node("MESH_OBJECT").owner=obj.owner
+				obj.get_node("MESH_OBJECT").mesh = objectMesh
+				
+			ObjectModel.objectTypes.OBJECT:
+				obj=load("res://models/modelObjectModel.gd").new()
+				obj.objectType=ObjectModel.objectTypes.OBJECT
+				objData = ObjectDataResource.new()
+				obj.objectData=objData
+				#TODO: parse and actually load OBJECT contents
+				var objectSize:int=data.decode_u32(currentSeek)
+				var objectLoaded=data.slice(currentSeek+4,currentSeek+4+objectSize).get_string_from_ascii()
+				obj.objectModelFile=objectLoaded
+				var childModel=load(objectLoaded).instantiate()
+				obj.add_child(childModel)
+				#childModel.scale=scaleVector
+				currentSeek+=objectSize+4
+				var placedObjects=loadOnto
+				placedObjects.add_child(obj)
 				currentSeek+=1
 				decodedTransform=decodedTransform.scaled_local(scaleVector)
+				obj.owner=get_tree().edited_scene_root
+				childModel.owner=get_tree().edited_scene_root
 				
 		#set object transform we already calculated
 		obj.global_transform=decodedTransform
@@ -138,7 +146,7 @@ func loadObjects(loadOnto:Node,data:PackedByteArray)->void:
 		
 		#have to get the encoded parameters out as well
 		var paramBlockSize:int=data.decode_u32(currentSeek)
-		var paramData = FateMap.compilerService.paramsDecode(data.slice(currentSeek+4,currentSeek+4+paramBlockSize))
+		var paramData = compilerService.paramsDecode(data.slice(currentSeek+4,currentSeek+4+paramBlockSize))
 		if paramData!=null:
 			for param in paramData.keys():
 				objData.setInstance(param,paramData[param][1])
@@ -148,7 +156,7 @@ func loadObjects(loadOnto:Node,data:PackedByteArray)->void:
 		currentSeek+=2
 		var startingFrom:int=currentSeek
 		while true:
-			var tagEnd:int=data.find(0,currentSeek+1)
+			var tagEnd:int=data.find(compilerService.SEPARATOR_BYTE,currentSeek+1)
 			if tagEnd==-1||tagEnd>tagBlockSize+startingFrom:break
 			var tagName=data.slice(currentSeek,tagEnd).get_string_from_ascii()
 			objData.baseTags.push_back(tagName)
@@ -166,29 +174,20 @@ func loadObjectCollision(collision:PackedByteArray)->SurfaceTool:
 	while curAt<collision.size():
 		var pID=collision.decode_u32(curAt)
 		curAt+=4
-		st.add_vertex(positions[pID])
+		st.add_vertex(positions[pID]/size)
 	return st
 
-func attachObjectCollision(obj:Node,mode:int,collisionST:SurfaceTool)->void:
-	var body=obj
-	if not obj is CollisionObject3D:
-		body = StaticBody3D.new()
+func attachObjectCollision(obj:ObjectModel,collisionST:SurfaceTool)->void:
+	var body=StaticBody3D.new()
 	var collider=CollisionShape3D.new()
-	if mode==1:
+	if obj.objectData.baseTags.has("convex_collision"):
 		collider.shape=collisionST.commit().create_convex_shape()
 	else:
 		collider.shape=collisionST.commit().create_trimesh_shape()
 	body.add_child(collider)
-	#if marked replace, remove it and just use this
-	if obj and obj.has_meta("replace"):
-		body.global_transform=obj.global_transform
-		obj.get_parent().add_child(body)
-		objectList.erase(obj)
-		objectList.push_back(body)
-		obj.queue_free()
-		return
-	
-	if body!=obj:obj.add_child(body)
+	obj.add_child(body)
+	body.owner=get_tree().edited_scene_root
+	collider.owner=get_tree().edited_scene_root
 
 
 func fullLoad(loadOnto:Node,data:PackedByteArray=[])->void:
@@ -204,12 +203,39 @@ func fullLoad(loadOnto:Node,data:PackedByteArray=[])->void:
 	loadObjects(loadOnto,data)
 	objects_loaded.emit()
 	currentSeek+=1
+	##get collision data
+	#var collisionSize:int=data.decode_u32(currentSeek)
+	#
+	#currentSeek+=4
+	#var collisionEnd:int=currentSeek+collisionSize
+	#while currentSeek<collisionEnd:
+		#var thisGroup:int=data.decode_u16(currentSeek)
+		#var thisSize:int=data.decode_u16(currentSeek+2)
+		#if not collisionSets.has(thisGroup):
+			#var st_n=SurfaceTool.new()
+			#st_n.begin(Mesh.PRIMITIVE_TRIANGLES)
+			#collisionSets[thisGroup]=st_n
+		#var st=collisionSets.get(thisGroup)
+		#currentSeek+=4
+		#for i in range(0,thisSize,4):
+			#var pID:int=data.decode_u32(currentSeek)
+			#st.add_vertex(positions[pID]/size)
+			#currentSeek+=4
+	#for group in collisionSets:
+		#var c=CollisionShape3D.new()
+		#var attachTo:Node=loadOnto if group==65535 else objectList[group]
+		#if attachTo is ObjectModel and attachTo.objectData.baseTags.has("convex_collision"):
+			#c.shape=collisionSets[group].commit().create_convex_shape()
+		#else:
+			#c.shape=collisionSets[group].commit().create_trimesh_shape()
+		#var e=StaticBody3D.new()
+		#e.add_child(c)
+		#
+		#attachTo.add_child(e)
+		#e.global_position=Vector3.ZERO
+		#e.owner=attachTo
+		#e.owner=get_tree().edited_scene_root
+		#c.owner=get_tree().edited_scene_root
+	collisionSets={}
 	objectList=[]
-	if Engine.is_editor_hint():
-		for child in get_children():
-			attachToEditor(child)
-
-func attachToEditor(child)->void:
-	child.owner=get_tree().edited_scene_root
-	for sub in child.get_children():
-		attachToEditor(sub)
+	

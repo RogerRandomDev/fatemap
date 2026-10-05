@@ -1,5 +1,8 @@
 extends Node
+class_name compilerService
 ##used to compile/decompile a map into its own file
+
+const SEPARATOR_BYTE:int=0
 
 #region general utilities
 
@@ -79,11 +82,12 @@ static func paramsEncode(parameters:Dictionary)->PackedByteArray:
 	encoded.encode_u16(0,parameters.size())
 	
 	for param in parameters:
+		var paramBytes:=PackedByteArray()
 		var paramName=param.to_ascii_buffer()
 		var paramValue=parameters[param]
 		paramValue=paramValueEncode(paramValue)
 		encoded.append_array(paramName)
-		encoded.append(0)
+		encoded.append(SEPARATOR_BYTE)
 		encoded.append_array(paramValue)
 		
 	
@@ -158,7 +162,7 @@ static func paramsDecode(parameters:PackedByteArray)->Dictionary:
 	var paramCount:int=parameters.decode_u16(0)
 	var checkFrom:int=2
 	for i in range(0,paramCount):
-		var nameEnd:int=parameters.find(0,checkFrom+1)
+		var nameEnd:int=parameters.find(SEPARATOR_BYTE,checkFrom+1)
 		if nameEnd==-1||nameEnd<=checkFrom+1:break
 		var paramName=parameters.slice(checkFrom,nameEnd).get_string_from_ascii()
 		checkFrom=nameEnd+1
@@ -167,18 +171,136 @@ static func paramsDecode(parameters:PackedByteArray)->Dictionary:
 		var paramValue=paramValueData[0]
 		decoded[paramName]=paramValue
 	
+	#encoded.append_array(paramName)
+	#encoded.append(SEPARATOR_BYTE)
+	#encoded.append_array(paramValue)
+	
 	return decoded
 
 #endregion
 
 
-#region Editor Compile
+#region Editor Compile/Decompile
 static func compileMapData(makerViewport:SubViewport)->PackedByteArray:
 	var compiledMap:PackedByteArray=[]
 	var objectList:Array[Node]=makerViewport.get_node("PlacedObjects").get_children()
 	var uncompiledData = precompileMapData.new(objectList)
 	compiledMap = uncompiledData.getBinary()
 	return compiledMap
+
+static func loadMapData(loadOnto:Node,data:PackedByteArray=[])->void:
+	#this needs segmented still but the logic is mostly set up
+	var checkFrom:int=0
+	var fmtPaths:PackedInt64Array=[]
+	#while true:
+		#var matToLoad=data.find(SEPARATOR_BYTE,checkFrom)
+		#if matToLoad==-1 or matToLoad-1<=checkFrom:break
+		#var materialFMTPath = data.slice(checkFrom,matToLoad).get_string_from_ascii()
+		#fmtPaths.push_back(materialFMTPath)
+		#checkFrom = matToLoad+1
+	#hash instead
+	checkFrom=4
+	for i in data.decode_u32(0):
+		fmtPaths.push_back(data.decode_u32(checkFrom))
+		checkFrom+=4
+	checkFrom+=1
+	var idList = data.slice(checkFrom,checkFrom+8)
+	checkFrom+=8
+	var positionIdCount:=idList.decode_u32(0)
+	var normalIdCount:=idList.decode_u32(4)
+	var positions:Array=[]
+	var normals:Array=[]
+	for pos in positionIdCount:
+		positions.push_back(decodeVector3Float(checkFrom,data))
+		checkFrom+=12
+	for norm in normalIdCount:
+		normals.push_back(decodeVector3Float(checkFrom,data))
+		checkFrom+=12
+	var matList=[]
+	for mat in fmtPaths:
+		matList.push_back(MaterialService.getMaterialByHash(mat))
+	while true:
+		var loadingObject = data.find(SEPARATOR_BYTE,checkFrom+1)
+		if loadingObject == -1 or loadingObject-1<=checkFrom:break
+		var objectName = data.slice(checkFrom,loadingObject).get_string_from_ascii()
+		var objectType = data.slice(loadingObject+1,loadingObject+2)[0]
+		checkFrom=loadingObject+3
+		# 2 vector3s 12*2 bytes
+		var objectTransform = data.slice(checkFrom,checkFrom+36)
+		checkFrom+=36
+		var decodedTransform:Transform3D=Transform3D()
+		# applies position|rotation|scale
+		decodedTransform.origin=decodeVector3Float(0,objectTransform)
+		decodedTransform.basis=Basis.from_euler(decodeVector3Float(12,objectTransform))
+		decodedTransform.basis=decodedTransform.basis.scaled_local(decodeVector3Float(24,objectTransform))
+		
+		var obj:ObjectModel
+		var objData
+		match objectType:
+			ObjectModel.objectTypes.MESH:
+				var surfaceSize=data.decode_u32(checkFrom)
+				var objectMesh:objectMeshModel=objectMeshModel.new()
+				
+				var UVTransform=data.slice(checkFrom+4+surfaceSize,checkFrom+surfaceSize+28)
+				objectMesh.globalTransform=Transform3D(
+					Basis.from_euler(decodeVector3Float(12,UVTransform)),Vector3(
+					decodeVector3Float(0,UVTransform)))
+				objectMesh.loadCompiledSurfaces(matList,positions,normals,data.slice(checkFrom+4,checkFrom+4+surfaceSize),1.0)
+				checkFrom+=surfaceSize+4+25
+				obj = PhysicalObjectModel.new()
+				obj.objectType=ObjectModel.objectTypes.MESH
+				objData = ObjectPhysicalDataResource.new()
+				objData.inheritedData=load("res://modelData/baseObject.tres")
+				objData.mesh=objectMesh
+				
+				
+				obj.objectData=objData
+				var placedObjects=loadOnto
+				placedObjects.add_child(obj)
+				obj.get_node("MESH_OBJECT").mesh = objectMesh
+				
+			ObjectModel.objectTypes.OBJECT:
+				obj=load("res://models/modelObjectModel.gd").new()
+				obj.objectType=ObjectModel.objectTypes.OBJECT
+				objData = ObjectDataResource.new()
+				obj.objectData=objData
+				#TODO: parse and actually load OBJECT contents
+				var objectSize:int=data.decode_u32(checkFrom)
+				var objectLoaded=data.slice(checkFrom+4,checkFrom+4+objectSize).get_string_from_ascii()
+				obj.objectModelFile=objectLoaded
+				
+				obj.add_child(load(objectLoaded).instantiate())
+				
+				checkFrom+=objectSize+4
+				
+				var placedObjects=loadOnto
+				placedObjects.add_child(obj)
+				checkFrom+=1
+		#set object transform we already calculated
+		obj.global_transform=decodedTransform
+		
+		#have to get the encoded parameters out as well
+		var paramBlockSize:int=data.decode_u32(checkFrom)
+		var paramData = paramsDecode(data.slice(checkFrom+4,checkFrom+4+paramBlockSize))
+		if paramData!=null:
+			for param in paramData.keys():
+				objData.setInstance(param,paramData[param][1])
+		checkFrom+=paramBlockSize+4
+		#load the tag list in
+		var tagBlockSize:int=data.decode_u16(checkFrom)
+		checkFrom+=2
+		var startingFrom:int=checkFrom
+		while true:
+			var tagEnd:int=data.find(compilerService.SEPARATOR_BYTE,checkFrom+1)
+			if tagEnd==-1||tagEnd>tagBlockSize+startingFrom:break
+			var tagName=data.slice(checkFrom,tagEnd).get_string_from_ascii()
+			objData.baseTags.push_back(tagName)
+			checkFrom=tagEnd+1
+		checkFrom=startingFrom+tagBlockSize
+		# +4 later because the last part is the group
+		# we aren't going to handle that just yet
+		#checkFrom+=4
+	
 
 
 class compilerMapData extends RefCounted:
@@ -221,9 +343,9 @@ class precompileMapData extends compilerMapData:
 	func getBinary()->PackedByteArray:
 		var binary:PackedByteArray=[]
 		binary.append_array(getMaterialBinary())
-		binary.push_back(0)
+		binary.push_back(SEPARATOR_BYTE) #ASCII buffer \n
 		binary.append_array(getIDListBinary())
-		binary.push_back(0)
+		binary.push_back(SEPARATOR_BYTE) #ASCII buffer \n
 		binary.append_array(getObjectsBinary())
 		return binary
 	
@@ -245,9 +367,9 @@ class precompileMapData extends compilerMapData:
 		binary.append_array(idCounts)
 		
 		for pos in positionIDs.values():
-			binary.append_array(FateMap.compilerService.encodeVector3Float(pos))
+			binary.append_array(compilerService.encodeVector3Float(pos))
 		for pos in normalIDs.values():
-			binary.append_array(FateMap.compilerService.encodeVector3Float(pos))
+			binary.append_array(compilerService.encodeVector3Float(pos))
 		return binary
 	
 	func getObjectsBinary() -> PackedByteArray:
@@ -257,29 +379,29 @@ class precompileMapData extends compilerMapData:
 		for object in objects:
 			var objectData = objects[object]
 			binary.append_array(object.to_ascii_buffer())
-			binary.push_back(0)
+			binary.push_back(SEPARATOR_BYTE)
 			binary.append_array([objectData.get("Type")])
-			binary.push_back(0)
+			binary.push_back(SEPARATOR_BYTE)
 			#object transform info. POSITION|ROTATION|SCALE
-			binary.append_array(FateMap.compilerService.encodeVector3Float(objectData.get("Position")))
-			binary.append_array(FateMap.compilerService.encodeVector3Float(objectData.get("Rotation")))
-			binary.append_array(FateMap.compilerService.encodeVector3Float(objectData.get("Scale")))
+			binary.append_array(compilerService.encodeVector3Float(objectData.get("Position")))
+			binary.append_array(compilerService.encodeVector3Float(objectData.get("Rotation")))
+			binary.append_array(compilerService.encodeVector3Float(objectData.get("Scale")))
 			#no gap as it isnt necessary
 			
 			match objectData.get("Type"):
-				FateMap.ObjectModel.objectTypes.MESH:
+				ObjectModel.objectTypes.MESH:
 					var surfaceSize = PackedByteArray([0,0,0,0])
 					surfaceSize.encode_u32(0,objectData.Surface.size())
 					binary.append_array(surfaceSize)
 					binary.append_array(objectData.Surface)
 					binary.append_array(objectData.get("UV"))
-				FateMap.ObjectModel.objectTypes.OBJECT:
+				ObjectModel.objectTypes.OBJECT:
 					var objectSize = PackedByteArray([0,0,0,0])
 					objectSize.encode_u32(0,objectData.get("Model").size())
 					binary.append_array(objectSize)
 					binary.append_array(objectData.get("Model"))
-			binary.push_back(0)
-			var params = FateMap.compilerService.paramsEncode(objectData.get("Parameters",null))
+			binary.push_back(SEPARATOR_BYTE)
+			var params = compilerService.paramsEncode(objectData.get("Parameters",null))
 			paramSize.encode_u32(0,params.size())
 			binary.append_array(paramSize)
 			binary.append_array(params)
@@ -294,18 +416,18 @@ class precompileMapData extends compilerMapData:
 	
 	func addObjectList(objectList:Array[Node],currentGroup:int=-1) -> void:
 		for object in objectList:
-			if not (object is FateMap.ObjectModel):continue
+			if not (object is ObjectModel):continue
 			attachObjectModel(object,currentGroup)
 	
-	func attachObjectModel(object:FateMap.ObjectModel,currentGroup:int=-1)->void:
+	func attachObjectModel(object:ObjectModel,currentGroup:int=-1)->void:
 		match object.objectType:
-			FateMap.ObjectModel.objectTypes.MESH:
+			ObjectModel.objectTypes.MESH:
 				var compiledObjectData = object.getCompiledData(self)
 				for mat in compiledObjectData.Mesh.Materials:
 					if materialList.has(mat):continue
 					materialList.push_back(mat)
 				objects[compiledObjectData.Identifier]={
-					"Type":FateMap.ObjectModel.objectTypes.MESH,
+					"Type":ObjectModel.objectTypes.MESH,
 					"Tags":compiledObjectData.Tags,
 					"Surface":compiledObjectData.Mesh.Surfaces,
 					"UV":compiledObjectData.Mesh.UVPosition,
@@ -316,10 +438,10 @@ class precompileMapData extends compilerMapData:
 					"Group":currentGroup
 					}
 				
-			FateMap.ObjectModel.objectTypes.OBJECT:
+			ObjectModel.objectTypes.OBJECT:
 				var compiledObjectData = object.getCompiledData(self)
 				objects[compiledObjectData.Identifier]={
-					"Type":FateMap.ObjectModel.objectTypes.OBJECT,
+					"Type":ObjectModel.objectTypes.OBJECT,
 					"Tags":compiledObjectData.Tags,
 					"Position":compiledObjectData.Position,
 					"Rotation":compiledObjectData.Rotation,
@@ -328,9 +450,9 @@ class precompileMapData extends compilerMapData:
 					"Parameters":compiledObjectData.Parameters,
 					"Group":currentGroup
 					}
-			FateMap.ObjectModel.objectTypes.DATA:
+			ObjectModel.objectTypes.DATA:
 				pass
-			FateMap.ObjectModel.objectTypes.GROUP:
+			ObjectModel.objectTypes.GROUP:
 				addObjectList(
 					object.get_children(),
 					currentGroup+1
@@ -354,11 +476,11 @@ class fullCompileMapData extends compilerMapData:
 	func getBinary()->PackedByteArray:
 		var binary:PackedByteArray=[]
 		binary.append_array(getMaterialBinary())
-		binary.push_back(0)
+		binary.push_back(SEPARATOR_BYTE)
 		binary.append_array(getIDListBinary())
-		binary.push_back(0)
+		binary.push_back(SEPARATOR_BYTE)
 		binary.append_array(getObjectsBinary())
-		binary.push_back(0)
+		binary.push_back(SEPARATOR_BYTE)
 		binary.append_array(getCollisionObjects())
 		#return binary
 		return binary
@@ -381,9 +503,9 @@ class fullCompileMapData extends compilerMapData:
 		binary.append_array(idCounts)
 		
 		for pos in positionIDs.values():
-			binary.append_array(FateMap.compilerService.encodeVector3Float(pos))
+			binary.append_array(compilerService.encodeVector3Float(pos))
 		for pos in normalIDs.values():
-			binary.append_array(FateMap.compilerService.encodeVector3Float(pos))
+			binary.append_array(compilerService.encodeVector3Float(pos))
 		return binary
 	
 	func getCollisionObjects() -> PackedByteArray:
@@ -410,17 +532,17 @@ class fullCompileMapData extends compilerMapData:
 		for object in objects:
 			var objectData = objects[object]
 			binary.append_array(object.to_ascii_buffer())
-			binary.push_back(0)
+			binary.push_back(SEPARATOR_BYTE)
 			binary.append_array([objectData.get("Type")])
-			binary.push_back(0)
+			binary.push_back(SEPARATOR_BYTE)
 			#object transform info. POSITION|ROTATION|SCALE
-			binary.append_array(FateMap.compilerService.encodeVector3Float(objectData.get("Position")))
-			binary.append_array(FateMap.compilerService.encodeVector3Float(objectData.get("Rotation")))
-			binary.append_array(FateMap.compilerService.encodeVector3Float(objectData.get("Scale")))
+			binary.append_array(compilerService.encodeVector3Float(objectData.get("Position")))
+			binary.append_array(compilerService.encodeVector3Float(objectData.get("Rotation")))
+			binary.append_array(compilerService.encodeVector3Float(objectData.get("Scale")))
 			#no gap as it isnt necessary
 			
 			match objectData.get("Type"):
-				FateMap.ObjectModel.objectTypes.MESH:
+				ObjectModel.objectTypes.MESH:
 					var surfaceSize = PackedByteArray([0,0,0,0])
 					var collisionSize = PackedByteArray([0,0])
 					surfaceSize.encode_u32(0,objectData.Surface.size())
@@ -432,13 +554,13 @@ class fullCompileMapData extends compilerMapData:
 					binary.append_array(objectData.Collision)
 					
 					
-				FateMap.ObjectModel.objectTypes.OBJECT:
+				ObjectModel.objectTypes.OBJECT:
 					var objectSize = PackedByteArray([0,0,0,0])
 					objectSize.encode_u32(0,objectData.get("Model").size())
 					binary.append_array(objectSize)
 					binary.append_array(objectData.get("Model"))
-			binary.push_back(0)
-			var params = FateMap.compilerService.paramsEncode(objectData.get("Parameters",null))
+			binary.push_back(SEPARATOR_BYTE)
+			var params = compilerService.paramsEncode(objectData.get("Parameters",null))
 			paramSize.encode_u32(0,params.size())
 			binary.append_array(paramSize)
 			binary.append_array(params)
@@ -453,18 +575,18 @@ class fullCompileMapData extends compilerMapData:
 	
 	func addObjectList(objectList:Array[Node],currentGroup:int=-1) -> void:
 		for object in objectList:
-			if not (object is FateMap.ObjectModel):continue
+			if not (object is ObjectModel):continue
 			attachObjectModel(object,currentGroup)
 	
-	func attachObjectModel(object:FateMap.ObjectModel,currentGroup:int=-1)->void:
+	func attachObjectModel(object:ObjectModel,currentGroup:int=-1)->void:
 		match object.objectType:
-			FateMap.ObjectModel.objectTypes.MESH:
+			ObjectModel.objectTypes.MESH:
 				var compiledObjectData = object.getCompiledData(self,true)
 				for mat in compiledObjectData.Mesh.Materials:
 					if materialList.has(mat):continue
 					materialList.push_back(mat)
 				objects[compiledObjectData.Identifier]={
-					"Type":FateMap.ObjectModel.objectTypes.MESH,
+					"Type":ObjectModel.objectTypes.MESH,
 					"Tags":compiledObjectData.Tags,
 					"Surface":compiledObjectData.Mesh.Surfaces,
 					"Collision":compiledObjectData.Mesh.Collision,
@@ -477,10 +599,10 @@ class fullCompileMapData extends compilerMapData:
 					}
 				objectGroups.get_or_add(currentGroup,[]).push_back(compiledObjectData.Identifier)
 				
-			FateMap.ObjectModel.objectTypes.OBJECT:
+			ObjectModel.objectTypes.OBJECT:
 				var compiledObjectData = object.getCompiledData(self)
 				objects[compiledObjectData.Identifier]={
-					"Type":FateMap.ObjectModel.objectTypes.OBJECT,
+					"Type":ObjectModel.objectTypes.OBJECT,
 					"Tags":compiledObjectData.Tags,
 					"Position":compiledObjectData.Position,
 					"Rotation":compiledObjectData.Rotation,
@@ -490,9 +612,9 @@ class fullCompileMapData extends compilerMapData:
 					"Group":objects.size() if object.objectData.baseTags.has("no_group") else currentGroup
 					}
 				objectGroups.get_or_add(currentGroup,[]).push_back(compiledObjectData.Identifier)
-			FateMap.ObjectModel.objectTypes.DATA:
+			ObjectModel.objectTypes.DATA:
 				pass
-			FateMap.ObjectModel.objectTypes.GROUP:
+			ObjectModel.objectTypes.GROUP:
 				addObjectList(
 					object.get_children(),
 					currentGroup+1

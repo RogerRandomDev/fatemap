@@ -36,7 +36,7 @@ func getClickedModel():
 		origin,origin+clickNorm*10000
 	)
 	var rayHit = spaceState.intersect_ray(checkRay)
-	#this assumes the parent is always an FateMap.ObjectModel
+	#this assumes the parent is always an objectModel
 	#if we have errors it might be we need to check to make sure here too
 	return null if rayHit.is_empty() else rayHit.collider.get_parent()
 

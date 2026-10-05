@@ -1,4 +1,4 @@
-extends FateMap.meshEditMode
+extends meshEditMode
 ##  a [meshEditMode] for sliding along the face's normal direction exclusively
 
 
@@ -26,14 +26,14 @@ func updateSelectionLocation(mousePosition:Vector2,mergeMoves:bool=false)->bool:
 	var targetSlideLocation=getTargetFromMouse(mousePosition)
 	if not targetSlideLocation.is_finite():return false
 	#snap the slide location and push it back onto the ray afterwards
-	#targetSlideLocation=getPointAlongRay(targetSlideLocation.snappedf(FateMap.ParameterService.getParam(&"snapDistance")))
+	#targetSlideLocation=getPointAlongRay(targetSlideLocation.snappedf(ParameterService.getParam(&"snapDistance")))
 	
 	var currentEditLocation=referenceFace.getCenter()*editingObject.global_transform.basis.get_rotation_quaternion().inverse()+editingObject.global_position
 	
 	var slideBy=(targetSlideLocation-currentEditLocation)
-	slideBy=slideBy.normalized()*snappedf(slideBy.length(),FateMap.ParameterService.getParam(&"snapDistance"))
+	slideBy=slideBy.normalized()*snappedf(slideBy.length(),ParameterService.getParam(&"snapDistance"))
 	#slideBy*=editingObject.global_transform.basis.get_rotation_quaternion()
-	FateMap.MeshEditService.editing.translateSelection(slideBy,true,mergeMoves)
-	FateMap.MeshEditService.editing.centerMesh()
+	MeshEditService.editing.translateSelection(slideBy,true,mergeMoves)
+	MeshEditService.editing.centerMesh()
 	editingMesh.rebuild()
 	return not slideBy.is_zero_approx()

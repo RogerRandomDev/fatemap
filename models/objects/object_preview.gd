@@ -22,7 +22,7 @@ func get_global_aabb(node: Node3D) -> AABB:
 	var has_initial_bounds := false
 	
 	# Internal helper function to recurse through the tree
-	var _calculate_bounds = func(_current: Node, _count_mesh: Callable) -> void:
+	var calculate_bounds = func(current: Node, count_mesh: Callable) -> void:
 		pass # Declared above to support recursive lambdas if needed, but a secondary function is cleaner
 		
 	total_aabb = _build_global_aabb_recursive(node, total_aabb, has_initial_bounds)

@@ -1,4 +1,5 @@
 extends ArrayMesh
+class_name objectMeshModel
 
 var vertices:Array[meshVertex]=[]
 var edges:Array[meshEdge]=[]
@@ -238,7 +239,7 @@ func updateSelection(_vertices,_edges,_faces,ignoreChange:bool=false)->Dictionar
 	var changes = trackedSelection.getChanges(_vertices,_edges,_faces)
 	return changes
 
-func getCompilerData(compiler:FateMap.compilerService.compilerMapData,full:bool=false)->Dictionary:
+func getCompilerData(compiler:compilerService.compilerMapData,full:bool=false)->Dictionary:
 	var uvPos=PackedByteArray()
 	var transformRotation=globalTransform.basis.get_euler()
 	uvPos.resize(12*2)
@@ -250,13 +251,13 @@ func getCompilerData(compiler:FateMap.compilerService.compilerMapData,full:bool=
 	uvPos.encode_float(20,transformRotation.z)
 	return {
 		"Materials":faceMaterialMap.keys().filter(func(mat):return faceMaterialMap[mat].size()>0),
-		"Surfaces":convertSurfacesToBinary(compiler) if not full else convertSurfacesToBinaryCompiled(compiler),
-		"Collision":PackedByteArray() if not full else getCollisionFaces(compiler),
+		"Surfaces":convertSurfacesToBinary(compiler,full),
+		"Collision":null if not full else getCollisionFaces(compiler),
 		"UVPosition":uvPos
 	}
 
 const BYTES_PER_FACE = 62
-func convertSurfacesToBinary(compiler:FateMap.compilerService.compilerMapData=null)->PackedByteArray:
+func convertSurfacesToBinary(compiler:compilerService.compilerMapData=null,full:bool=false)->PackedByteArray:
 	var binarySurfaceData:PackedByteArray=[]
 	for mat in faceMaterialMap.keys():
 		if faceMaterialMap[mat].size()==0:continue
@@ -274,6 +275,7 @@ func convertSurfacesToBinary(compiler:FateMap.compilerService.compilerMapData=nu
 	const sub_offset = 12
 	for face in faces:
 		var compiledSurfaceId=compiler.materialList.find(face.surfaceMaterial)
+		if full and face.surfaceMaterial.materialTags.has("ignore_render"):continue
 		
 		binarySurfaceData.encode_u16(offset,compiledSurfaceId)
 		for i in 3:
@@ -290,41 +292,8 @@ func convertSurfacesToBinary(compiler:FateMap.compilerService.compilerMapData=nu
 	binarySurfaceData.resize(offset)
 	return binarySurfaceData
 
-const BYTES_PER_FACE_COMPILED:int=42
-func convertSurfacesToBinaryCompiled(compiler:FateMap.compilerService.compilerMapData=null)->PackedByteArray:
-	var binarySurfaceData:PackedByteArray=[]
-	for mat in faceMaterialMap.keys():
-		if faceMaterialMap[mat].size()==0:continue
-		if compiler.materialList.has(mat):continue
-		compiler.materialList.push_back(mat)
-	
-	
-	var face_bytes:int=(
-		faces.size()*BYTES_PER_FACE_COMPILED
-	)
-	binarySurfaceData.resize(
-		face_bytes
-	)
-	var offset:int=0
-	const sub_offset = 12
-	for face in faces:
-		var compiledSurfaceId=compiler.materialList.find(face.surfaceMaterial)
-		if face.surfaceMaterial.materialTags.has("ignore_render"):continue
-		binarySurfaceData.encode_u16(offset,compiledSurfaceId)
-		for i in 3:
-			var active_vertex=face.vertices[i]
-			binarySurfaceData.encode_u32(offset+2+sub_offset*i,compiler.getPositionID(active_vertex.position))
-			var vertex_actual_uv:Vector2=(active_vertex.uv*face.uvScale+face.uvOffset).rotated(face.uvRotation)
-			binarySurfaceData.encode_float(offset+6+sub_offset*i,vertex_actual_uv.x)
-			binarySurfaceData.encode_float(offset+10+sub_offset*i,vertex_actual_uv.y)
-		binarySurfaceData.encode_u32(offset+38,compiler.getNormalID(face.normal))
-		offset+=BYTES_PER_FACE_COMPILED
-	binarySurfaceData.resize(offset)
-	return binarySurfaceData
-
-
 const BYTES_PER_COLLISION_FACE:int=12
-func getCollisionFaces(compiler:FateMap.compilerService.compilerMapData=null)->PackedByteArray:
+func getCollisionFaces(compiler:compilerService.compilerMapData=null)->PackedByteArray:
 	var collisionBinary:PackedByteArray=[]
 	collisionBinary.resize(faces.size()*BYTES_PER_COLLISION_FACE)
 	var keptFaces:int=0
@@ -360,7 +329,7 @@ func loadCompiledSurfaces(matList:Array=[],positions:Array=[],normals:Array=[],b
 					faceData.decode_float(10+sub_offset*i)
 					)
 				)
-		var _faceNormal = getNormalID(normals[faceData.decode_u32(38)])
+		var faceNormal = getNormalID(normals[faceData.decode_u32(38)])
 		var face = meshFace.new(
 			self,faceVertexPositions,faceVertexUVs,
 			surfaceUsed)
@@ -392,10 +361,10 @@ class meshVertex extends RefCounted:
 	var weldedVertices:Array[meshVertex]=[]
 	var edges:Array[meshEdge]=[]
 	
-	var _mesh:FateMap.objectMeshModel
+	var _mesh:objectMeshModel
 	var locked:bool=false
 	
-	func _init(vertexPosition:int,vertexUV:Vector2,mesh:FateMap.objectMeshModel) -> void:
+	func _init(vertexPosition:int,vertexUV:Vector2,mesh:objectMeshModel) -> void:
 		positionID=vertexPosition
 		uv=vertexUV
 		_mesh=mesh
@@ -452,11 +421,11 @@ class meshVertex extends RefCounted:
 class meshVertexObject extends RefCounted:
 	var vertices:Array[meshVertex]=[]
 	@warning_ignore("unused_private_class_variable")
-	var _mesh:FateMap.objectMeshModel
+	var _mesh:objectMeshModel
 
 class meshEdge extends meshVertexObject:
 	
-	func _init(owner:FateMap.objectMeshModel,inputVertices:Array[meshVertex])->void:
+	func _init(owner:objectMeshModel,inputVertices:Array[meshVertex])->void:
 		_mesh=owner
 		vertices=inputVertices
 		for vertex in vertices:
@@ -492,7 +461,7 @@ class meshFace extends meshVertexObject:
 	var uvScale:Vector2=Vector2.ONE
 	var uvOffset:Vector2=Vector2.ZERO
 	var uvRotation:float=0.0
-	var surfaceMaterial:FateMap.MaterialService.materialModel
+	var surfaceMaterial:MaterialService.materialModel
 	var edges:Array[meshEdge]=[]
 	
 	var vertexUVS:PackedVector2Array=[]
@@ -503,7 +472,7 @@ class meshFace extends meshVertexObject:
 	var faceIndex:int
 	var surfaceIndex:int=0
 	
-	func _init(owner:FateMap.objectMeshModel,vertexPosList:PackedVector3Array,uvs:PackedVector2Array,material:FateMap.MaterialService.materialModel=null)->void:
+	func _init(owner:objectMeshModel,vertexPosList:PackedVector3Array,uvs:PackedVector2Array,material:MaterialService.materialModel=null)->void:
 		_mesh=owner
 		for vertex in len(vertexPosList):
 			vertices.push_back(meshVertex.new(
@@ -523,11 +492,11 @@ class meshFace extends meshVertexObject:
 		
 		if _mesh==null:return
 		if material==null:
-			setSurfaceMaterial(FateMap.MaterialService.getMaterial(&"NONE"))
+			setSurfaceMaterial(MaterialService.getMaterial(&"NONE"))
 		else:
 			setSurfaceMaterial(material)
 	
-	func setSurfaceMaterial(material:FateMap.MaterialService.materialModel)->void:
+	func setSurfaceMaterial(material:MaterialService.materialModel)->void:
 		if surfaceMaterial:
 			var removeIndex=_mesh.faceMaterialMap[surfaceMaterial].find(self)
 			_mesh.faceMaterialMap[surfaceMaterial].remove_at(removeIndex)
@@ -592,7 +561,7 @@ class cleanedVertexObject extends RefCounted:
 	var normal:
 		get:return _mesh.normalIDs[normalID]
 	
-	var _mesh:FateMap.objectMeshModel
+	var _mesh:objectMeshModel
 	
 	func getCenter()->Vector3:
 		var centerPos=Vector3.ZERO
@@ -612,7 +581,7 @@ class  cleanedVertex extends RefCounted:
 		get:return _mesh.normalIDs[normalID]
 	var vertices:Array[meshVertex]=[]
 	
-	var _mesh:FateMap.objectMeshModel
+	var _mesh:objectMeshModel
 	
 	func _init(fromVertices:Array):
 		_mesh=fromVertices[0]._mesh

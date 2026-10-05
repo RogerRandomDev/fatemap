@@ -1,7 +1,8 @@
 extends RefCounted
+class_name meshEditMode
 ##Base meshEditMode for handling different ways you can have a mesh being edited at a given time
-var editingObject:FateMap.ObjectModel=null
-var editingMesh:FateMap.objectMeshModel
+var editingObject:ObjectModel=null
+var editingMesh:objectMeshModel
 var editingNormal:Vector3=Vector3.INF
 var editingOrigin:Vector3=Vector3.INF
 var editingPlane:Plane
@@ -11,7 +12,7 @@ var referenceFace:RefCounted
 var camera:Camera3D
 
 ##creates a new reference or, if providing another editMode, constructs itself using that editModes info to allow a seamless swap mid-edit
-func _init(oldObject=null)->void:
+func _init(oldObject:meshEditMode=null)->void:
 	if oldObject==null:return
 	editingObject=oldObject.editingObject
 	editingMesh=oldObject.editingMesh
@@ -40,31 +41,31 @@ func clearData(clearObject:bool=false)->void:
 	referenceFace=null
 
 ## updates current object for editing and clears all stored data from previous selections
-func updateEditingObject(object:FateMap.ObjectModel)->void:
+func updateEditingObject(object:ObjectModel)->void:
 	clearData(true)
 	editingObject=object
-	if object.objectType==FateMap.ObjectModel.objectTypes.MESH:
+	if object.objectType==ObjectModel.objectTypes.MESH:
 		editingMesh=object.get_node_or_null("MESH_OBJECT").mesh
 	else:
 		editingNormal=Vector3.UP
 		editingOrigin=object.global_position
 
 func updateSelected(cleanPoint:RefCounted)->void:
-	if cleanPoint is FateMap.objectMeshModel.cleanedFace:
+	if cleanPoint is objectMeshModel.cleanedFace:
 		updateSelectedCleanFace(cleanPoint)
-	if cleanPoint is FateMap.objectMeshModel.cleanedEdge:
+	if cleanPoint is objectMeshModel.cleanedEdge:
 		updateSelectedCleanEdge(cleanPoint)
-	if cleanPoint is FateMap.objectMeshModel.cleanedVertex:
+	if cleanPoint is objectMeshModel.cleanedVertex:
 		referenceVertex=cleanPoint
 	updatePlane()
 
 ## updates the selected face we will use for the edit direction and location info
-func updateSelectedCleanFace(cleanFace:FateMap.objectMeshModel.cleanedFace)->void:
+func updateSelectedCleanFace(cleanFace:objectMeshModel.cleanedFace)->void:
 	editingNormal=cleanFace.getNormal()
 	editingOrigin=cleanFace.getCenter()
 	referenceFace=cleanFace
 	updatePlane()
-func updateSelectedCleanEdge(cleanEdge:FateMap.objectMeshModel.cleanedEdge)->void:
+func updateSelectedCleanEdge(cleanEdge:objectMeshModel.cleanedEdge)->void:
 	editingNormal=cleanEdge.getNormal()
 	editingOrigin=cleanEdge.getCenter()
 	referenceEdge=cleanEdge
@@ -77,8 +78,8 @@ func updateReferences()->void:
 		updateSelectedCleanFace(referenceFace)
 
 
-func updateSelectedFaceSet(faces:Array[FateMap.objectMeshModel.meshFace])->void:
-	var cleanFace=FateMap.objectMeshModel.cleanedFace.new(faces)
+func updateSelectedFaceSet(faces:Array[objectMeshModel.meshFace])->void:
+	var cleanFace=objectMeshModel.cleanedFace.new(faces)
 	updateSelectedCleanFace(cleanFace)
 
 

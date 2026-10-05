@@ -15,11 +15,11 @@ func _ready() -> void:
 		0.001,
 		&"ScaleX",
 		func(value):
-		var updateFaces=FateMap.MeshEditService.editing.selectedFaces
-		if updateFaces.size()==0:updateFaces=FateMap.MeshEditService.editing.mesh.faces
+		var updateFaces=MeshEditService.editing.selectedFaces
+		if updateFaces.size()==0:updateFaces=MeshEditService.editing.mesh.faces
 		for face in updateFaces:
 			face.uvScale.x=value
-		FateMap.MeshEditService.editing.mesh.rebuild()
+		MeshEditService.editing.mesh.rebuild()
 	)
 	var uvScaleY:SpinBox=createSpinBox(
 		-10000,
@@ -27,11 +27,11 @@ func _ready() -> void:
 		0.001,
 		&"ScaleY",
 		func(value):
-		var updateFaces=FateMap.MeshEditService.editing.selectedFaces
-		if updateFaces.size()==0:updateFaces=FateMap.MeshEditService.editing.mesh.faces
+		var updateFaces=MeshEditService.editing.selectedFaces
+		if updateFaces.size()==0:updateFaces=MeshEditService.editing.mesh.faces
 		for face in updateFaces:
 			face.uvScale.y=value
-		FateMap.MeshEditService.editing.mesh.rebuild()
+		MeshEditService.editing.mesh.rebuild()
 	)
 	
 	infoSet.add_child(uvScaleX)
@@ -41,14 +41,14 @@ func _ready() -> void:
 	add_child(selectionInfo)
 	displaySelectedFaceInfo()
 	
-	FateMap.signalService.bindToSignal(&"meshSelectionChanged",displaySelectedFaceInfo)
-	FateMap.signalService.bindToSignal(&"meshSelectionChanged",updateWithSelectedObject)
+	signalService.bindToSignal(&"meshSelectionChanged",displaySelectedFaceInfo)
+	signalService.bindToSignal(&"meshSelectionChanged",updateWithSelectedObject)
 
 func updateWithSelectedObject()->void:
-	if not FateMap.MeshEditService.isEditing() or FateMap.MeshEditService.editing.mesh==null:return
-	var firstFace=FateMap.MeshEditService.editing.mesh.faces[0]
-	if FateMap.MeshEditService.editing.selectedFaces.size()!=0:
-		firstFace=FateMap.MeshEditService.editing.selectedFaces[0]
+	if not MeshEditService.isEditing() or MeshEditService.editing.mesh==null:return
+	var firstFace=MeshEditService.editing.mesh.faces[0]
+	if MeshEditService.editing.selectedFaces.size()!=0:
+		firstFace=MeshEditService.editing.selectedFaces[0]
 	infoSet.get_node("ScaleX").set_value_no_signal(firstFace.uvScale.x)
 	infoSet.get_node("ScaleY").set_value_no_signal(firstFace.uvScale.y)
 
@@ -58,17 +58,17 @@ func displaySelectedFaceInfo()->void:
 	
 	var counters:Array=[0,0,0]
 	var selected:Array=[0,0,0]
-	if FateMap.MeshEditService.isEditing():
-		if FateMap.MeshEditService.editing.mesh==null:return
+	if MeshEditService.isEditing():
+		if MeshEditService.editing.mesh==null:return
 		counters = [
-			FateMap.MeshEditService.editing.mesh.faces.size(),
-			FateMap.MeshEditService.editing.mesh.edges.size(),
-			FateMap.MeshEditService.editing.mesh.vertices.size()
+			MeshEditService.editing.mesh.faces.size(),
+			MeshEditService.editing.mesh.edges.size(),
+			MeshEditService.editing.mesh.vertices.size()
 		]
 		selected = [
-			FateMap.MeshEditService.editing.selectedFaces.size(),
-			FateMap.MeshEditService.editing.selectedEdges.size(),
-			FateMap.MeshEditService.editing.selectedVertices.size()
+			MeshEditService.editing.selectedFaces.size(),
+			MeshEditService.editing.selectedEdges.size(),
+			MeshEditService.editing.selectedVertices.size()
 		]
 	createLabel(objectInfo,"Faces:\n%s\n%s"%[str(counters[0]),str(selected[0])])
 	createLabel(objectInfo,"Edges:\n%s\n%s"%[str(counters[1]),str(selected[1])])

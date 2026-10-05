@@ -1,12 +1,13 @@
 extends Node
 
-var InspectorMain: FateMap.GUIService.guiElement
-var InspectorValueList: FateMap.GUIService.guiElement
+var InspectorMain: guiElement
+var InspectorValueList: guiElement
+
 
 func _ready() -> void:
 	await get_tree().process_frame
-	var primaryVertical = FateMap.GUIService.insertElement(
-		FateMap.GUIService.createElement(
+	var primaryVertical = GUIService.insertElement(
+		GUIService.createElement(
 			VSplitContainer.new(),
 			&"RightToolBox",
 			[&"Tools",&"Layout"],
@@ -17,9 +18,9 @@ func _ready() -> void:
 	primaryVertical.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	primaryVertical.size_flags_stretch_ratio=0.25
 	
-	var _parameterLister = FateMap.GUIService.insertElement(
-		FateMap.GUIService.createElement(
-			load("res://models/objects/guiObjectParameterTabContainer.gd").new(),
+	var _parameterLister = GUIService.insertElement(
+		GUIService.createElement(
+			guiObjectParameterTabContainer.new(),
 			&"selectedParameterTabContainer",
 			[&"Tools",&"Parameters",&"Layout"],
 			&"RightToolBox"

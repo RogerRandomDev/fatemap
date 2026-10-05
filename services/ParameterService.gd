@@ -1,20 +1,17 @@
 extends RefCounted
-
-
-@warning_ignore("missing_tool")
-class paramServiceParams extends "res://models/resources/paramServiceResource.gd":pass
+class_name ParameterService
 
 static var _parameterList:Dictionary={}
 
-static func initialize(resourcePath:String="res://ServiceLists/Parameters")->void:
+static func initialize(resourcePath:String="res://ServiceLists")->void:
 	var resourceDir=DirAccess.open(resourcePath)
 	for parameterList in resourceDir.get_files():
 		if not parameterList.ends_with(".tres"):continue
 		var loadedParamList=load("%s/%s"%[resourcePath,parameterList])
-		if not loadedParamList is Resource:continue
+		if not loadedParamList is paramServiceParams:continue
 		loadFromParamFile(loadedParamList)
 
-static func loadFromParamFile(paramFile:Resource)->void:
+static func loadFromParamFile(paramFile:paramServiceParams)->void:
 	for param in paramFile.getParameterDefaults():
 		setParam(param.name,param.value)
 

@@ -7,24 +7,24 @@ func  _ready() -> void:
 	buildTools.call_deferred()
 
 func buildTools()->void:
-	var SelectorDropdown:OptionButton=FateMap.GUIService.insertElement(
-		FateMap.GUIService.createElement(
+	var SelectorDropdown:OptionButton=GUIService.insertElement(
+		GUIService.createElement(
 			OptionButton.new(),
 			&"MeshSelectorDropdown",
 			[&"Tools",&"Menu"],
 			&"ToolBarBottom"
 		)
 	).reference
-	var selectorSpecials:Control=FateMap.GUIService.insertElement(
-		FateMap.GUIService.createElement(
+	var selectorSpecials:Control=GUIService.insertElement(
+		GUIService.createElement(
 			Container.new(),
 			&"MeshSelectorSpecials",
 			[&"Tools",&"Menu",&"Mesh"],
 			&"ToolBarBottom"
 		)
 	).reference
-	FateMap.GUIService.insertElement(
-		FateMap.GUIService.createElement(
+	GUIService.insertElement(
+		GUIService.createElement(
 			VSeparator.new(),
 			&"MeshSelectorSeparatorRight",
 			[&"Separator",&"Tools"],
@@ -37,7 +37,7 @@ func buildTools()->void:
 		ind+=1
 	SelectorDropdown.item_selected.connect(func(index):
 		var mesh=selectorItems.values()[index]
-		FateMap.ParameterService.setParam(
+		ParameterService.setParam(
 			&"newObjectShape",
 			mesh.duplicate()
 		)
@@ -52,7 +52,7 @@ func buildTools()->void:
 	selectorSpecials.get_child(0).show()
 
 func loadSpecials()->void:
-	var SelectorDropdown:OptionButton=FateMap.GUIService.getByName(&"MeshSelectorDropdown").reference
+	var SelectorDropdown:OptionButton=GUIService.getByName(&"MeshSelectorDropdown").reference
 	
 	boxSpecials(SelectorDropdown)
 	cylinderSpecials(SelectorDropdown)
@@ -61,8 +61,8 @@ func loadSpecials()->void:
 	
 
 func boxSpecials(_SelectorDropdown)->void:
-	FateMap.GUIService.insertElement(
-		FateMap.GUIService.createElement(
+	GUIService.insertElement(
+		GUIService.createElement(
 			Control.new(),
 			&"MeshSelectorSpecialsBox",
 			[&"Tools",&"Menu",&"Mesh"],
@@ -71,8 +71,8 @@ func boxSpecials(_SelectorDropdown)->void:
 	)
 
 func cylinderSpecials(SelectorDropdown)->void:
-	var cylinder:HBoxContainer=FateMap.GUIService.insertElement(
-		FateMap.GUIService.createElement(
+	var cylinder:HBoxContainer=GUIService.insertElement(
+		GUIService.createElement(
 			HBoxContainer.new(),
 			&"MeshSelectorSpecialsCylinder",
 			[&"Tools",&"Menu",&"Mesh"],
@@ -86,10 +86,10 @@ func cylinderSpecials(SelectorDropdown)->void:
 	cylinderSides.rounded=true
 	cylinderSides.value=8
 	cylinderSides.value_changed.connect(func(newValue):
-		var shape=FateMap.ParameterService.getParam(&"newObjectShape")
-		if not shape is FateMap.SpecializedCylinderMesh:return
+		var shape=ParameterService.getParam(&"newObjectShape")
+		if not shape is SpecializedCylinderMesh:return
 		shape.sides=int(newValue)
-		FateMap.ParameterService.setParam(&"newObjectShape",shape)
+		ParameterService.setParam(&"newObjectShape",shape)
 		var key = selectorItems.keys()[SelectorDropdown.get_selected_id()]
 		selectorItems[key]=shape
 		)
@@ -97,18 +97,18 @@ func cylinderSpecials(SelectorDropdown)->void:
 	var halfRot:CheckBox=CheckBox.new()
 	halfRot.text="Half Rotation"
 	halfRot.toggled.connect(func(newValue):
-		var shape=FateMap.ParameterService.getParam(&"newObjectShape")
-		if not shape is FateMap.SpecializedCylinderMesh:return
+		var shape=ParameterService.getParam(&"newObjectShape")
+		if not shape is SpecializedCylinderMesh:return
 		shape.halfRot=newValue
-		FateMap.ParameterService.setParam(&"newObjectShape",shape)
+		ParameterService.setParam(&"newObjectShape",shape)
 		var key = selectorItems.keys()[SelectorDropdown.get_selected_id()]
 		selectorItems[key]=shape
 		)
 	cylinder.add_child(halfRot)
 
 func prismSpecials(_SelectorDropdown)->void:
-	var _prism:HBoxContainer=FateMap.GUIService.insertElement(
-		FateMap.GUIService.createElement(
+	var _prism:HBoxContainer=GUIService.insertElement(
+		GUIService.createElement(
 			HBoxContainer.new(),
 			&"MeshSelectorSpecialsPrism",
 			[&"Tools",&"Menu",&"Mesh"],
@@ -117,8 +117,8 @@ func prismSpecials(_SelectorDropdown)->void:
 	).reference
 
 func sphereSpecials(_SelectorDropdown)->void:
-	var sphere:HBoxContainer=FateMap.GUIService.insertElement(
-		FateMap.GUIService.createElement(
+	var sphere:HBoxContainer=GUIService.insertElement(
+		GUIService.createElement(
 			HBoxContainer.new(),
 			&"MeshSelectorSpecialsSphere",
 			[&"Tools",&"Menu",&"Mesh"],
@@ -128,9 +128,9 @@ func sphereSpecials(_SelectorDropdown)->void:
 	var scaleConstant:CheckBox=CheckBox.new()
 	scaleConstant.text="Keep Equal"
 	scaleConstant.toggled.connect(func(newValue):
-		var shape=FateMap.ParameterService.getParam(&"newObjectShape")
+		var shape=ParameterService.getParam(&"newObjectShape")
 		if not shape is SphereMesh:return
 		shape.set_meta("KeepEqual",newValue)
-		FateMap.ParameterService.setParam(&"newObjectShape",shape)
+		ParameterService.setParam(&"newObjectShape",shape)
 		)
 	sphere.add_child(scaleConstant)

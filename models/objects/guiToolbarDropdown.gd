@@ -1,11 +1,10 @@
 extends MenuButton
+class_name ToolbarMenuButton
 
-var dropDownResource:FateMap.GUIService.guiDropdownResource
+var dropDownResource:guiDropdownResource
 
 
-func  _init(customName:StringName=&"",dropResource:Resource=null) -> void:
-	if not dropResource is FateMap.GUIService.guiDropdownResource:
-		dropResource=FateMap.GUIService.guiDropdownResource.new().copyFrom(dropResource)
+func  _init(customName:StringName=&"",dropResource:guiDropdownResource=null) -> void:
 	if customName!=&"":
 		text=customName
 	dropDownResource=dropResource
@@ -13,7 +12,7 @@ func  _init(customName:StringName=&"",dropResource:Resource=null) -> void:
 func _ready() -> void:
 	buildFromResource(dropDownResource,get_popup())
 
-func buildFromResource(resource:Resource,currentPopup:PopupMenu=get_popup())->void:
+func buildFromResource(resource:guiDropdownResource,currentPopup:PopupMenu=get_popup())->void:
 	addMenuCallback(currentPopup)
 	currentPopup.hide_on_checkable_item_selection=false
 	for index in len(resource.optionNames):
@@ -90,9 +89,9 @@ static func callIndexedMenuMethod(index:int=0,popup:PopupMenu=null)->void:
 	if checkableItem:
 		var isChecked = !popup.is_item_checked(index)
 		popup.set_item_checked(index,isChecked)
-		FateMap.ToolMethodService.executeMethod(meta_method[0],[
+		ToolMethodService.executeMethod(meta_method[0],[
 			isChecked,
 			meta_param
 		])
 	else:
-		FateMap.ToolMethodService.executeMethod(meta_method[0],[meta_param])
+		ToolMethodService.executeMethod(meta_method[0],[meta_param])

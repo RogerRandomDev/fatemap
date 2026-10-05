@@ -1,4 +1,5 @@
-extends "res://Scenes/MapMaker/WorldInteractions/BaseEditScripts.gd"
+extends EditInteractionBase
+class_name EditCreateMesh
 
 var editOrigin:Vector3=Vector3.INF
 var editEnd:Vector3=Vector3.INF
@@ -11,35 +12,35 @@ func _ready()->void:
 	marker=get_child(0)
 	marker.add_child(highlight)
 	highlight.add_child(highlightOutline)
-	highlight.material_override=load("res://Scenes/MapMaker/debugMaterial.tres")
+	highlight.material_override=load("res://debugMaterial.tres")
 	highlightOutline.mesh=ArrayMesh.new()
-	FateMap.signalService.bindToSignal.call_deferred(&"mapObjectSelected",disableCreation)
+	signalService.bindToSignal.call_deferred(&"mapObjectSelected",disableCreation)
 
 func disableCreation(_arr)->void:
 	await get_tree().process_frame
 	highlight.visible=false
 
 func _handle_mouse_click(_event: InputEventMouseButton) -> bool:
-	if FateMap.InputService.pressed(&"ScrollUp") || FateMap.InputService.pressed(&"ScrollDown") and editOrigin!=Vector3.INF:
-		if FateMap.InputService.pressed(&"ScrollUp"):
-			editEnd.y+=FateMap.ParameterService.getParam(&"snapDistance")
+	if InputService.pressed(&"ScrollUp") || InputService.pressed(&"ScrollDown") and editOrigin!=Vector3.INF:
+		if InputService.pressed(&"ScrollUp"):
+			editEnd.y+=ParameterService.getParam(&"snapDistance")
 			updateExampleMesh()
-		if FateMap.InputService.pressed(&"ScrollDown"):
-			editEnd.y-=FateMap.ParameterService.getParam(&"snapDistance")
+		if InputService.pressed(&"ScrollDown"):
+			editEnd.y-=ParameterService.getParam(&"snapDistance")
 			updateExampleMesh()
 	
-	if FateMap.InputService.pressed(&"MouseLeft")||FateMap.InputService.released(&"MouseLeft",true):
-		if FateMap.InputService.pressed(&"MouseLeft",true):
-			if not FateMap.InputService.pressed(&"CreateMesh"):return false
+	if InputService.pressed(&"MouseLeft")||InputService.released(&"MouseLeft",true):
+		if InputService.pressed(&"MouseLeft",true):
+			if not InputService.pressed(&"CreateMesh"):return false
 			editOrigin=holder.getMousePoint().snappedf(
-				FateMap.ParameterService.getParam(&"snapDistance")
+				ParameterService.getParam(&"snapDistance")
 			)
-			editEnd=editOrigin+Vector3(0,FateMap.ParameterService.getParam(&"snapDistance"),0)
+			editEnd=editOrigin+Vector3(0,ParameterService.getParam(&"snapDistance"),0)
 			loadExampleMesh()
 		else:
-			if FateMap.InputService.pressed(&"MouseLeft"):return false
+			if InputService.pressed(&"MouseLeft"):return false
 			editEnd=holder.getMousePoint().snappedf(
-				FateMap.ParameterService.getParam(&"snapDistance")
+				ParameterService.getParam(&"snapDistance")
 			)
 			if highlight.visible:finalizeMesh()
 			editOrigin=Vector3.INF
@@ -50,7 +51,7 @@ func _handle_mouse_drag(_event: InputEventMouseMotion) -> bool:
 	if not editOrigin.is_finite():return false
 	var posY=editEnd.y
 	editEnd=holder.getMousePoint(true,Vector3(0,editOrigin.y,0)).snappedf(
-		FateMap.ParameterService.getParam(&"snapDistance")
+		ParameterService.getParam(&"snapDistance")
 	)
 	
 	
@@ -60,13 +61,13 @@ func _handle_mouse_drag(_event: InputEventMouseMotion) -> bool:
 	return true
 
 func loadExampleMesh()->void:
-	var highlightMesh = (FateMap.ParameterService.getParam(
+	var highlightMesh = (ParameterService.getParam(
 		&"newObjectShape"
 	)).duplicate()
 	#fix their heights when creates to current snap distance
 	match highlightMesh.get_class():
 		"BoxMesh":
-			highlightMesh.size.y=FateMap.ParameterService.getParam(&"snapDistance")
+			highlightMesh.size.y=ParameterService.getParam(&"snapDistance")
 		"ArrayMesh":
 			highlightMesh.height=1
 	
@@ -128,8 +129,8 @@ func finalizeMesh()->void:
 	for vertex in dt.get_vertex_count():
 		var pos=dt.get_vertex(vertex)
 		dt.set_vertex(vertex,pos*highlight.scale)
-	var obj=FateMap.PhysicalObjectModel.new()
-	var data = FateMap.ObjectPhysicalDataResource.new()
+	var obj=PhysicalObjectModel.new()
+	var data = ObjectPhysicalDataResource.new()
 	data.inheritedData=load("res://modelData/baseObject.tres")
 	m.clear_surfaces()
 	dt.commit_to_surface(m)
@@ -139,14 +140,14 @@ func finalizeMesh()->void:
 	var placedObjects=get_parent().get_parent().get_node("PlacedObjects")
 	placedObjects.add_child(obj)
 	obj.global_position=highlight.global_position
-	(obj.get_node("MESH_OBJECT").mesh as FateMap.objectMeshModel).globalTransform.origin=-obj.global_transform.origin
+	(obj.get_node("MESH_OBJECT").mesh as objectMeshModel).globalTransform.origin=-obj.global_transform.origin
 	
-	FateMap.UndoRedoService.startAction(&"CreateMesh")
-	FateMap.UndoRedoService.addRef(obj)
-	FateMap.UndoRedoService.addMethods(
+	UndoRedoService.startAction(&"CreateMesh")
+	UndoRedoService.addRef(obj)
+	UndoRedoService.addMethods(
 		placedObjects.add_child.bind(obj),
 		placedObjects.remove_child.bind(obj)
 	)
-	FateMap.UndoRedoService.commitAction()
+	UndoRedoService.commitAction()
 	
 	

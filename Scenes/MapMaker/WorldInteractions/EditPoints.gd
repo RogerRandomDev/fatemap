@@ -1,4 +1,5 @@
-extends "res://Scenes/MapMaker/WorldInteractions/BaseEditScripts.gd"
+extends EditInteractionBase
+class_name EditPoints
 
 var renderPoints:Dictionary={}
 var renderPointFaces:Array=[]
@@ -16,42 +17,42 @@ const pointSize:float=8
 var  multimesh:MultiMeshInstance3D
 
 func _ready() -> void:
-	FateMap.signalService.bindToSignal(&"UpdateEditingMesh",updateMeshSelection)
-	FateMap.signalService.bindToSignal(&"meshSelectionChanged",updateMeshSelection)
+	signalService.bindToSignal(&"UpdateEditingMesh",updateMeshSelection)
+	signalService.bindToSignal(&"meshSelectionChanged",updateMeshSelection)
 	multimesh=get_child(0)
 
 func updateMeshSelection()->void:
-	multimesh.visible=not FateMap.InputService.pressed(&"CreateMesh")
+	multimesh.visible=not InputService.pressed(&"CreateMesh")
 	renderPoints={}
 	renderPointVertices=[]
 	renderPointEdges=[]
 	renderPointFaces=[]
-	var activeObj=FateMap.ParameterService.getParam(&"activeObject")
-	if activeObj!=null and activeObj.objectType!=FateMap.ObjectModel.objectTypes.MESH:
+	var activeObj=ParameterService.getParam(&"activeObject")
+	if activeObj!=null and activeObj.objectType!=ObjectModel.objectTypes.MESH:
 		multimesh.visible=false;return
-	var editMode:int=FateMap.MeshEditService.getEditMode()
-	if not FateMap.MeshEditService.isEditing():
+	var editMode:int=MeshEditService.getEditMode()
+	if not MeshEditService.isEditing():
 		updateEditPointRender()
 		return
-	if FateMap.MeshEditService.editing.mesh==null:return
+	if MeshEditService.editing.mesh==null:return
 	match(editMode):
-		FateMap.MeshEditService.MeshEditMode.FACE:
-			for index in FateMap.MeshEditService.editing.mesh.cleanedFaces:
-				var pointAt=index.getCenter()*FateMap.MeshEditService.editing.meshObject.global_transform.basis.inverse()+FateMap.MeshEditService.editing.meshObject.global_transform.origin
+		MeshEditService.MeshEditMode.FACE:
+			for index in MeshEditService.editing.mesh.cleanedFaces:
+				var pointAt=index.getCenter()*MeshEditService.editing.meshObject.global_transform.basis.inverse()+MeshEditService.editing.meshObject.global_transform.origin
 				renderPoints[pointAt]=index
 				renderPointFaces.push_back(index.faces)
-		FateMap.MeshEditService.MeshEditMode.EDGE:
-			var cleanEdges=FateMap.MeshEditService.editing.mesh.getTrueCleanEdges()
+		MeshEditService.MeshEditMode.EDGE:
+			var cleanEdges=MeshEditService.editing.mesh.getTrueCleanEdges()
 			renderPoints={}
 			for edge in cleanEdges:
-				var pointAt=edge.getCenter()+FateMap.MeshEditService.editing.meshObject.global_transform.origin
+				var pointAt=edge.getCenter()+MeshEditService.editing.meshObject.global_transform.origin
 				renderPoints[pointAt]=edge
 				renderPointEdges.push_back(edge.edges)
-		FateMap.MeshEditService.MeshEditMode.VERTEX:
-			var cleanVertices=FateMap.MeshEditService.editing.mesh.getCleanVertices()
+		MeshEditService.MeshEditMode.VERTEX:
+			var cleanVertices=MeshEditService.editing.mesh.getCleanVertices()
 			renderPoints={}
 			for vertex in cleanVertices:
-				var pointAt=vertex.position+FateMap.MeshEditService.editing.meshObject.global_transform.origin
+				var pointAt=vertex.position+MeshEditService.editing.meshObject.global_transform.origin
 				renderPoints[pointAt]=vertex
 				renderPointVertices.push_back(vertex.vertices)
 	updateEditPointRender()
@@ -72,7 +73,7 @@ func updateEditPointRender()->void:
 		index+=1
 
 func _check_valid(_event:InputEvent)->bool:
-	return FateMap.MeshEditService.isEditing() and FateMap.MeshEditService.editing.dataObject.objectType==FateMap.ObjectModel.objectTypes.MESH
+	return MeshEditService.isEditing() and MeshEditService.editing.dataObject.objectType==ObjectModel.objectTypes.MESH
 
 func _handle_keyboard_input(event: InputEventKey) -> bool:
 	if event.keycode==KEY_CTRL:
@@ -97,52 +98,52 @@ func _handle_keyboard_input(event: InputEventKey) -> bool:
 func _handle_mouse_drag(event: InputEventMouseMotion) -> bool:
 	if not dragSafe:return false
 	if get_viewport().is_input_handled():return false
-	if FateMap.InputService.pressed(&"CreateMesh"):return false
-	if event is InputEventMouseMotion and FateMap.MeshEditService.isEditing() and FateMap.InputService.pressed(&"MouseLeft"):
-		if FateMap.MeshEditService.editing.selectedVertices.size() == 0:return false
-		hasDragged=FateMap.MeshEditService.editor.updateSelectionLocation(holder.get_local_mouse_position(),hasDragged) || hasDragged
-		FateMap.MeshEditService.editing.dataObject.call("transformed")
-		FateMap.PhysicalObjectService.updatePickableArea(FateMap.MeshEditService.editor.editingObject)
-		FateMap.signalService.emitSignal(&"meshSelectionChanged")
+	if InputService.pressed(&"CreateMesh"):return false
+	if event is InputEventMouseMotion and MeshEditService.isEditing() and InputService.pressed(&"MouseLeft"):
+		if MeshEditService.editing.selectedVertices.size() == 0:return false
+		hasDragged=MeshEditService.editor.updateSelectionLocation(holder.get_local_mouse_position(),hasDragged) || hasDragged
+		MeshEditService.editing.dataObject.call("transformed")
+		PhysicalObjectService.updatePickableArea(MeshEditService.editor.editingObject)
+		signalService.emitSignal(&"meshSelectionChanged")
 		return true
 	return false
 
 func _handle_mouse_click(event: InputEventMouseButton) -> bool:
-	if not get_child(0).visible and FateMap.MeshEditService.isEditing() and FateMap.InputService.pressed(&"MouseLeft"):
-		FateMap.MeshEditService.editing.clearSelections()
-		FateMap.signalService.emitSignal(&"meshSelectionChanged")
+	if not get_child(0).visible and MeshEditService.isEditing() and InputService.pressed(&"MouseLeft"):
+		MeshEditService.editing.clearSelections()
+		signalService.emitSignal(&"meshSelectionChanged")
 	#clear focus from outside the area if you click in here
 	if  event is InputEventMouseButton:get_tree().root.gui_release_focus()
-	if not FateMap.InputService.pressed(&"MouseLeft"):
+	if not InputService.pressed(&"MouseLeft"):
 		hasDragged=false
 	
-	if FateMap.MeshEditService.isEditing() and FateMap.InputService.pressed(&"MouseLeft"):
-		if FateMap.InputService.pressed(&"CreateMesh"):
-			FateMap.MeshEditService.editing.updateSelectionTracked()
+	if MeshEditService.isEditing() and InputService.pressed(&"MouseLeft"):
+		if InputService.pressed(&"CreateMesh"):
+			MeshEditService.editing.updateSelectionTracked()
 			return false
-		if not FateMap.InputService.pressed(&"SelectMultiple"):
-			FateMap.MeshEditService.editing.clearSelections()
-			FateMap.signalService.emitSignal(&"meshSelectionChanged")
+		if not InputService.pressed(&"SelectMultiple"):
+			MeshEditService.editing.clearSelections()
+			signalService.emitSignal(&"meshSelectionChanged")
 		if selectPointToChange(holder.get_local_mouse_position()):
 			get_viewport().set_input_as_handled()
-			FateMap.signalService.emitSignal(&"meshSelectionChanged")
+			signalService.emitSignal(&"meshSelectionChanged")
 			dragSafe=true
-			FateMap.MeshEditService.editing.updateSelectionTracked()
+			MeshEditService.editing.updateSelectionTracked()
 			return true
 		else:
-			FateMap.MeshEditService.editing.updateSelectionTracked()
+			MeshEditService.editing.updateSelectionTracked()
 			dragSafe=false
 			
 	return false
 
 func _handle_outside_click_deselect(_event: InputEventMouseButton) -> bool:
-	if FateMap.InputService.pressed(&"SelectMultiple"):return false
-	if FateMap.InputService.pressed(&"CreateMesh"):return false
-	if FateMap.InputService.pressed(&"MouseLeft"):
-		if FateMap.PhysicalObjectInputController.hoveredObjects.size() == 0 and FateMap.ParameterService.getParam(&"activeObject")!=null:
-			FateMap.PhysicalObjectInputController.deselect()
+	if InputService.pressed(&"SelectMultiple"):return false
+	if InputService.pressed(&"CreateMesh"):return false
+	if InputService.pressed(&"MouseLeft"):
+		if PhysicalObjectInputController.hoveredObjects.size() == 0 and ParameterService.getParam(&"activeObject")!=null:
+			PhysicalObjectInputController.deselect()
 			return true
-	if FateMap.MeshEditService.isEditing():return true
+	if MeshEditService.isEditing():return true
 	return false
 
 func _get_snapped_direction(forward: Vector3) -> Vector3:
@@ -157,19 +158,19 @@ func _get_snapped_direction(forward: Vector3) -> Vector3:
 	return _snapped
 
 func moveSelection(moveBy:Vector3,local:bool=true)->void:
-	var selectedObj = FateMap.ParameterService.getParam(&"activeObject")
+	var selectedObj = ParameterService.getParam(&"activeObject")
 	if selectedObj==null:return
-	moveBy*=FateMap.ParameterService.getParam(&"snapDistance")
+	moveBy*=ParameterService.getParam(&"snapDistance")
 	#if its a normal object just offset its position
-	if FateMap.MeshEditService.isEditing():
-		if FateMap.MeshEditService.editing.selectedVertices.size()==0:
-			FateMap.MeshEditService.editing.dataObject.position+=moveBy
-			if FateMap.MeshEditService.editing.dataObject.has_method("transformed"):
-				FateMap.MeshEditService.editing.dataObject.call("transformed")
-		FateMap.MeshEditService.editing.translateSelection(moveBy,local)
-		FateMap.MeshEditService.editing.mesh.rebuild(false)
-		FateMap.PhysicalObjectService.updatePickableArea(FateMap.MeshEditService.editing.dataObject)
-	FateMap.signalService.emitSignal(&"meshSelectionChanged")
+	if MeshEditService.isEditing():
+		if MeshEditService.editing.selectedVertices.size()==0:
+			MeshEditService.editing.dataObject.position+=moveBy
+			if MeshEditService.editing.dataObject.has_method("transformed"):
+				MeshEditService.editing.dataObject.call("transformed")
+		MeshEditService.editing.translateSelection(moveBy,local)
+		MeshEditService.editing.mesh.rebuild(false)
+		PhysicalObjectService.updatePickableArea(MeshEditService.editing.dataObject)
+	signalService.emitSignal(&"meshSelectionChanged")
 	
 
 func selectPointToChange(atPos:Vector2)->bool:
@@ -180,37 +181,37 @@ func selectPointToChange(atPos:Vector2)->bool:
 	var pointIndex=sortDistance.find(sortedDistances[0])
 	var newPoint=renderPoints.values()[pointIndex]
 	if sortedDistances[0]>pointSize*pointSize:return false
-	var _previousSelected=FateMap.MeshEditService.editing.selectedVertices.size()
-	FateMap.MeshEditService.editing.select(newPoint,FateMap.InputService.pressed(&"CreateMesh"))
-	FateMap.MeshEditService.editor.updateSelected(newPoint)
+	var _previousSelected=MeshEditService.editing.selectedVertices.size()
+	MeshEditService.editing.select(newPoint,InputService.pressed(&"CreateMesh"))
+	MeshEditService.editor.updateSelected(newPoint)
 	updateSelected()
 	return true
 	
 func deselectPoint()->void:
-	FateMap.MeshEditService.editing.clearSelections()
+	MeshEditService.editing.clearSelections()
 	for pointIndex in selectedPoints:
 		multimesh.multimesh.set_instance_color(pointIndex,Color.BLACK)
 	selectedPoints=[]
 	
 	
-	FateMap.signalService.emitSignal(&"meshSelectionChanged")
+	signalService.emitSignal(&"meshSelectionChanged")
 
 func updateSelected()->void:
 	for index in len(renderPointFaces):
 		var face=renderPointFaces[index]
-		if face.any(func(f):return FateMap.MeshEditService.editing.selectedFaces.has(f)):
+		if face.any(func(f):return MeshEditService.editing.selectedFaces.has(f)):
 			pointSelected(index)
 		else:
 			pointDeselected(index)
 	for index in len(renderPointEdges):
 		var edge=renderPointEdges[index]
-		if edge.any(func(edg):return FateMap.MeshEditService.editing.selectedEdges.has(edg)):
+		if edge.any(func(edg):return MeshEditService.editing.selectedEdges.has(edg)):
 			pointSelected(index)
 		else:
 			pointDeselected(index)
 	for index in len(renderPointVertices):
 		var vertex=renderPointVertices[index]
-		if vertex.any(func(vert):return FateMap.MeshEditService.editing.selectedVertices.has(vert)):
+		if vertex.any(func(vert):return MeshEditService.editing.selectedVertices.has(vert)):
 			pointSelected(index)
 		else:
 			pointDeselected(index)

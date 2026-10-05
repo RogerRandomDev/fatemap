@@ -1,4 +1,5 @@
 extends Node
+class_name ToolMethodService
 
 static var ToolMethods:Dictionary={}
 
