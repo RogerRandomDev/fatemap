@@ -41,11 +41,11 @@ func reloadMap()->void:
 		child.process_mode=Node.PROCESS_MODE_DISABLED
 
 
-func decodeVectorList(data:PackedByteArray,updateSeek:bool=false)->PackedVector3Array:
+func decodeVectorList(data:PackedByteArray,updateSeek:bool=false,scaler:float=1.0)->PackedVector3Array:
 	var arr=PackedVector3Array()
 	var offset:int=0
 	while offset<data.size():
-		arr.push_back(compilerService.decodeVector3Float(offset,data))
+		arr.push_back(compilerService.decodeVector3Float(offset,data)*scaler)
 		offset+=12
 	if updateSeek:currentSeek+=offset
 	return arr
@@ -61,7 +61,7 @@ func loadFMTS(data:PackedByteArray=[])->void:
 func loadVectorIDS(data:PackedByteArray)->void:
 	var idList = data.slice(currentSeek,currentSeek+8)
 	currentSeek+=8
-	positions=decodeVectorList(data.slice(currentSeek,currentSeek+idList.decode_u32(0)*12),true)
+	positions=decodeVectorList(data.slice(currentSeek,currentSeek+idList.decode_u32(0)*12),true,1.0/size)
 	normals=decodeVectorList(data.slice(currentSeek,currentSeek+idList.decode_u32(4)*12),true)
 
 func loadObjects(loadOnto:Node,data:PackedByteArray)->void:
@@ -70,7 +70,7 @@ func loadObjects(loadOnto:Node,data:PackedByteArray)->void:
 	var scaleVector:Vector3=Vector3(1.0/size,1.0/size,1.0/size)
 	
 	for i in objectCount:
-		var loadingObject = data.find(compilerService.SEPARATOR_BYTE,currentSeek+1)
+		var loadingObject = data.find(0,currentSeek+1)
 		var objectName = data.slice(currentSeek,loadingObject).get_string_from_ascii()
 		var objectType = data.slice(loadingObject+1,loadingObject+2)[0]
 		currentSeek=loadingObject+3
@@ -83,62 +83,51 @@ func loadObjects(loadOnto:Node,data:PackedByteArray)->void:
 		decodedTransform.basis=Basis.from_euler(compilerService.decodeVector3Float(12,objectTransform))
 		decodedTransform.basis=decodedTransform.basis.scaled_local(compilerService.decodeVector3Float(24,objectTransform))
 		
-		var obj:ObjectModel
+		var obj:CompiledObjectModel.ObjectModelData=CompiledObjectModel.ObjectModelData.new()
 		var objData
 		match objectType:
 			ObjectModel.objectTypes.MESH:
 				var surfaceSize=data.decode_u32(currentSeek)
-				var objectMesh:objectMeshModel=objectMeshModel.new()
-				
-				var UVTransform=data.slice(currentSeek+4+surfaceSize,currentSeek+surfaceSize+28)
-				objectMesh.globalTransform=Transform3D(
-					Basis.from_euler(compilerService.decodeVector3Float(12,UVTransform)),
-					compilerService.decodeVector3Float(0,UVTransform))
-				
-				objectMesh.loadCompiledSurfaces(matList,positions,normals,data.slice(currentSeek+4,currentSeek+4+surfaceSize),size)
+				var objectMesh:ArrayMesh
+				if surfaceSize!=0:
+					objectMesh=CompiledObjectModel.ObjectMesh.loadCompiledMesh(
+					matList,
+					positions,
+					normals,
+					data.slice(currentSeek+4,currentSeek+4+surfaceSize)
+				)
 				currentSeek+=surfaceSize+28
 				var collisionSize:int=data.decode_u16(currentSeek)
 				currentSeek+=2
 				var objectColliderST = loadObjectCollision(data.slice(currentSeek,currentSeek+collisionSize))
 				currentSeek+=collisionSize+1
-				obj = PhysicalObjectModel.new()
 				obj.objectType=ObjectModel.objectTypes.MESH
 				objData = ObjectPhysicalDataResource.new()
 				objData.inheritedData=load("res://modelData/baseObject.tres")
 				objData.mesh=objectMesh
-				(func():
-					await objects_loaded
-					attachObjectCollision(obj,objectColliderST)
-				).call()
-				
-				
 				obj.objectData=objData
 				var placedObjects=loadOnto
-				placedObjects.add_child(obj)
-				#obj.owner=self
-				obj.owner=get_tree().edited_scene_root
-				obj.get_node("MESH_OBJECT").owner=obj.owner
-				obj.get_node("MESH_OBJECT").mesh = objectMesh
+				var builtObj = obj.build()
+				placedObjects.add_child(builtObj)
+				(func():
+					await objects_loaded
+					var mode = int(obj.objectData.baseTags.has("convex_collision"))
+					attachObjectCollision(builtObj,mode,objectColliderST)
+				).call()
 				
 			ObjectModel.objectTypes.OBJECT:
-				obj=load("res://models/modelObjectModel.gd").new()
 				obj.objectType=ObjectModel.objectTypes.OBJECT
 				objData = ObjectDataResource.new()
 				obj.objectData=objData
 				#TODO: parse and actually load OBJECT contents
 				var objectSize:int=data.decode_u32(currentSeek)
-				var objectLoaded=data.slice(currentSeek+4,currentSeek+4+objectSize).get_string_from_ascii()
-				obj.objectModelFile=objectLoaded
-				var childModel=load(objectLoaded).instantiate()
-				obj.add_child(childModel)
-				#childModel.scale=scaleVector
+				obj.objectTargetFile=data.slice(currentSeek+4,currentSeek+4+objectSize).get_string_from_ascii()
 				currentSeek+=objectSize+4
 				var placedObjects=loadOnto
-				placedObjects.add_child(obj)
+				var builtObj=obj.build()
+				placedObjects.add_child(builtObj)
 				currentSeek+=1
 				decodedTransform=decodedTransform.scaled_local(scaleVector)
-				obj.owner=get_tree().edited_scene_root
-				childModel.owner=get_tree().edited_scene_root
 				
 		#set object transform we already calculated
 		obj.global_transform=decodedTransform
@@ -156,7 +145,7 @@ func loadObjects(loadOnto:Node,data:PackedByteArray)->void:
 		currentSeek+=2
 		var startingFrom:int=currentSeek
 		while true:
-			var tagEnd:int=data.find(compilerService.SEPARATOR_BYTE,currentSeek+1)
+			var tagEnd:int=data.find(0,currentSeek+1)
 			if tagEnd==-1||tagEnd>tagBlockSize+startingFrom:break
 			var tagName=data.slice(currentSeek,tagEnd).get_string_from_ascii()
 			objData.baseTags.push_back(tagName)
@@ -177,17 +166,25 @@ func loadObjectCollision(collision:PackedByteArray)->SurfaceTool:
 		st.add_vertex(positions[pID]/size)
 	return st
 
-func attachObjectCollision(obj:ObjectModel,collisionST:SurfaceTool)->void:
-	var body=StaticBody3D.new()
+func attachObjectCollision(obj:Node,mode:int,collisionST:SurfaceTool)->void:
+	var body=obj
+	if not obj is CollisionObject3D:
+		body = StaticBody3D.new()
 	var collider=CollisionShape3D.new()
-	if obj.objectData.baseTags.has("convex_collision"):
+	if mode==1:
 		collider.shape=collisionST.commit().create_convex_shape()
 	else:
 		collider.shape=collisionST.commit().create_trimesh_shape()
 	body.add_child(collider)
-	obj.add_child(body)
-	body.owner=get_tree().edited_scene_root
-	collider.owner=get_tree().edited_scene_root
+	#if marked replace, remove it and just use this
+	if obj and obj.has_meta("replace"):
+		body.global_transform=obj.global_transform
+		obj.get_parent().add_child(body)
+		objectList.erase(obj)
+		objectList.push_back(body)
+		obj.queue_free()
+		return
+	if body!=obj:obj.add_child(body)
 
 
 func fullLoad(loadOnto:Node,data:PackedByteArray=[])->void:
