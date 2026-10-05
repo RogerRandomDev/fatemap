@@ -1,38 +1,37 @@
 extends RefCounted
-class_name MeshEditService
 
 
 static var editing:editingMesh
 static var editMode:MeshEditMode=MeshEditMode.FACE:
 	set(v):
 		editMode=v
-		signalService.emitSignal(&"EditModeChanged",[v])
-static var editingType:ObjectModel.objectTypes:
-	get:return -1 if editor.editingObject==null else editor.editingObject.objectType
+		FateMap.signalService.emitSignal(&"EditModeChanged",[v])
+static var editingType:FateMap.ObjectModel.objectTypes:
+	get:return FateMap.ObjectModel.objectTypes.MAX if editor.editingObject==null else editor.editingObject.objectType
 
-static var editor:meshEditMode
+static var editor:FateMap.meshEditMode
 
 
 
 static func initializeService()->void:pass
 
-static func setEditing(object:ObjectModel)->void:
-	signalService.emitSignal.call_deferred(&"UpdateEditingMesh")
+static func setEditing(object:FateMap.ObjectModel)->void:
+	FateMap.signalService.emitSignal.call_deferred(&"UpdateEditingMesh")
 	if object==null:
 		editing=null
 		return
 	
-	editor=ParameterService.getParam(&"CurrentMeshEditMode").new()
+	editor=FateMap.ParameterService.getParam(&"CurrentMeshEditMode").new()
 	editor.camera=object.get_viewport().get_camera_3d()
 	editor.updateEditingObject(object)
 	match object.objectType:
-		ObjectModel.objectTypes.OBJECT:
+		FateMap.ObjectModel.objectTypes.OBJECT:
 			editor=load("res://models/meshEditModes/basicObject.gd").new()
 			editor.camera=object.get_viewport().get_camera_3d()
 			editor.updateEditingObject(object)
 			editing=editingMesh.new(object,null)
 			return
-		ObjectModel.objectTypes.MESH:
+		FateMap.ObjectModel.objectTypes.MESH:
 			var mesh=object.get_node_or_null("MESH_OBJECT")
 			if editing and editing.meshObject==mesh:return
 			editing=editingMesh.new(object,mesh)
@@ -55,22 +54,22 @@ enum MeshEditMode{
 }
 
 class editingMesh extends Resource:
-	var dataObject:ObjectModel
+	var dataObject:FateMap.ObjectModel
 	var meshObject:MeshInstance3D
-	var mesh:objectMeshModel:
+	var mesh:FateMap.objectMeshModel:
 		get:return null if meshObject==null else meshObject.mesh
 	
 	#surface special info
 	#part selections
-	var selectedFaces:Array[objectMeshModel.meshFace]=[]
-	var selectedEdges:Array[objectMeshModel.meshEdge]=[]
-	var selectedVertices:Array[objectMeshModel.meshVertex]=[]
+	var selectedFaces:Array[FateMap.objectMeshModel.meshFace]=[]
+	var selectedEdges:Array[FateMap.objectMeshModel.meshEdge]=[]
+	var selectedVertices:Array[FateMap.objectMeshModel.meshVertex]=[]
 	
 	var editing:bool=false
 	var mode:MeshEditMode=MeshEditMode.FACE
 	
 	
-	func _init(data:ObjectModel,meshInst:MeshInstance3D):
+	func _init(data:FateMap.ObjectModel,meshInst:MeshInstance3D):
 		dataObject=data
 		meshObject=meshInst
 	
@@ -94,35 +93,35 @@ class editingMesh extends Resource:
 		selectedVertices=[]
 		
 	
-	func deselectVertex(vertex:objectMeshModel.meshVertex)->void:
+	func deselectVertex(vertex:FateMap.objectMeshModel.meshVertex)->void:
 		if not selectedVertices.has(vertex):return
 		selectedVertices.erase(vertex)
-	func deselectEdge(edge:objectMeshModel.meshEdge)->void:
+	func deselectEdge(edge:FateMap.objectMeshModel.meshEdge)->void:
 		if not selectedEdges.has(edge):return
 		selectedEdges.erase(edge)
 		for vertex in edge.vertices:deselectVertex(vertex)
-	func deselectFace(face:objectMeshModel.meshFace)->void:
+	func deselectFace(face:FateMap.objectMeshModel.meshFace)->void:
 		if not selectedFaces.has(face):return
 		selectedFaces.erase(face)
 		for edge in face.edges:deselectEdge(edge)
 	
 	func deselect(meshPart)->void:
-		if meshPart is objectMeshModel.meshVertex:deselectVertex(meshPart)
-		if meshPart is objectMeshModel.meshEdge:deselectEdge(meshPart)
-		if meshPart is objectMeshModel.meshFace:deselectFace(meshPart)
-		if meshPart is objectMeshModel.cleanedFace:for face in meshPart.faces:deselectFace(face)
+		if meshPart is FateMap.objectMeshModel.meshVertex:deselectVertex(meshPart)
+		if meshPart is FateMap.objectMeshModel.meshEdge:deselectEdge(meshPart)
+		if meshPart is FateMap.objectMeshModel.meshFace:deselectFace(meshPart)
+		if meshPart is FateMap.objectMeshModel.cleanedFace:for face in meshPart.faces:deselectFace(face)
 	
-	func selectVertex(vertex:objectMeshModel.meshVertex,toggleSelected:bool=false)->void:
+	func selectVertex(vertex:FateMap.objectMeshModel.meshVertex,toggleSelected:bool=false)->void:
 		if not mesh.vertices.has(vertex):return
 		if not selectedVertices.has(vertex):selectedVertices.push_back(vertex)
 		elif toggleSelected:deselectVertex(vertex)
-	func selectEdge(edge:objectMeshModel.meshEdge,toggleSelected:bool=false)->void:
+	func selectEdge(edge:FateMap.objectMeshModel.meshEdge,toggleSelected:bool=false)->void:
 		if not mesh.edges.has(edge):return
 		if not selectedEdges.has(edge):
 			selectedEdges.push_back(edge)
 			for vertex in edge.vertices:selectVertex(vertex,toggleSelected)
 		elif toggleSelected:deselectEdge(edge)
-	func selectFace(face:objectMeshModel.meshFace,toggleSelected:bool=false)->void:
+	func selectFace(face:FateMap.objectMeshModel.meshFace,toggleSelected:bool=false)->void:
 		if not mesh.faces.has(face):return
 		if not selectedFaces.has(face):
 			selectedFaces.push_back(face)
@@ -130,12 +129,12 @@ class editingMesh extends Resource:
 		elif toggleSelected:deselectFace(face)
 		
 	func select(meshPart,toggleSelected:bool=false)->void:
-		if meshPart is objectMeshModel.meshVertex:selectVertex(meshPart,toggleSelected)
-		if meshPart is objectMeshModel.meshEdge:selectEdge(meshPart,toggleSelected)
-		if meshPart is objectMeshModel.meshFace:selectFace(meshPart,toggleSelected)
-		if meshPart is objectMeshModel.cleanedFace:for face in meshPart.faces:selectFace(face,toggleSelected)
-		if meshPart is objectMeshModel.cleanedEdge:for edge in meshPart.edges:selectEdge(edge,toggleSelected)
-		if meshPart is objectMeshModel.cleanedVertex:for vertex in meshPart.vertices:selectVertex(vertex,toggleSelected)
+		if meshPart is FateMap.objectMeshModel.meshVertex:selectVertex(meshPart,toggleSelected)
+		if meshPart is FateMap.objectMeshModel.meshEdge:selectEdge(meshPart,toggleSelected)
+		if meshPart is FateMap.objectMeshModel.meshFace:selectFace(meshPart,toggleSelected)
+		if meshPart is FateMap.objectMeshModel.cleanedFace:for face in meshPart.faces:selectFace(face,toggleSelected)
+		if meshPart is FateMap.objectMeshModel.cleanedEdge:for edge in meshPart.edges:selectEdge(edge,toggleSelected)
+		if meshPart is FateMap.objectMeshModel.cleanedVertex:for vertex in meshPart.vertices:selectVertex(vertex,toggleSelected)
 	
 	func updateSelectionTracked(ignore:bool=false)->void:
 		if meshObject==null:return
@@ -147,25 +146,25 @@ class editingMesh extends Resource:
 		if changes.values().any(func(v):return v.any(func(e):return e.size()>0)):
 			loadSelectionUndoRedo(changes)
 	func loadSelectionUndoRedo(changes:Dictionary)->void:
-		UndoRedoService.startAction(&"SelectMeshParts")
-		UndoRedoService.addDo(func():
-			var newEdit=MeshEditService.getEditing()
+		FateMap.UndoRedoService.startAction(&"SelectMeshParts")
+		FateMap.UndoRedoService.addDo(func():
+			var newEdit=FateMap.MeshEditService.getEditing()
 			for i in 3:for selectable in changes[&"added"][i]:newEdit.select(selectable,false)
 			for i in 3:for selectable in changes[&"removed"][i]:newEdit.deselect(selectable)
 			newEdit.updateSelectionTracked(true)
-			signalService.emitSignal(&"meshSelectionChanged")
+			FateMap.signalService.emitSignal(&"meshSelectionChanged")
 			)
-		UndoRedoService.addUndo(func():
-			var newEdit=MeshEditService.getEditing()
+		FateMap.UndoRedoService.addUndo(func():
+			var newEdit=FateMap.MeshEditService.getEditing()
 			for i in 3:for selectable in changes[&"added"][i]:newEdit.deselect(selectable)
 			for i in 3:for selectable in changes[&"removed"][i]:newEdit.select(selectable,false)
 			newEdit.updateSelectionTracked(true)
-			signalService.emitSignal(&"meshSelectionChanged")
+			FateMap.signalService.emitSignal(&"meshSelectionChanged")
 		)
-		UndoRedoService.commitAction()
+		FateMap.UndoRedoService.commitAction()
 	
 	##obtains any face and connected vertex using info from clicking on the object
-	func selectByClickInfo(normal:Vector3,hitPosition:Vector3=Vector3.ZERO,keep:bool=false)->Array[objectMeshModel.meshFace]:
+	func selectByClickInfo(normal:Vector3,hitPosition:Vector3=Vector3.ZERO,keep:bool=false)->Array[FateMap.objectMeshModel.meshFace]:
 		if not keep:clearSelections()
 		var localNormal = normal*meshObject.global_transform.basis.get_rotation_quaternion()
 		hitPosition-=meshObject.global_position
@@ -178,11 +177,11 @@ class editingMesh extends Resource:
 		if local:translateBy*=meshObject.global_transform.basis.get_rotation_quaternion()
 		var editingPositionIDs={}
 		for vertex in selectedVertices:editingPositionIDs[vertex.positionID]=mesh.positionIDs[vertex.positionID]
-		#UndoRedoService.startAction(&"TranslateMeshPoints",UndoRedo.MERGE_ENDS)
-		UndoRedoService.startAction(&"TranslateMeshPoints",UndoRedo.MERGE_ALL if mergeMove else UndoRedo.MERGE_DISABLE)
+		#FateMap.UndoRedoService.startAction(&"TranslateMeshPoints",UndoRedo.MERGE_ENDS)
+		FateMap.UndoRedoService.startAction(&"TranslateMeshPoints",UndoRedo.MERGE_ALL if mergeMove else UndoRedo.MERGE_DISABLE)
 		#breaks if i re-center the mesh elsewhere cause it changes where everything is relative
 		#if i do MERGE_ALL and just add/subtract the change instead it works fine.
-		UndoRedoService.addMethods(
+		FateMap.UndoRedoService.addMethods(
 			(func():
 				for positionID in editingPositionIDs.keys():
 					#mesh.positionIDs[positionID]=editingPositionIDs[positionID]+translateBy
@@ -194,19 +193,19 @@ class editingMesh extends Resource:
 					mesh.positionIDs[positionID]-=translateBy
 				)
 		)
-		var rebuild = MeshEditService.editing.mesh.rebuild
-		UndoRedoService.addMethods(
+		var rebuild = FateMap.MeshEditService.editing.mesh.rebuild
+		FateMap.UndoRedoService.addMethods(
 			func():
-				MeshEditService.editing.mesh.rebuild(false)
-				signalService.emitSignal.call_deferred(&"meshSelectionChanged")
+				FateMap.MeshEditService.editing.mesh.rebuild(false)
+				FateMap.signalService.emitSignal.call_deferred(&"meshSelectionChanged")
 				,
 			func():
-				MeshEditService.editing.mesh.rebuild.call_deferred(false)
-				signalService.emitSignal.call_deferred(&"meshSelectionChanged")
+				FateMap.MeshEditService.editing.mesh.rebuild.call_deferred(false)
+				FateMap.signalService.emitSignal.call_deferred(&"meshSelectionChanged")
 		)
 		
 		
-		UndoRedoService.commitAction(true)
+		FateMap.UndoRedoService.commitAction(true)
 	
 	func centerMesh()->void:
 		var aabb=AABB(mesh.positionIDs.values()[0],Vector3.ZERO)
@@ -226,13 +225,13 @@ class editingMesh extends Resource:
 		for vertex in selectedVertices:editingPositionIDs[vertex.positionID]=null
 		for positionID in editingPositionIDs.keys():
 			mesh.positionIDs[positionID]=mesh.positionIDs[positionID].snappedf(
-				ParameterService.getParam(&"snapDistance")
+				FateMap.ParameterService.getParam(&"snapDistance")
 			)
 	
 	#not implemented yet, it will slide your edit along the edges to keep angles consistent
 	func translateAlongEdges()->void:
-		#var alongAxis=MeshEditService.editing.mesh.getCleanEdgesTouchingCleanFace(
-			#MeshEditService.editing.mesh.getCleanFaceForFace(MeshEditService.editing.selectedFaces[0])
+		#var alongAxis=FateMap.MeshEditService.editing.mesh.getCleanEdgesTouchingCleanFace(
+			#FateMap.MeshEditService.editing.mesh.getCleanFaceForFace(FateMap.MeshEditService.editing.selectedFaces[0])
 		#)
 		#var positionAlongAxis=[]
 		#positionAlongAxis.push_back(
@@ -241,12 +240,12 @@ class editingMesh extends Resource:
 		#*alongAxis[positionAlongAxis[i]].getQuaternion(positionID)
 		pass
 	
-	func setMaterialOnFaces(material:MaterialService.materialModel,faces:Array[objectMeshModel.meshFace])->void:
+	func setMaterialOnFaces(material:FateMap.MaterialService.materialModel,faces:Array[FateMap.objectMeshModel.meshFace])->void:
 		if faces.size()==0:return
 		for face in faces:
 			face.setSurfaceMaterial(material)
 	
-	func setMaterial(material:MaterialService.materialModel,setAllIfNoneActive:bool=false)->void:
+	func setMaterial(material:FateMap.MaterialService.materialModel,setAllIfNoneActive:bool=false)->void:
 		if setAllIfNoneActive and selectedFaces.size()==0:
 			for face in mesh.faces:face.setSurfaceMaterial(material)
 		

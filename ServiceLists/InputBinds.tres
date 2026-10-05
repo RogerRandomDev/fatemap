@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="InputMapData" load_steps=30 format=3 uid="uid://bwk28degu8fgh"]
+[gd_resource type="Resource" load_steps=30 format=3 uid="uid://bwk28degu8fgh"]
 
 [ext_resource type="Script" uid="uid://pu05o4yiow38" path="res://models/resources/InputMapData.gd" id="1_m2dc3"]
 

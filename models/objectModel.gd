@@ -1,14 +1,16 @@
 extends Marker3D
-class_name ObjectModel
 
 enum objectTypes{
 	MESH,
 	OBJECT,
 	DATA,
-	GROUP
+	GROUP,
+	MAX
 }
 
-var objectData:ObjectDataResource:
+signal paramUpdate()
+
+var objectData:FateMap.ObjectDataResource:
 	set(v):
 		setObjectData(v)
 		objectData=v
@@ -18,9 +20,9 @@ var objectData:ObjectDataResource:
 var objectDisplay:Node3D
 
 
-func getData()->ObjectDataResource:return null
+func getData()->FateMap.ObjectDataResource:return null
 
-func getCompiledData(compiler:compilerService.compilerMapData,full:bool=false)->Dictionary:return {
+func getCompiledData(_compiler:FateMap.compilerService.compilerMapData,_full:bool=false)->Dictionary:return {
 	"Identifier":name,
 	"Position":global_position,
 	"Rotation":global_rotation,
@@ -44,4 +46,4 @@ func setObjectData(data)->void:
 
 func paramChanged(param:StringName,value:Variant)->void:
 	set(param,value)
-	signalService.emitSignal(&"meshSelectionChanged")
+	paramUpdate.emit()

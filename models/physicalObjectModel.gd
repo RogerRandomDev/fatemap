@@ -1,5 +1,4 @@
-extends ObjectModel
-class_name PhysicalObjectModel
+extends FateMap.ObjectModel
 
 @warning_ignore("unused_private_class_variable")
 var _undo_positionRelativeToWorld:Variant=true:
@@ -31,15 +30,15 @@ func _ready() -> void:
 	if objectData==null:return
 	objectType=objectTypes.MESH
 	objectData.owner=self
-	objectDisplay=PhysicalObjectService.buildMesh(objectData,self)
-	PhysicalObjectService.buildPickableArea(objectData,self,objectDisplay)
+	objectDisplay=FateMap.PhysicalObjectService.buildMesh(objectData,self)
+	FateMap.PhysicalObjectService.buildPickableArea(objectData,self,objectDisplay)
 	
 	for param in objectData.getParameterDefaults(true,true,true):paramChanged(param.name,param.value)
 	transformed.call_deferred()
 
 func getData():return objectData
 
-func getCompiledData(compiler:compilerService.compilerMapData,full:bool=false)->Dictionary:
+func getCompiledData(compiler:FateMap.compilerService.compilerMapData,full:bool=false)->Dictionary:
 	var compiledData=super.getCompiledData(compiler,full)
 	compiledData.set("Mesh",objectDisplay.mesh.getCompilerData(compiler,full))
 	
@@ -58,4 +57,4 @@ func transformed()->void:
 
 func paramChanged(param:StringName,value:Variant)->void:
 	set(param,value)
-	signalService.emitSignal(&"meshSelectionChanged")
+	FateMap.signalService.emitSignal(&"meshSelectionChanged")

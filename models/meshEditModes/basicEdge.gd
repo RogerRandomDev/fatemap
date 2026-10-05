@@ -1,4 +1,4 @@
-extends meshEditMode
+extends FateMap.meshEditMode
 ##  a [meshEditMode] for dragging vertices along axes
 
 
@@ -27,14 +27,14 @@ func updateSelectionLocation(mousePosition:Vector2,mergeMoves:bool=false)->bool:
 	var targetSlideLocation=getTargetFromMouse(mousePosition)
 	if not targetSlideLocation.is_finite():return false
 	#snap the slide location and push it back onto the ray afterwards
-	#targetSlideLocation=getPointAlongRay(targetSlideLocation.snappedf(ParameterService.getParam(&"snapDistance")))
+	#targetSlideLocation=getPointAlongRay(targetSlideLocation.snappedf(FateMap.ParameterService.getParam(&"snapDistance")))
 	var currentEditLocation=referenceEdge.getCenter()*editingObject.global_transform.basis.get_rotation_quaternion().inverse()+editingObject.global_position
 	
 	var slideBy=(targetSlideLocation-currentEditLocation)
 	
-	slideBy=slideBy.snappedf(ParameterService.getParam(&"snapDistance"))
+	slideBy=slideBy.snappedf(FateMap.ParameterService.getParam(&"snapDistance"))
 	
-	MeshEditService.editing.translateSelection(slideBy,true,mergeMoves)
-	MeshEditService.editing.centerMesh()
+	FateMap.MeshEditService.editing.translateSelection(slideBy,true,mergeMoves)
+	FateMap.MeshEditService.editing.centerMesh()
 	editingMesh.rebuild()
 	return not slideBy.is_zero_approx()

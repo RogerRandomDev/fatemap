@@ -35,7 +35,7 @@ func updateSlider()->void:
 	slider.value=flyCam.fly_speed
 
 func loadGuiElement()->void:
-	slider = GUIService.insertElement(GUIService.createElement(
+	slider = FateMap.GUIService.insertElement(FateMap.GUIService.createElement(
 		VSlider.new(),
 		&"CameraSpeedSlider",
 		[&"Camera"],

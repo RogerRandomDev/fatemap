@@ -1,5 +1,4 @@
 extends VSplitContainer
-class_name ObjectModelTab
 
 var objectList:HFlowContainer
 var objectIconSize:float=96
@@ -16,8 +15,8 @@ func _ready() -> void:
 	updateGridLayout()
 
 func buildView()->void:
-	objectList=GUIService.insertElement(
-		GUIService.createElement(
+	objectList=FateMap.GUIService.insertElement(
+		FateMap.GUIService.createElement(
 			HFlowContainer.new(),
 			&"ObjectTabModelList",
 			[&"List",&"Object",&"Model"],
@@ -56,7 +55,7 @@ func updateGridLayout()->void:
 		objectOption.setIconSize(objectIconSize)
 
 
-func loadContents(contents:ObjectDataResource)->void:
+func loadContents(contents:FateMap.ObjectDataResource)->void:
 	recursiveToggleContents(self,contents!=null)
 	if contents==null:return
 
@@ -67,20 +66,20 @@ func optionEvent(event:InputEvent,option)->void:
 		var newObject=option.myObject.instantiate()
 		var placeOn:Node3D = get_tree().current_scene.mapViewport.get_node("PlacedObjects")
 		var holder=load("res://models/modelObjectModel.gd").new()
-		holder.objectType=ObjectModel.objectTypes.OBJECT
+		holder.objectType=FateMap.ObjectModel.objectTypes.OBJECT
 		holder.add_child(newObject)
 		holder.objectModelFile=option.myObject.resource_path
-		holder.objectData=ObjectDataResource.new()
+		holder.objectData=FateMap.ObjectDataResource.new()
 		holder.objectData.inheritedData=load("res://modelData/baseObject.tres")
 		placeOn.add_child(holder)
 		holder.set_meta("reposition","")
-		ParameterService.setParam(&"activeObject",holder)
-		MeshEditService.setEditing(holder)
-		signalService.emitSignal.call_deferred(&"meshSelectionChanged")
+		FateMap.ParameterService.setParam(&"activeObject",holder)
+		FateMap.MeshEditService.setEditing(holder)
+		FateMap.signalService.emitSignal.call_deferred(&"meshSelectionChanged")
 		var f:Callable
 		f=func(_event:InputEvent):
-			GUIService.getByName("PrimaryViewport").reference.get_child(0).get_child(0)._input(_event)
-			if InputService.pressed("MouseUp"):
+			FateMap.GUIService.getByName("PrimaryViewport").reference.get_child(0).get_child(0)._input(_event)
+			if FateMap.InputService.pressed("MouseUp"):
 				option.gui_input.disconnect(f)
 		option.gui_input.connect(f)
 

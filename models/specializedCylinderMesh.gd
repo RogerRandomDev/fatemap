@@ -1,6 +1,5 @@
 @tool
 extends ArrayMesh
-class_name SpecializedCylinderMesh
 
 @export var sides:int=8:
 	set(v):

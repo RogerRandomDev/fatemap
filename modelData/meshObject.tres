@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="ObjectDataResource" load_steps=3 format=3 uid="uid://d05qahqunl0sw"]
+[gd_resource type="Resource" load_steps=3 format=3 uid="uid://d05qahqunl0sw"]
 
 [ext_resource type="Resource" uid="uid://cw24807ltrvdv" path="res://modelData/baseObject.tres" id="1_de47s"]
 [ext_resource type="Script" uid="uid://dmuurymqm5l" path="res://models/resources/objectDataResource.gd" id="1_ous33"]

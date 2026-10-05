@@ -1,9 +1,8 @@
 extends VBoxContainer
-class_name TagTab
 
 var tree:Tree=Tree.new()
 
-var editingResource:ObjectDataResource
+var editingResource:FateMap.ObjectDataResource
 
 func _ready() -> void:
 	size_flags_vertical=Control.SIZE_EXPAND_FILL
@@ -17,15 +16,15 @@ func setupTree()->void:
 	add_child(tree)
 
 func setupTabCreationBar()->void:
-	GUIService.insertElement(
-		GUIService.createElement(
+	FateMap.GUIService.insertElement(
+		FateMap.GUIService.createElement(
 			HBoxContainer.new(),
 			&"TagCreateBar",
 			[&"Tag",&"Tool",&"Object"],
 			self
 	))
-	var nameLine:LineEdit=GUIService.insertElement(
-		GUIService.createElement(
+	var nameLine:LineEdit=FateMap.GUIService.insertElement(
+		FateMap.GUIService.createElement(
 			LineEdit.new(),
 			&"TagCreateName",
 			[&"Tag",&"Tool",&"Object",&"Name"],
@@ -52,7 +51,7 @@ func setupTabCreationBar()->void:
 		nameLine.placeholder_text="Tag Name"
 		)
 
-func loadContents(contents:ObjectDataResource)->void:
+func loadContents(contents:FateMap.ObjectDataResource)->void:
 	editingResource=contents
 	tree.clear()
 	var treeRoot:TreeItem=tree.create_item()

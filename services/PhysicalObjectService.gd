@@ -1,20 +1,19 @@
 @tool
 extends RefCounted
-class_name PhysicalObjectService
 
 
 
 
-static func buildMesh(object:ObjectPhysicalDataResource,instance:Node3D=null,_makeSelectable:bool=true)->MeshInstance3D:
+static func buildMesh(object:FateMap.ObjectPhysicalDataResource,instance:Node3D=null,_makeSelectable:bool=true)->MeshInstance3D:
 	var mesh=object.mesh
 	var meshInstance=MeshInstance3D.new()
-	if not (object.mesh is objectMeshModel):
+	if not (object.mesh is FateMap.objectMeshModel):
 		var surfaceTool = SurfaceTool.new()
 		surfaceTool.create_from(mesh,0)
 		surfaceTool.set_smooth_group(-1)
 		surfaceTool.generate_normals()
 		
-		var arrayMesh:objectMeshModel=objectMeshModel.new()
+		var arrayMesh:FateMap.objectMeshModel=FateMap.objectMeshModel.new()
 		arrayMesh.add_surface_from_arrays(
 			Mesh.PRIMITIVE_TRIANGLES,
 			surfaceTool.commit_to_arrays()
@@ -35,7 +34,7 @@ static func buildMesh(object:ObjectPhysicalDataResource,instance:Node3D=null,_ma
 	
 	return meshInstance
 
-static func buildPickableAreaForModel(model:ObjectModel,object:Node3D)->StaticBody3D:
+static func buildPickableAreaForModel(model:FateMap.ObjectModel,object:Node3D)->StaticBody3D:
 	var bounds:Array[AABB] = []
 	for node in object.get_children():
 		if node is MeshInstance3D:
@@ -60,12 +59,12 @@ static func buildPickableAreaForModel(model:ObjectModel,object:Node3D)->StaticBo
 	
 	
 	
-	area.mouse_entered.connect(func():signalService.emitSignal(&"MouseEnteredObject",[object]))
-	area.mouse_exited.connect(func():signalService.emitSignal(&"MouseExitedObject",[object]))
-	#area.input_event.connect(PhysicalObjectInputController.objectInputEvent.bind(instance))
+	area.mouse_entered.connect(func():FateMap.signalService.emitSignal(&"MouseEnteredObject",[object]))
+	area.mouse_exited.connect(func():FateMap.signalService.emitSignal(&"MouseExitedObject",[object]))
+	#area.input_event.connect(FateMap.PhysicalObjectInputController.objectInputEvent.bind(instance))
 	return area
 
-static func buildPickableArea(object:ObjectPhysicalDataResource,instance:Node3D,meshInstance:MeshInstance3D=null)->StaticBody3D:
+static func buildPickableArea(object:FateMap.ObjectPhysicalDataResource,instance:Node3D,meshInstance:MeshInstance3D=null)->StaticBody3D:
 	
 	var mesh = object.mesh
 	if meshInstance!=null:mesh=meshInstance.mesh
@@ -76,9 +75,9 @@ static func buildPickableArea(object:ObjectPhysicalDataResource,instance:Node3D,
 	area.add_child(body)
 	body.shape=mesh.create_trimesh_shape()
 	
-	area.mouse_entered.connect(func():signalService.emitSignal(&"MouseEnteredObject",[instance]))
-	area.mouse_exited.connect(func():signalService.emitSignal(&"MouseExitedObject",[instance]))
-	#area.input_event.connect(PhysicalObjectInputController.objectInputEvent.bind(instance))
+	area.mouse_entered.connect(func():FateMap.signalService.emitSignal(&"MouseEnteredObject",[instance]))
+	area.mouse_exited.connect(func():FateMap.signalService.emitSignal(&"MouseExitedObject",[instance]))
+	#area.input_event.connect(FateMap.PhysicalObjectInputController.objectInputEvent.bind(instance))
 	return area
 
 static func updatePickableArea(object:Node3D)->void:
