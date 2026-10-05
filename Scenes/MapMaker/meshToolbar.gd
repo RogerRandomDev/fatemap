@@ -9,8 +9,8 @@ func _ready()->void:
 
 
 func buildToolbar()->void:
-	var toolBar := FateMap.GUIService.insertElement(
-		FateMap.GUIService.createElement(
+	var toolBar := GUIService.insertElement(
+		GUIService.createElement(
 			HBoxContainer.new(),
 			&"MeshToolbar",
 			[&"Tools",&"Model",&"Layout",&"Selection"],
@@ -18,7 +18,7 @@ func buildToolbar()->void:
 		)
 	).reference as HBoxContainer
 	#hide the toolbar if no object is selected
-	#FateMap.signalService.bindToSignal(&"mapObjectSelected",func(obj):toolBar.visible=obj!=null)
+	#signalService.bindToSignal(&"mapObjectSelected",func(obj):toolBar.visible=obj!=null)
 	toolBar.set_anchors_preset(Control.PRESET_TOP_WIDE)
 	toolBar.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	#toolBar.visible=false
@@ -26,8 +26,8 @@ func buildToolbar()->void:
 	attachTransformModeButtons()
 
 func attachTransformModeButtons()->void:
-	var _translateButton := FateMap.GUIService.insertElement(
-		FateMap.GUIService.createElement(
+	var _translateButton := GUIService.insertElement(
+		GUIService.createElement(
 			load("res://Scenes/MapMaker/editModeSelectButton.gd").new(),
 			&"MeshToolSelectEditMode",
 			[&"Tools",&"Buttons",&"Selection",&"EditMode",&"Mesh"],

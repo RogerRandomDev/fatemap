@@ -1,4 +1,5 @@
 extends RefCounted
+class_name StringVarTypedService
 
 
 static func toVar(input:String,mapType:String)->Variant:

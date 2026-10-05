@@ -1,5 +1,6 @@
 @tool
 extends Resource
+class_name paramServiceParams
 
 var parameterNames:PackedStringArray=[]
 var parameterTypes:PackedStringArray=[]

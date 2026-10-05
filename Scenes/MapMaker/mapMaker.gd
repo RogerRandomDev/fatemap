@@ -3,13 +3,13 @@ extends VBoxContainer
 
 @onready var mapViewport = $MapView
 
-func _enter_tree() -> void:load("res://Scenes/ServiceInitializer.gd").initializeAllServices()
+func _enter_tree() -> void:ServiceInitializer.initializeAllServices()
 
 func _ready() -> void:
 	loadGUILayout()
 	
-	FateMap.MaterialService.loadAllFMT("res://Imported/Materials")
-	FateMap.PhysicalObjectInputController.initializeInputController()
+	MaterialService.loadAllFMT("res://Imported/Materials")
+	PhysicalObjectInputController.initializeInputController()
 
 func loadGUILayout()->void:
 	loadToolBar()
@@ -17,29 +17,29 @@ func loadGUILayout()->void:
 	loadViewContainer()
 
 func loadToolBar()->void:
-	var ToolBarPanel := FateMap.GUIService.insertElement(
-		FateMap.GUIService.createElement(
+	var ToolBarPanel := GUIService.insertElement(
+		GUIService.createElement(
 			PanelContainer.new(),
 			&"ToolBarPanel",
 			[&"Layout",&"Style"],
 			self
 	))
-	var _ToolBarHolders :=FateMap.GUIService.insertElement(
-		FateMap.GUIService.createElement(
+	var _ToolBarHolders :=GUIService.insertElement(
+		GUIService.createElement(
 			VBoxContainer.new(),
 			&"ToolBarHolders",
 			[&"Layout",&"Tools"],
 			&"ToolBarPanel"
 	))
-	var _ToolBarTop := FateMap.GUIService.insertElement(
-		FateMap.GUIService.createElement(
+	var _ToolBarTop := GUIService.insertElement(
+		GUIService.createElement(
 			HBoxContainer.new(),
 			&"ToolBar",
 			[&"Layout",&"Tools"],
 			&"ToolBarHolders"
 	))
-	var _ToolBarBottom := FateMap.GUIService.insertElement(
-		FateMap.GUIService.createElement(
+	var _ToolBarBottom := GUIService.insertElement(
+		GUIService.createElement(
 			HBoxContainer.new(),
 			&"ToolBarBottom",
 			[&"Layout",&"Tools"],
@@ -49,8 +49,8 @@ func loadToolBar()->void:
 	ToolBarPanel.reference.custom_minimum_size.y=20
 
 func loadMiddleRegion()->void:
-	var MiddleContainer :=FateMap.GUIService.insertElement(
-		FateMap.GUIService.createElement(
+	var MiddleContainer :=GUIService.insertElement(
+		GUIService.createElement(
 			HSplitContainer.new(),
 			&"MiddleHorizontalContainer",
 			[&"Layout",&"Middle"],
@@ -63,8 +63,8 @@ func loadMiddleRegion()->void:
 	MiddleContainer.reference.mouse_filter=Control.MOUSE_FILTER_IGNORE
 
 func loadViewContainer()->void:
-	var ViewContainer :=FateMap.GUIService.insertElement(
-		FateMap.GUIService.createElement(
+	var ViewContainer :=GUIService.insertElement(
+		GUIService.createElement(
 			SubViewportContainer.new(),
 			&"PrimaryViewport",
 			[&"Layout",&"Viewport"],
@@ -78,8 +78,8 @@ func loadViewContainer()->void:
 	ViewContainer.reference.update_minimum_size()
 	(ViewContainer.reference as SubViewportContainer).stretch=true
 	mapViewport.reparent(ViewContainer.reference)
-	var viewportInternal :=FateMap.GUIService.insertElement(
-		FateMap.GUIService.createElement(
+	var viewportInternal :=GUIService.insertElement(
+		GUIService.createElement(
 			VBoxContainer.new(),
 			&"PrimaryViewportVBox",
 			[&"Layout",&"Viewport"],
@@ -93,7 +93,7 @@ func loadViewContainer()->void:
 	viewportInternal.reference.mouse_filter=Control.MOUSE_FILTER_IGNORE
 
 func _process(_delta: float) -> void:
-	if FateMap.InputService.pressed(&"RedoAction",true):
-		FateMap.UndoRedoService.redo()
-	elif FateMap.InputService.pressed(&"UndoAction",true):
-		FateMap.UndoRedoService.undo()
+	if InputService.pressed(&"RedoAction",true):
+		UndoRedoService.redo()
+	elif InputService.pressed(&"UndoAction",true):
+		UndoRedoService.undo()

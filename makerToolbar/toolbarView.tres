@@ -1,4 +1,4 @@
-[gd_resource type="Resource" load_steps=4 format=3 uid="uid://dr25645qk8jbv"]
+[gd_resource type="Resource" script_class="guiDropdownResource" load_steps=4 format=3 uid="uid://dr25645qk8jbv"]
 
 [ext_resource type="Script" uid="uid://56abiotdxm3f" path="res://models/resources/guiDropdownResource.gd" id="1_ob8md"]
 

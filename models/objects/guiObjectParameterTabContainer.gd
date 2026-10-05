@@ -1,32 +1,33 @@
 extends TabContainer
+class_name guiObjectParameterTabContainer
 
 
 
 func _ready() -> void:
-	FateMap.signalService.bindToSignal(&"mapObjectSelected",selectedObjectChanged)
+	signalService.bindToSignal(&"mapObjectSelected",selectedObjectChanged)
 	addTab(
 		&"Models",
-		load("res://models/objects/tabs/ObjectModelTab.gd").new(),
+		ObjectModelTab.new(),
 		null
 	)
 	addTab(
 		&"Surface",
-		load("res://models/objects/tabs/SurfaceTab.gd").new(),
+		SurfaceTab.new(),
 		null
 	)
 	addTab(
 		&"Parameters",
-		load("res://models/objects/tabs/ParamaterTab.gd").new(),
+		ParameterTab.new(),
 		null
 	)
 	addTab(
 		&"Tags",
-		load("res://models/objects/tabs/TagTab.gd").new(),
+		TagTab.new(),
 		null
 	)
 	
 
-func addTab(tabName:String,newTab:Control=null,tabData:FateMap.ObjectDataResource=null)->bool:
+func addTab(tabName:String,newTab:Control=null,tabData:ObjectDataResource=null)->bool:
 	if get_node_or_null(tabName)!=null:return false
 	add_child(newTab)
 	if tabData!=null:
@@ -44,7 +45,7 @@ func removeTabs(tabs:PackedStringArray=[])->void:
 	await get_tree().process_frame
 	return
 
-func selectedObjectChanged(newSelectedObject:FateMap.ObjectModel=null)->void:
+func selectedObjectChanged(newSelectedObject:ObjectModel=null)->void:
 	var objectData = null
 	if newSelectedObject:objectData=newSelectedObject.getData()
 	

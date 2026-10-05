@@ -1,7 +1,7 @@
-extends FateMap.ObjectModel
+extends ObjectModel
 class_name ObjectGroupModel
 
-@export var containedObjects:Array[FateMap.ObjectModel]
+@export var containedObjects:Array[ObjectModel]
 
 
 

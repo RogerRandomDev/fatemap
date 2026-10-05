@@ -1,4 +1,5 @@
 extends Resource
+class_name guiElement
 
 @warning_ignore("shadowed_variable_base_class")
 var reference:Control

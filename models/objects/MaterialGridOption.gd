@@ -2,9 +2,9 @@ extends PanelContainer
 
 var optionSpacing:float=0.0
 var iconSize:float=0.0
-var myMaterial:FateMap.MaterialService.materialModel
+var myMaterial:MaterialService.materialModel
 
-func loadContext(context:FateMap.MaterialService.materialModel)->void:
+func loadContext(context:MaterialService.materialModel)->void:
 	$VBoxContainer/MaterialPreview.texture=context.materialTexture
 	$VBoxContainer/MaterialName.text=context.materialName
 	myMaterial=context

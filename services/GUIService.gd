@@ -1,18 +1,10 @@
 extends Node
+class_name GUIService
 ##manages GUI for the FateMap builder
 
 
 static var GUIElements:Array[guiElement]=[]
-static var selectedPhysical:FateMap.ObjectModel
-
-
-class guiElement extends "res://models/resources/guiElement.gd":pass
-class guiArrayMethods extends "res://models/utility/guiArrayMethods.gd":pass
-@warning_ignore("missing_tool")
-class guiParameters extends "res://models/utility/guiParameterTypes.gd":pass
-class guiPlaceholderElements extends "res://models/utility/guiPlaceholderElements.gd":pass
-@warning_ignore("missing_tool")
-class guiDropdownResource extends "res://models/resources/guiDropdownResource.gd":pass
+static var selectedPhysical:ObjectModel
 
 
 

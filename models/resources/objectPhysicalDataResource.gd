@@ -1,4 +1,5 @@
 @tool
-extends FateMap.ObjectDataResource
+extends ObjectDataResource
+class_name ObjectPhysicalDataResource
 
 @export var mesh:Mesh=BoxMesh.new()

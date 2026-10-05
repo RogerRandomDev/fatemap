@@ -1,8 +1,9 @@
 @tool
 extends Resource
+class_name ObjectDataResource
 ## Data holder for all FateMap resources
 
-@export var inheritedData:Resource=null:
+@export var inheritedData:ObjectDataResource=null:
 	set(value):
 		if value==self:value = null
 		inheritedData=value
@@ -11,7 +12,7 @@ extends Resource
 
 
 var inheritedParameterNames:PackedStringArray=[]
-var inheritedParameterSource:Array[Resource]=[]
+var inheritedParameterSource:Array[ObjectDataResource]=[]
 var inheritedParameterValues:Array=[]
 
 var parameterNames:PackedStringArray=[]
@@ -87,7 +88,7 @@ func getInheritedParameters(initial:bool=false)->Array[Dictionary]:
 	
 	return parameters
 
-##updates the list of parameters inherited from other [FateMap.ObjectDataResource]
+##updates the list of parameters inherited from other [ObjectDataResource]
 func updateInheritedParameters(skip_notify:bool=false)->void:
 	var old_parameters=inheritedParameterNames.duplicate()
 	var old_values = inheritedParameterValues.duplicate()
@@ -175,7 +176,7 @@ func getInheritedPropertyList() -> Array[Dictionary]:
 		properties.append({
 				"name": "inheritedParameter%s/value" % i,
 				&"hint_string": "inherited",
-				"type": FateMap.ObjectParameters.getTypeByName(inheritedParameters[i].type)[0]
+				"type": ObjectParameters.getTypeByName(inheritedParameters[i].type)[0]
 			})
 		properties.append({
 			"name": "inheritedParameter%s/source" % i,
@@ -211,11 +212,11 @@ func getCustomPropertyList() -> Array[Dictionary]:
 				"name": "parameter_%s/type" % i,
 				"type": TYPE_STRING,
 				"hint": PROPERTY_HINT_ENUM,
-				"hint_string": ",".join(FateMap.ObjectParameters.parameterTypeMap.keys()),
+				"hint_string": ",".join(ObjectParameters.parameterTypeMap.keys()),
 			})
 		properties.append({
 				"name": "parameter_%s/value" % i,
-				"type": FateMap.ObjectParameters.getTypeByName(parameterTypes[i])[0]
+				"type": ObjectParameters.getTypeByName(parameterTypes[i])[0]
 			})
 	return properties
 
@@ -349,7 +350,7 @@ func getTagsForCompiler()->PackedByteArray:
 	var compiledTags:PackedByteArray=[]
 	for tag in tagList:
 		compiledTags.append_array(tag.to_ascii_buffer())
-		compiledTags.append(0)
+		compiledTags.append(compilerService.SEPARATOR_BYTE)
 	return compiledTags
 
 #endregion

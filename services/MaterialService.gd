@@ -1,4 +1,5 @@
 extends RefCounted
+class_name MaterialService
 
 static var materialList:Array[materialModel]=[]
 static var materialHashes:Dictionary={}
@@ -81,7 +82,7 @@ class materialModel extends Resource:
 		materialName=name
 		path=_path
 		materialHash=hash(_path)
-		if not ignoreDefaultParams:materialParameters=FateMap.MaterialService.basicMaterialParams.duplicate(false)
+		if not ignoreDefaultParams:materialParameters=MaterialService.basicMaterialParams.duplicate(false)
 		for parameter in params:
 			materialParameters[parameter]=params[parameter]
 		updateMaterial()
@@ -102,7 +103,7 @@ class materialModel extends Resource:
 	
 	##Sets the parameters for the material using the provided dictionary
 	func setParameters(parameterList:Dictionary={},ignoreDefaultParams:bool=false)->void:
-		if not ignoreDefaultParams:materialParameters=FateMap.MaterialService.basicMaterialParams.duplicate(false)
+		if not ignoreDefaultParams:materialParameters=MaterialService.basicMaterialParams.duplicate(false)
 		for parameter in parameterList:
 			materialParameters[parameter]=parameterList[parameter]
 		updateMaterial()

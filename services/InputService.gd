@@ -1,10 +1,9 @@
 extends RefCounted
-
-@warning_ignore("missing_tool")
-class InputMapData extends "res://models/resources/InputMapData.gd":pass
+class_name InputService
 
 
-static func applyKeyMap(map:Resource,override:bool=false):
+
+static func applyKeyMap(map:InputMapData,override:bool=false):
 	for index in map.inputActionNames.size():
 		var eventName=map.inputActionNames[index]
 		var binds = map.inputBinds[index]
