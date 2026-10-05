@@ -55,7 +55,7 @@ func loadContents()->void:
 	func(v=null):
 		var worldChecked = get_tree().current_scene.mapViewport
 		var f=FileAccess.open_compressed("user://test.fatemapEditor",FileAccess.READ,FileAccess.COMPRESSION_GZIP)
-		compilerService.loadMapData(worldChecked.get_node("PlacedObjects"),f.get_buffer(f.get_length()))
+		EditLoader.loadMapData(worldChecked.get_node("PlacedObjects"),f.get_buffer(f.get_length()))
 		)
 	
 	ToolMethodService.addToolMethod(&"TestingFullCompile",

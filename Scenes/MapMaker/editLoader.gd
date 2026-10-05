@@ -1,5 +1,5 @@
 extends Node
-
+class_name EditLoader
 
 static func loadMapData(loadOnto:Node,data:PackedByteArray=[])->void:
 	#this needs segmented still but the logic is mostly set up
