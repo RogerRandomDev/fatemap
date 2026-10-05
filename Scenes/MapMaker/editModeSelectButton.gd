@@ -24,11 +24,11 @@ func _ready() -> void:
 	for option in options:
 		var newItem = add_item(option)
 		set_item_tooltip(newItem,option)
-		signalService.bindToSignal(&"EditModeChanged",
+		FateMap.signalService.bindToSignal(&"EditModeChanged",
 		(func(onValue,editModeLink,val):
 			if val!=onValue:return
-			MeshEditService.changeEditor(editModeLink)
-			ParameterService.setParam(&"CurrentMeshEditMode",editModeLink)
+			FateMap.MeshEditService.changeEditor(editModeLink)
+			FateMap.ParameterService.setParam(&"CurrentMeshEditMode",editModeLink)
 		).bind(defaults[newItem],newItem),
 		["MeshEditMode",option]
 		)
@@ -37,8 +37,8 @@ func _ready() -> void:
 
 
 func _option_selected(optionIndex:int)->void:
-	MeshEditService.editMode=options.values()[optionIndex]
-	var optionName = options.keys()[optionIndex]
+	FateMap.MeshEditService.editMode=options.values()[optionIndex]
+	var _optionName = options.keys()[optionIndex]
 	
 	
-	signalService.emitSignal(&"meshSelectionChanged")
+	FateMap.signalService.emitSignal(&"meshSelectionChanged")

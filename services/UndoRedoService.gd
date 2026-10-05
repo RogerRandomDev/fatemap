@@ -1,5 +1,4 @@
 extends RefCounted
-class_name UndoRedoService
 
 static var controller:UndoRedo=UndoRedo.new()
 

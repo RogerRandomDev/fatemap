@@ -10,25 +10,25 @@ func _ready() -> void:
 	add_child(m)
 	m.mesh=mesh
 	m.set_layer_mask_value(20,true)#ill need to make a static enum somwhere to track what layers are for rendering what
-	signalService.bindToSignal.call_deferred(&"meshSelectionChanged",updatedMeshSelection)
+	FateMap.signalService.bindToSignal.call_deferred(&"meshSelectionChanged",updatedMeshSelection)
 
 
 func updatedMeshSelection()->void:
 	mesh.clear_surfaces()
-	var activeObj=ParameterService.getParam(&"activeObject") as ObjectModel
-	if activeObj==null or not MeshEditService.isEditing():return
+	var activeObj=FateMap.ParameterService.getParam(&"activeObject") as FateMap.ObjectModel
+	if activeObj==null or not FateMap.MeshEditService.isEditing():return
 	#normal editing for meshes
 	match activeObj.objectType:
-		ObjectModel.objectTypes.MESH:
-			m.global_transform=MeshEditService.editing.meshObject.global_transform
-			var selection=MeshEditService.editing.selectedFaces
+		FateMap.ObjectModel.objectTypes.MESH:
+			m.global_transform=FateMap.MeshEditService.editing.meshObject.global_transform
+			var selection=FateMap.MeshEditService.editing.selectedFaces
 			var st=SurfaceTool.new()
-			var lineSelection=MeshEditService.editing.mesh.getCleanEdges()
+			var lineSelection=FateMap.MeshEditService.editing.mesh.getCleanEdges()
 			st.begin(Mesh.PRIMITIVE_LINES)
 			for edge in lineSelection:
 				st.add_vertex(edge.vertices[0].position)
 				st.add_vertex(edge.vertices[1].position)
-			st.set_material(load("res://debugMaterial.tres"))
+			st.set_material(load("res://Scenes/MapMaker/debugMaterial.tres"))
 			st.commit(mesh)
 			if selection.size()!=0:
 				st.clear()
@@ -39,10 +39,10 @@ func updatedMeshSelection()->void:
 					i=face.loadToSurfaceTool(st,i,f,-1)
 					f+=1
 				st.generate_normals()
-				st.set_material(load("res://debugMaterial.tres"))
+				st.set_material(load("res://Scenes/MapMaker/debugMaterial.tres"))
 				st.commit(mesh)
 		#regular models we drop in.
-		ObjectModel.objectTypes.OBJECT:
+		FateMap.ObjectModel.objectTypes.OBJECT:
 			m.global_transform=Transform3D()
 			var pickableShapes = activeObj.get_node_or_null("PICKABLE_OBJECT")
 			if pickableShapes==null:return
@@ -70,6 +70,6 @@ func updatedMeshSelection()->void:
 						for edge in edges:
 							st.add_vertex(corners[edge[0]])
 							st.add_vertex(corners[edge[1]])
-			st.set_material(load("res://debugMaterial.tres"))
+			st.set_material(load("res://Scenes/MapMaker/debugMaterial.tres"))
 			st.commit(mesh)
 	m.mesh=mesh

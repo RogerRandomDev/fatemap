@@ -1,6 +1,5 @@
 @tool
 extends RefCounted
-class_name guiParameters
 
 
 
@@ -19,7 +18,7 @@ const dropdownTypeMap:Dictionary={
 	"submenu":{
 		"type":TYPE_OBJECT,
 		"hint":PROPERTY_HINT_RESOURCE_TYPE,
-		"hint_string":&"guiDropdownResource"
+		"hint_string":&"FateMap.guiDropdownResource"
 	}
 }
 

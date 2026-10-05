@@ -1,5 +1,4 @@
 extends VSplitContainer
-class_name SurfaceTab
 
 var materialList:VBoxContainer
 var faceInfoList:Control
@@ -17,16 +16,16 @@ func _ready() -> void:
 	updateGridLayout()
 
 func buildView()->void:
-	faceInfoList=GUIService.insertElement(
-		GUIService.createElement(
+	faceInfoList=FateMap.GUIService.insertElement(
+		FateMap.GUIService.createElement(
 			load("res://Scenes/MapMaker/surfaceTabFaceInfo.gd").new(),
 			&"SurfaceTabFaceInfo",
 			[&"List",&"Surface",&"Material",&"Face"],
 			self
 		)
 	).reference
-	var scrollMaterialList=GUIService.insertElement(
-		GUIService.createElement(
+	var scrollMaterialList=FateMap.GUIService.insertElement(
+		FateMap.GUIService.createElement(
 			ScrollContainer.new(),
 			&"SurfaceTabMaterialListScrollContainer",
 			[&"Container",&"Scroll",&"Surface",&"Material",&"Face"],
@@ -37,8 +36,8 @@ func buildView()->void:
 	scrollMaterialList.size_flags_vertical=Control.SIZE_EXPAND_FILL
 	scrollMaterialList.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	
-	materialList=GUIService.insertElement(
-		GUIService.createElement(
+	materialList=FateMap.GUIService.insertElement(
+		FateMap.GUIService.createElement(
 			VBoxContainer.new(),
 			&"SurfaceTabMaterialList",
 			[&"List",&"Surface",&"Material"],
@@ -56,7 +55,7 @@ func clearMaterialList()->void:
 		child.queue_free()
 
 func loadMaterialList()->void:
-	var surfaceMaterialList:Array[MaterialService.materialModel]=MaterialService.getMaterialList()
+	var surfaceMaterialList:Array[FateMap.MaterialService.materialModel]=FateMap.MaterialService.getMaterialList()
 	var subGroups:Dictionary={}
 	for surfaceMaterial in surfaceMaterialList:
 		var materialPath = surfaceMaterial.path.split("Imported/Materials/",false,1)[1]
@@ -88,33 +87,33 @@ func updateGridLayout()->void:
 		materialOption.setIconSize(surfaceMaterialIconSize)
 
 
-func loadContents(contents:ObjectDataResource)->void:
+func loadContents(contents:FateMap.ObjectDataResource)->void:
 	recursiveToggleContents(self,contents!=null)
 	faceInfoList.displaySelectedFaceInfo()
 	faceInfoList.updateWithSelectedObject()
 	if contents==null:return
 
 func optionEvent(event:InputEvent,option)->void:
-	if not MeshEditService.isEditing() or not MeshEditService.editingType==ObjectModel.objectTypes.MESH:return
+	if not FateMap.MeshEditService.isEditing() or not FateMap.MeshEditService.editingType==FateMap.ObjectModel.objectTypes.MESH:return
 	if not event is InputEventMouseButton:return
 	if event.button_index==MOUSE_BUTTON_LEFT and event.is_pressed():
 		
-		var originalMaterials = MeshEditService.editing.mesh.trackedSelection.getMaterials()
-		UndoRedoService.startAction(&"SetMaterialsOnFaces")
+		var originalMaterials = FateMap.MeshEditService.editing.mesh.trackedSelection.getMaterials()
+		FateMap.UndoRedoService.startAction(&"SetMaterialsOnFaces")
 		for mat in originalMaterials:
 			var onFaces=originalMaterials[mat]
 			for face in onFaces:
-				UndoRedoService.addMethods(
+				FateMap.UndoRedoService.addMethods(
 					face.setSurfaceMaterial.bind(option.myMaterial),
 					face.setSurfaceMaterial.bind(mat)
 				)
-		var rebuild = MeshEditService.editing.mesh.rebuild
-		UndoRedoService.addMethods(
+		var rebuild = FateMap.MeshEditService.editing.mesh.rebuild
+		FateMap.UndoRedoService.addMethods(
 			func():rebuild.call_deferred(),
 			func():rebuild.call_deferred()
 		)
-		UndoRedoService.commitAction(true)
-		MeshEditService.editing.mesh.rebuild()
+		FateMap.UndoRedoService.commitAction(true)
+		FateMap.MeshEditService.editing.mesh.rebuild()
 
 func recursiveToggleContents(from:Control,enable:bool=true)->void:
 	from.set("editable",enable)

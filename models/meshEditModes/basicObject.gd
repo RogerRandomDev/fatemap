@@ -1,4 +1,4 @@
-extends meshEditMode
+extends FateMap.meshEditMode
 ##  a [meshEditMode] for sliding along the global axis for an object.
 
 
@@ -47,20 +47,20 @@ func updateSelectionLocation(mousePosition:Vector2,mergeMoves:bool=false)->bool:
 	var targetSlideLocation=getTargetFromMouse(mousePosition)
 	if not targetSlideLocation.is_finite():return false
 	#snap the slide location and push it back onto the ray afterwards
-	#targetSlideLocation=getPointAlongRay(targetSlideLocation.snappedf(ParameterService.getParam(&"snapDistance")))
+	#targetSlideLocation=getPointAlongRay(targetSlideLocation.snappedf(FateMap.ParameterService.getParam(&"snapDistance")))
 	
 	var currentEditLocation=editingOrigin*editingObject.global_transform.basis.get_rotation_quaternion().inverse()+editingObject.global_position
 	
 	var slideBy=(targetSlideLocation-currentEditLocation)
-	slideBy=slideBy.snappedf(ParameterService.getParam(&"snapDistance"))
+	slideBy=slideBy.snappedf(FateMap.ParameterService.getParam(&"snapDistance"))
 	if slideBy.is_zero_approx():return false
 	#slideBy*=editingObject.global_transform.basis.get_rotation_quaternion()
-	UndoRedoService.startAction("MoveObject",UndoRedo.MERGE_ALL if mergeMoves else UndoRedo.MERGE_DISABLE)
-	UndoRedoService.addDoProperty(editingObject,"global_position",editingObject.global_position+slideBy)
-	UndoRedoService.addUndoProperty(editingObject,"global_position",editingObject.global_position)
-	UndoRedoService.addMethods(
-		func():signalService.emitSignal.call_deferred(&"meshSelectionChanged"),
-		func():signalService.emitSignal.call_deferred(&"meshSelectionChanged"),
+	FateMap.UndoRedoService.startAction("MoveObject",UndoRedo.MERGE_ALL if mergeMoves else UndoRedo.MERGE_DISABLE)
+	FateMap.UndoRedoService.addDoProperty(editingObject,"global_position",editingObject.global_position+slideBy)
+	FateMap.UndoRedoService.addUndoProperty(editingObject,"global_position",editingObject.global_position)
+	FateMap.UndoRedoService.addMethods(
+		func():FateMap.signalService.emitSignal.call_deferred(&"meshSelectionChanged"),
+		func():FateMap.signalService.emitSignal.call_deferred(&"meshSelectionChanged"),
 	)
-	UndoRedoService.commitAction(true)
+	FateMap.UndoRedoService.commitAction(true)
 	return not slideBy.is_zero_approx()

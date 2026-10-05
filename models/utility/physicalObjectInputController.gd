@@ -1,22 +1,21 @@
 extends RefCounted
-class_name PhysicalObjectInputController
 
 
 static var activeObject:
-	get:return ParameterService.getParam(&"activeObject")
-	set(value):ParameterService.setParam(&"activeObject",value)
+	get:return FateMap.ParameterService.getParam(&"activeObject")
+	set(value):FateMap.ParameterService.setParam(&"activeObject",value)
 static var activeObjectList:
-	get:return ParameterService.getParam(&"activeObjectList")
-	set(value):ParameterService.setParam(&"activeObjectList",value)
+	get:return FateMap.ParameterService.getParam(&"activeObjectList")
+	set(value):FateMap.ParameterService.setParam(&"activeObjectList",value)
 static var hoveredObjects:
-	get:return ParameterService.getParam(&"hoveredObjects")
-	set(value):ParameterService.setParam(&"hoveredObjects",value)
+	get:return FateMap.ParameterService.getParam(&"hoveredObjects")
+	set(value):FateMap.ParameterService.setParam(&"hoveredObjects",value)
 
 
 static func initializeInputController()->void:
 	
-	signalService.bindToSignal(&"MouseEnteredObject",onMouseEnterObject)
-	signalService.bindToSignal(&"MouseExitedObject",onMouseExitObject)
+	FateMap.signalService.bindToSignal(&"MouseEnteredObject",onMouseEnterObject)
+	FateMap.signalService.bindToSignal(&"MouseExitedObject",onMouseExitObject)
 	
 
 static func onMouseEnterObject(object:Node3D)->void:
@@ -27,19 +26,19 @@ static func onMouseExitObject(object:Node3D)->void:
 static func deselect()->void:
 	if activeObject==null:return
 	var currentActive=activeObject
-	UndoRedoService.startAction(&"DeselectObject")
-	UndoRedoService.addMethods(
+	FateMap.UndoRedoService.startAction(&"DeselectObject")
+	FateMap.UndoRedoService.addMethods(
 		(func():
-			ParameterService.setParam(&"activeObject",null)
-			MeshEditService.setEditing(null)
-			signalService.emitSignal(&"meshSelectionChanged")
-			signalService.emitSignal(&"mapObjectSelected",[])
+			FateMap.ParameterService.setParam(&"activeObject",null)
+			FateMap.MeshEditService.setEditing(null)
+			FateMap.signalService.emitSignal(&"meshSelectionChanged")
+			FateMap.signalService.emitSignal(&"mapObjectSelected",[])
 			),
 		(func():
-			ParameterService.setParam(&"activeObject",currentActive)
-			MeshEditService.setEditing(currentActive)
-			signalService.emitSignal(&"meshSelectionChanged")
-			signalService.emitSignal(&"mapObjectSelected",[currentActive])
+			FateMap.ParameterService.setParam(&"activeObject",currentActive)
+			FateMap.MeshEditService.setEditing(currentActive)
+			FateMap.signalService.emitSignal(&"meshSelectionChanged")
+			FateMap.signalService.emitSignal(&"mapObjectSelected",[currentActive])
 			)
 	)
-	UndoRedoService.commitAction(true)
+	FateMap.UndoRedoService.commitAction(true)

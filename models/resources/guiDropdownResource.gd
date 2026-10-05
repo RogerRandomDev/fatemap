@@ -1,6 +1,5 @@
 @tool
 extends Resource
-class_name guiDropdownResource
 
 var optionNames:PackedStringArray = []
 var optionTypes:PackedStringArray = []
@@ -64,9 +63,9 @@ func getCustomProperties()->Array[Dictionary]:
 				"name": "option_%s/type" % i,
 				"type": TYPE_STRING,
 				"hint": PROPERTY_HINT_ENUM,
-				"hint_string": ",".join(guiParameters.dropdownTypeMap.keys()),
+				"hint_string": ",".join(FateMap.GUIService.guiParameters.dropdownTypeMap.keys()),
 			})
-		var typeMap=guiParameters.getTypeByName(optionTypes[i])
+		var typeMap=FateMap.GUIService.guiParameters.getTypeByName(optionTypes[i])
 		if typeMap.get("type",TYPE_NIL)==TYPE_NIL:continue
 		properties.append({
 			"name": "option_%s/description" % i,
@@ -92,3 +91,14 @@ func _get_property_list() -> Array[Dictionary]:
 	
 	return properties
 #endregion
+
+func copyFrom(ref:Resource):
+	set("option_count",ref.optionNames.size())
+	for item in ref.optionNames.size():
+		var context=ref.getItemContext(item)
+		set("option_%s/name"%str(item),context.name)
+		set("option_%s/type"%str(item),context.type)
+		set("option_%s/description"%str(item),context.description)
+		set("option_%s/value"%str(item),context.value)
+		set("option_%s/param"%str(item),context.param)
+	return self

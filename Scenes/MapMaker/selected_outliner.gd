@@ -1,10 +1,10 @@
 extends Node
 
 
-var selectedObject:ObjectModel
+var selectedObject:FateMap.ObjectModel
 
 func _ready() -> void:
-	signalService.bindToSignal.call_deferred(&"mapObjectSelected",func(obj):selectedObject=obj)
+	FateMap.signalService.bindToSignal.call_deferred(&"mapObjectSelected",func(obj):selectedObject=obj)
 
 
 func _process(delta: float) -> void:

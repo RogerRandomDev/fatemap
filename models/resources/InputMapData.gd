@@ -1,7 +1,5 @@
 @tool
 extends Resource
-class_name InputMapData
-
 
 var inputActionNames:PackedStringArray=[]
 var inputBinds:Array=[]
