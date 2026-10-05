@@ -251,13 +251,13 @@ func getCompilerData(compiler:compilerService.compilerMapData,full:bool=false)->
 	uvPos.encode_float(20,transformRotation.z)
 	return {
 		"Materials":faceMaterialMap.keys().filter(func(mat):return faceMaterialMap[mat].size()>0),
-		"Surfaces":convertSurfacesToBinary(compiler,full),
+		"Surfaces":convertSurfacesToBinary(compiler) if not full else convertSurfacesToBinaryCompiled(compiler),
 		"Collision":null if not full else getCollisionFaces(compiler),
 		"UVPosition":uvPos
 	}
 
 const BYTES_PER_FACE = 62
-func convertSurfacesToBinary(compiler:compilerService.compilerMapData=null,full:bool=false)->PackedByteArray:
+func convertSurfacesToBinary(compiler:compilerService.compilerMapData=null)->PackedByteArray:
 	var binarySurfaceData:PackedByteArray=[]
 	for mat in faceMaterialMap.keys():
 		if faceMaterialMap[mat].size()==0:continue
@@ -275,7 +275,6 @@ func convertSurfacesToBinary(compiler:compilerService.compilerMapData=null,full:
 	const sub_offset = 12
 	for face in faces:
 		var compiledSurfaceId=compiler.materialList.find(face.surfaceMaterial)
-		if full and face.surfaceMaterial.materialTags.has("ignore_render"):continue
 		
 		binarySurfaceData.encode_u16(offset,compiledSurfaceId)
 		for i in 3:
@@ -291,6 +290,39 @@ func convertSurfacesToBinary(compiler:compilerService.compilerMapData=null,full:
 		offset+=BYTES_PER_FACE
 	binarySurfaceData.resize(offset)
 	return binarySurfaceData
+
+const BYTES_PER_FACE_COMPILED:int=42
+func convertSurfacesToBinaryCompiled(compiler:compilerService.compilerMapData=null)->PackedByteArray:
+	var binarySurfaceData:PackedByteArray=[]
+	for mat in faceMaterialMap.keys():
+		if faceMaterialMap[mat].size()==0:continue
+		if compiler.materialList.has(mat):continue
+		compiler.materialList.push_back(mat)
+	
+	
+	var face_bytes:int=(
+		faces.size()*BYTES_PER_FACE_COMPILED
+	)
+	binarySurfaceData.resize(
+		face_bytes
+	)
+	var offset:int=0
+	const sub_offset = 12
+	for face in faces:
+		var compiledSurfaceId=compiler.materialList.find(face.surfaceMaterial)
+		if face.surfaceMaterial.materialTags.has("ignore_render"):continue
+		binarySurfaceData.encode_u16(offset,compiledSurfaceId)
+		for i in 3:
+			var active_vertex=face.vertices[i]
+			binarySurfaceData.encode_u32(offset+2+sub_offset*i,compiler.getPositionID(active_vertex.position))
+			var vertex_actual_uv:Vector2=(active_vertex.uv*face.uvScale+face.uvOffset).rotated(face.uvRotation)
+			binarySurfaceData.encode_float(offset+6+sub_offset*i,vertex_actual_uv.x)
+			binarySurfaceData.encode_float(offset+10+sub_offset*i,vertex_actual_uv.y)
+		binarySurfaceData.encode_u32(offset+38,compiler.getNormalID(face.normal))
+		offset+=BYTES_PER_FACE_COMPILED
+	binarySurfaceData.resize(offset)
+	return binarySurfaceData
+
 
 const BYTES_PER_COLLISION_FACE:int=12
 func getCollisionFaces(compiler:compilerService.compilerMapData=null)->PackedByteArray:

@@ -8,6 +8,8 @@ enum objectTypes{
 	GROUP
 }
 
+signal paramUpdated
+
 var objectData:ObjectDataResource:
 	set(v):
 		setObjectData(v)
@@ -44,4 +46,4 @@ func setObjectData(data)->void:
 
 func paramChanged(param:StringName,value:Variant)->void:
 	set(param,value)
-	signalService.emitSignal(&"meshSelectionChanged")
+	paramUpdated.emit()

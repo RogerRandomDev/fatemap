@@ -2,8 +2,6 @@ extends Node
 class_name compilerService
 ##used to compile/decompile a map into its own file
 
-const SEPARATOR_BYTE:int=0
-
 #region general utilities
 
 ### ENCODERS
@@ -87,7 +85,7 @@ static func paramsEncode(parameters:Dictionary)->PackedByteArray:
 		var paramValue=parameters[param]
 		paramValue=paramValueEncode(paramValue)
 		encoded.append_array(paramName)
-		encoded.append(SEPARATOR_BYTE)
+		encoded.append(0)
 		encoded.append_array(paramValue)
 		
 	
@@ -162,7 +160,7 @@ static func paramsDecode(parameters:PackedByteArray)->Dictionary:
 	var paramCount:int=parameters.decode_u16(0)
 	var checkFrom:int=2
 	for i in range(0,paramCount):
-		var nameEnd:int=parameters.find(SEPARATOR_BYTE,checkFrom+1)
+		var nameEnd:int=parameters.find(0,checkFrom+1)
 		if nameEnd==-1||nameEnd<=checkFrom+1:break
 		var paramName=parameters.slice(checkFrom,nameEnd).get_string_from_ascii()
 		checkFrom=nameEnd+1
@@ -172,7 +170,7 @@ static func paramsDecode(parameters:PackedByteArray)->Dictionary:
 		decoded[paramName]=paramValue
 	
 	#encoded.append_array(paramName)
-	#encoded.append(SEPARATOR_BYTE)
+	#encoded.append(0)
 	#encoded.append_array(paramValue)
 	
 	return decoded
@@ -228,9 +226,9 @@ class precompileMapData extends compilerMapData:
 	func getBinary()->PackedByteArray:
 		var binary:PackedByteArray=[]
 		binary.append_array(getMaterialBinary())
-		binary.push_back(SEPARATOR_BYTE) #ASCII buffer \n
+		binary.push_back(0) #ASCII buffer \n
 		binary.append_array(getIDListBinary())
-		binary.push_back(SEPARATOR_BYTE) #ASCII buffer \n
+		binary.push_back(0) #ASCII buffer \n
 		binary.append_array(getObjectsBinary())
 		return binary
 	
@@ -264,9 +262,9 @@ class precompileMapData extends compilerMapData:
 		for object in objects:
 			var objectData = objects[object]
 			binary.append_array(object.to_ascii_buffer())
-			binary.push_back(SEPARATOR_BYTE)
+			binary.push_back(0)
 			binary.append_array([objectData.get("Type")])
-			binary.push_back(SEPARATOR_BYTE)
+			binary.push_back(0)
 			#object transform info. POSITION|ROTATION|SCALE
 			binary.append_array(compilerService.encodeVector3Float(objectData.get("Position")))
 			binary.append_array(compilerService.encodeVector3Float(objectData.get("Rotation")))
@@ -285,7 +283,7 @@ class precompileMapData extends compilerMapData:
 					objectSize.encode_u32(0,objectData.get("Model").size())
 					binary.append_array(objectSize)
 					binary.append_array(objectData.get("Model"))
-			binary.push_back(SEPARATOR_BYTE)
+			binary.push_back(0)
 			var params = compilerService.paramsEncode(objectData.get("Parameters",null))
 			paramSize.encode_u32(0,params.size())
 			binary.append_array(paramSize)
@@ -353,7 +351,7 @@ static func fullCompile(makerViewport:SubViewport)->PackedByteArray:
 	compiledMap = uncompiledData.getBinary()
 	return compiledMap
 
-
+## TODO: replace with previous version we reverted.
 class fullCompileMapData extends compilerMapData:
 	## all meshes in a group should stick together, unless tagged otherwise.
 	var mapCollision:PackedByteArray
@@ -361,12 +359,12 @@ class fullCompileMapData extends compilerMapData:
 	func getBinary()->PackedByteArray:
 		var binary:PackedByteArray=[]
 		binary.append_array(getMaterialBinary())
-		binary.push_back(SEPARATOR_BYTE)
+		binary.push_back(0)
 		binary.append_array(getIDListBinary())
-		binary.push_back(SEPARATOR_BYTE)
+		binary.push_back(0)
 		binary.append_array(getObjectsBinary())
-		binary.push_back(SEPARATOR_BYTE)
-		binary.append_array(getCollisionObjects())
+		#binary.push_back(0)
+		#binary.append_array(getCollisionObjects())
 		#return binary
 		return binary
 	
@@ -417,9 +415,9 @@ class fullCompileMapData extends compilerMapData:
 		for object in objects:
 			var objectData = objects[object]
 			binary.append_array(object.to_ascii_buffer())
-			binary.push_back(SEPARATOR_BYTE)
+			binary.push_back(0)
 			binary.append_array([objectData.get("Type")])
-			binary.push_back(SEPARATOR_BYTE)
+			binary.push_back(0)
 			#object transform info. POSITION|ROTATION|SCALE
 			binary.append_array(compilerService.encodeVector3Float(objectData.get("Position")))
 			binary.append_array(compilerService.encodeVector3Float(objectData.get("Rotation")))
@@ -444,7 +442,7 @@ class fullCompileMapData extends compilerMapData:
 					objectSize.encode_u32(0,objectData.get("Model").size())
 					binary.append_array(objectSize)
 					binary.append_array(objectData.get("Model"))
-			binary.push_back(SEPARATOR_BYTE)
+			binary.push_back(0)
 			var params = compilerService.paramsEncode(objectData.get("Parameters",null))
 			paramSize.encode_u32(0,params.size())
 			binary.append_array(paramSize)
@@ -485,7 +483,7 @@ class fullCompileMapData extends compilerMapData:
 				objectGroups.get_or_add(currentGroup,[]).push_back(compiledObjectData.Identifier)
 				
 			ObjectModel.objectTypes.OBJECT:
-				var compiledObjectData = object.getCompiledData(self)
+				var compiledObjectData = object.getCompiledData(self,true)
 				objects[compiledObjectData.Identifier]={
 					"Type":ObjectModel.objectTypes.OBJECT,
 					"Tags":compiledObjectData.Tags,

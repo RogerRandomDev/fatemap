@@ -111,7 +111,7 @@ func updateMeshSelection()->void:
 		var targetPoint = holder.getMousePoint().snappedf(
 			ParameterService.getParam(&"snapDistance")
 		)
-		if not targetPoint.is_finite():
+		if not targetPoint.is_finite() or (targetPoint-MeshEditService.editor.camera.global_position).length_squared()>1024:
 			var projectedOrigin:Vector3=MeshEditService.editor.camera.project_ray_origin(holder.get_local_mouse_position())
 			var projectedNormal:Vector3=MeshEditService.editor.camera.project_ray_normal(holder.get_local_mouse_position())
 			targetPoint=(projectedOrigin+projectedNormal*16).snappedf(

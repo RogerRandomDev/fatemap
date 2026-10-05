@@ -130,6 +130,10 @@ func finalizeMesh()->void:
 		var pos=dt.get_vertex(vertex)
 		dt.set_vertex(vertex,pos*highlight.scale)
 	var obj=PhysicalObjectModel.new()
+	obj.paramUpdated.connect(
+		signalService.emitSignal.bind(&"meshSelectionChanged")
+	)
+	
 	var data = ObjectPhysicalDataResource.new()
 	data.inheritedData=load("res://modelData/baseObject.tres")
 	m.clear_surfaces()

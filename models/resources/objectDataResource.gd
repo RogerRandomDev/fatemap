@@ -350,7 +350,7 @@ func getTagsForCompiler()->PackedByteArray:
 	var compiledTags:PackedByteArray=[]
 	for tag in tagList:
 		compiledTags.append_array(tag.to_ascii_buffer())
-		compiledTags.append(compilerService.SEPARATOR_BYTE)
+		compiledTags.append(0)
 	return compiledTags
 
 #endregion

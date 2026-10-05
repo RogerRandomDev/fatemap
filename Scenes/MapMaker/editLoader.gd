@@ -92,6 +92,10 @@ static func loadMapData(loadOnto:Node,data:PackedByteArray=[])->void:
 		#set object transform we already calculated
 		obj.global_transform=decodedTransform
 		
+		obj.paramUpdated.connect(
+			signalService.emitSignal.bind(&"meshSelectionChanged")
+		)
+		
 		#have to get the encoded parameters out as well
 		var paramBlockSize:int=data.decode_u32(checkFrom)
 		var paramData = compilerService.paramsDecode(data.slice(checkFrom+4,checkFrom+4+paramBlockSize))

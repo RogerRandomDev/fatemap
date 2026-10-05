@@ -72,6 +72,9 @@ func optionEvent(event:InputEvent,option)->void:
 		holder.objectModelFile=option.myObject.resource_path
 		holder.objectData=ObjectDataResource.new()
 		holder.objectData.inheritedData=load("res://modelData/baseObject.tres")
+		holder.paramUpdated.connect(
+			signalService.emitSignal.bind(&"meshSelectionChanged")
+		)
 		placeOn.add_child(holder)
 		holder.set_meta("reposition","")
 		ParameterService.setParam(&"activeObject",holder)
