@@ -5,7 +5,8 @@ enum objectTypes{
 	MESH,
 	OBJECT,
 	DATA,
-	GROUP
+	GROUP,
+	MAX
 }
 
 signal paramUpdated
@@ -22,7 +23,7 @@ var objectDisplay:Node3D
 
 func getData()->ObjectDataResource:return null
 
-func getCompiledData(compiler:compilerService.compilerMapData,full:bool=false)->Dictionary:return {
+func getCompiledData(_compiler:compilerService.compilerMapData,_full:bool=false)->Dictionary:return {
 	"Identifier":name,
 	"Position":global_position,
 	"Rotation":global_rotation,

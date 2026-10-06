@@ -33,7 +33,7 @@ func loadContents()->void:
 		[&"Map"]
 	).reference as ToolbarMenuButton
 	ToolMethodService.addToolMethod(&"ExportMapAsGLB",
-	func(v=null):
+	func(_v=null):
 		var worldChecked = get_tree().current_scene.mapViewport
 		var glb = GLTFDocument.new()
 		var state = GLTFState.new()
@@ -43,7 +43,7 @@ func loadContents()->void:
 		f.close()
 		)
 	ToolMethodService.addToolMethod(&"ExportMapCustom",
-	func(v=null):
+	func(_v=null):
 		var worldChecked = get_tree().current_scene.mapViewport
 		mapData = compilerService.compileMapData(worldChecked)
 		#temporary file
@@ -52,14 +52,15 @@ func loadContents()->void:
 		f.close()
 		)
 	ToolMethodService.addToolMethod(&"LoadMapCustom",
-	func(v=null):
+	func(_v=null):
 		var worldChecked = get_tree().current_scene.mapViewport
 		var f=FileAccess.open_compressed("user://test.fatemapEditor",FileAccess.READ,FileAccess.COMPRESSION_GZIP)
 		EditLoader.loadMapData(worldChecked.get_node("PlacedObjects"),f.get_buffer(f.get_length()))
+		UndoRedoService.clearAllActions()
 		)
 	
 	ToolMethodService.addToolMethod(&"TestingFullCompile",
-	func(v=null):
+	func(_v=null):
 		var worldChecked = get_tree().current_scene.mapViewport
 		mapData = compilerService.fullCompile(worldChecked)
 		var f=FileAccess.open_compressed("user://test.fatemap",FileAccess.WRITE,FileAccess.COMPRESSION_GZIP)

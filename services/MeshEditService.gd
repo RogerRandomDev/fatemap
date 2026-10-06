@@ -8,7 +8,7 @@ static var editMode:MeshEditMode=MeshEditMode.FACE:
 		editMode=v
 		signalService.emitSignal(&"EditModeChanged",[v])
 static var editingType:ObjectModel.objectTypes:
-	get:return -1 if editor.editingObject==null else editor.editingObject.objectType
+	get:return ObjectModel.objectTypes.MAX if editor.editingObject==null else editor.editingObject.objectType
 
 static var editor:meshEditMode
 

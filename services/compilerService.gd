@@ -80,7 +80,7 @@ static func paramsEncode(parameters:Dictionary)->PackedByteArray:
 	encoded.encode_u16(0,parameters.size())
 	
 	for param in parameters:
-		var paramBytes:=PackedByteArray()
+		var _paramBytes:=PackedByteArray()
 		var paramName=param.to_ascii_buffer()
 		var paramValue=parameters[param]
 		paramValue=paramValueEncode(paramValue)

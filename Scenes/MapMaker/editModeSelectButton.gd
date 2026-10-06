@@ -38,7 +38,7 @@ func _ready() -> void:
 
 func _option_selected(optionIndex:int)->void:
 	MeshEditService.editMode=options.values()[optionIndex]
-	var optionName = options.keys()[optionIndex]
+	var _optionName = options.keys()[optionIndex]
 	
 	
 	signalService.emitSignal(&"meshSelectionChanged")

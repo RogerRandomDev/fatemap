@@ -80,25 +80,30 @@ func loadContents(contents:ObjectDataResource)->void:
 		parameterItem.set_metadata(0,value.name)
 		parameterItem.set_metadata(1,value.type)
 		parameterItem.set_tooltip_text(0,value.description)
-		if value.type=="Resource":
-			parameterItem.set_cell_mode(1,TreeItem.CELL_MODE_CUSTOM)
+		match value.type:
+			"Boolean":
+				parameterItem.set_cell_mode(1,TreeItem.CELL_MODE_CHECK)
+			"Resource":
+				parameterItem.set_cell_mode(1,TreeItem.CELL_MODE_CUSTOM)
 		parameterItem.set_editable(1,true)
-		parameterItem.set_text(1,StringVarTypedService.toStr(value.value))
 		parameterItem.set_tooltip_text(1,value.type)
+		updateValueShown(parameterItem,value.value)
 
 func parameterEdited()->void:
 	var editedItem:TreeItem=tree.get_edited()
 	var editedParam:String=editedItem.get_metadata(0)
 	if editedItem.get_cell_mode(1)==TreeItem.CELL_MODE_CUSTOM:return
-	var newValue=StringVarTypedService.toVar(
-		editedItem.get_text(1),editedItem.get_metadata(1)
-	)
+	var newValue
+	match editedItem.get_metadata(1):
+		"Boolean":
+			newValue=editedItem.is_checked(1)
+	if newValue==null:
+		newValue=StringVarTypedService.toVar(
+			editedItem.get_text(1),editedItem.get_metadata(1)
+		)
 	var oldValue=editingResource.getInstance(editedParam)
 	if newValue==null:newValue=oldValue
-	editedItem.set_text(
-		1,
-		StringVarTypedService.toStr(newValue)
-	)
+	updateValueShown(editedItem,newValue)
 	var undoRedoValueOld=editingResource.getUndoRedoParamValue(editedParam)
 	
 	#actually sets the new data into the object
@@ -124,7 +129,8 @@ func parameterEdited()->void:
 			var checkOn=tree.get_root().get_child(0)
 			while checkOn!=null && checkOn.get_metadata(0)!=editedParam:
 				checkOn=checkOn.get_next()
-			if checkOn!=null:checkOn.set_text(1,StringVarTypedService.toStr(newValue))
+			if checkOn!=null:
+				updateValueShown(checkOn,newValue)
 			,
 		func():
 			editingResource.setUndoRedoParamValue(
@@ -138,7 +144,9 @@ func parameterEdited()->void:
 			var checkOn=tree.get_root().get_child(0)
 			while checkOn!=null && checkOn.get_metadata(0)!=editedParam:
 				checkOn=checkOn.get_next()
-			if checkOn!=null:checkOn.set_text(1,StringVarTypedService.toStr(oldValue))
+			if checkOn!=null:
+				updateValueShown(checkOn,oldValue)
+				
 	)
 	UndoRedoService.commitAction()
 
@@ -149,3 +157,21 @@ func customEdited(mouse_button_index: int)->void:
 		pass
 	if mouse_button_index==MOUSE_BUTTON_RIGHT:
 		pass
+
+func updateValueShown(item:TreeItem,value)->void:
+	match item.get_metadata(1):
+		"Boolean":
+			item.set_checked(1,value)
+		"Vector2":
+			item.set_text(1,StringVarTypedService.toStr(value))
+		"Vector3":
+			item.set_text(1,StringVarTypedService.toStr(value))
+		"Text":
+			item.set_text(1,StringVarTypedService.toStr(value))
+		"Float":
+			item.set_text(1,StringVarTypedService.toStr(value))
+		"Integer":
+			item.set_text(1,StringVarTypedService.toStr(value))
+		"Object":
+			item.set_text(1,StringVarTypedService.toStr(value))
+		

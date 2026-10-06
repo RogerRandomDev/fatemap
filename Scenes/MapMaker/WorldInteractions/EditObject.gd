@@ -98,6 +98,7 @@ func moveSelection(moveBy:Vector3,_local:bool=true)->void:
 
 func updateMeshSelection()->void:
 	var activeObject=ParameterService.getParam(&"activeObject")
+	if not activeObject:return
 	if not activeObject is ObjectModel:return
 	if not activeObject.has_meta("reposition"):return
 	activeObject.remove_meta("reposition")

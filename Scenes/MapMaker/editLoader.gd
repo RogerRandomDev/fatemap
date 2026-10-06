@@ -2,6 +2,10 @@ extends Node
 class_name EditLoader
 
 static func loadMapData(loadOnto:Node,data:PackedByteArray=[])->void:
+	for child in loadOnto.get_children():
+		child.free()
+	MeshEditService.setEditing(null)
+	#ParameterService.setParam(&"activeObject",null)
 	#this needs segmented still but the logic is mostly set up
 	var checkFrom:int=0
 	var fmtPaths:PackedInt64Array=[]
@@ -63,7 +67,7 @@ static func loadMapData(loadOnto:Node,data:PackedByteArray=[])->void:
 				obj = PhysicalObjectModel.new()
 				obj.objectType=ObjectModel.objectTypes.MESH
 				objData = ObjectPhysicalDataResource.new()
-				objData.inheritedData=load("res://modelData/baseObject.tres")
+				objData.inheritedData=load("res://modelData/meshObject.tres")
 				objData.mesh=objectMesh
 				
 				

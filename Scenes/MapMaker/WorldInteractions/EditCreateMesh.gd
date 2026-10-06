@@ -135,7 +135,7 @@ func finalizeMesh()->void:
 	)
 	
 	var data = ObjectPhysicalDataResource.new()
-	data.inheritedData=load("res://modelData/baseObject.tres")
+	data.inheritedData=load("res://modelData/meshObject.tres")
 	m.clear_surfaces()
 	dt.commit_to_surface(m)
 	data.mesh=m

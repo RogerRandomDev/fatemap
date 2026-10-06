@@ -7,7 +7,7 @@ class_name ObjectDataResource
 	set(value):
 		if value==self:value = null
 		inheritedData=value
-		updateInheritedParameters.call_deferred(true)
+		updateInheritedParameters(true)
 	get:return inheritedData
 
 
@@ -301,13 +301,13 @@ func setInstance(parameter:String,value:Variant)->void:
 	var index:int=parameterNames.find(parameter)
 	var inheritedParam=null if inheritedData == null else inheritedData.findParam(parameter)
 	#inherited and matching new value
-	if inheritedParam==null:return
+	if inheritedParam==null || inheritedParam.is_empty():return
 	if inheritedParam.value==value and index!=-1:
 		parameterNames.remove_at(index)
 		parameterTypes.remove_at(index)
 		parameterDescriptions.remove_at(index)
 		parameterValues.remove_at(index)
-	if inheritedParam.value!=value and inheritedParam!=null:
+	if inheritedParam.value!=value and inheritedParam!=null and not inheritedParam.is_empty():
 		if index==-1:
 			parameterNames.push_back(parameter)
 			parameterTypes.push_back(inheritedParam.type)

@@ -24,6 +24,7 @@ var collisionSets:Dictionary={}
 
 
 func _ready() -> void:
+	if Engine.is_editor_hint():return
 	reloadMap()
 
 func reloadMap()->void:
@@ -71,7 +72,7 @@ func loadObjects(loadOnto:Node,data:PackedByteArray)->void:
 	
 	for i in objectCount:
 		var loadingObject = data.find(0,currentSeek+1)
-		var objectName = data.slice(currentSeek,loadingObject).get_string_from_ascii()
+		var _objectName = data.slice(currentSeek,loadingObject).get_string_from_ascii()
 		var objectType = data.slice(loadingObject+1,loadingObject+2)[0]
 		currentSeek=loadingObject+3
 		# 2 vector3s 12*2 bytes
@@ -103,7 +104,7 @@ func loadObjects(loadOnto:Node,data:PackedByteArray)->void:
 				currentSeek+=collisionSize+1
 				obj.objectType=ObjectModel.objectTypes.MESH
 				objData = ObjectPhysicalDataResource.new()
-				objData.inheritedData=load("res://modelData/baseObject.tres")
+				objData.inheritedData=load("res://modelData/meshObject.tres")
 				objData.mesh=objectMesh
 				obj.objectData=objData
 				var placedObjects=loadOnto
@@ -111,7 +112,7 @@ func loadObjects(loadOnto:Node,data:PackedByteArray)->void:
 				placedObjects.add_child(builtObj)
 				(func():
 					await objects_loaded
-					var mode = int(obj.objectData.baseTags.has("convex_collision"))
+					var mode = int(obj.objectData.findParam("concave").get("value",false))
 					attachObjectCollision(builtObj,mode,objectColliderST)
 				).call()
 				
@@ -171,7 +172,7 @@ func attachObjectCollision(obj:Node,mode:int,collisionST:SurfaceTool)->void:
 	if not obj is CollisionObject3D:
 		body = StaticBody3D.new()
 	var collider=CollisionShape3D.new()
-	if mode==1:
+	if mode==0:
 		collider.shape=collisionST.commit().create_convex_shape()
 	else:
 		collider.shape=collisionST.commit().create_trimesh_shape()
@@ -200,39 +201,7 @@ func fullLoad(loadOnto:Node,data:PackedByteArray=[])->void:
 	loadObjects(loadOnto,data)
 	objects_loaded.emit()
 	currentSeek+=1
-	##get collision data
-	#var collisionSize:int=data.decode_u32(currentSeek)
-	#
-	#currentSeek+=4
-	#var collisionEnd:int=currentSeek+collisionSize
-	#while currentSeek<collisionEnd:
-		#var thisGroup:int=data.decode_u16(currentSeek)
-		#var thisSize:int=data.decode_u16(currentSeek+2)
-		#if not collisionSets.has(thisGroup):
-			#var st_n=SurfaceTool.new()
-			#st_n.begin(Mesh.PRIMITIVE_TRIANGLES)
-			#collisionSets[thisGroup]=st_n
-		#var st=collisionSets.get(thisGroup)
-		#currentSeek+=4
-		#for i in range(0,thisSize,4):
-			#var pID:int=data.decode_u32(currentSeek)
-			#st.add_vertex(positions[pID]/size)
-			#currentSeek+=4
-	#for group in collisionSets:
-		#var c=CollisionShape3D.new()
-		#var attachTo:Node=loadOnto if group==65535 else objectList[group]
-		#if attachTo is ObjectModel and attachTo.objectData.baseTags.has("convex_collision"):
-			#c.shape=collisionSets[group].commit().create_convex_shape()
-		#else:
-			#c.shape=collisionSets[group].commit().create_trimesh_shape()
-		#var e=StaticBody3D.new()
-		#e.add_child(c)
-		#
-		#attachTo.add_child(e)
-		#e.global_position=Vector3.ZERO
-		#e.owner=attachTo
-		#e.owner=get_tree().edited_scene_root
-		#c.owner=get_tree().edited_scene_root
+	finished.emit()
 	collisionSets={}
 	objectList=[]
 	if Engine.is_editor_hint():

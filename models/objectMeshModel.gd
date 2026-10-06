@@ -252,7 +252,7 @@ func getCompilerData(compiler:compilerService.compilerMapData,full:bool=false)->
 	return {
 		"Materials":faceMaterialMap.keys().filter(func(mat):return faceMaterialMap[mat].size()>0),
 		"Surfaces":convertSurfacesToBinary(compiler) if not full else convertSurfacesToBinaryCompiled(compiler),
-		"Collision":null if not full else getCollisionFaces(compiler),
+		"Collision":PackedByteArray() if not full else getCollisionFaces(compiler),
 		"UVPosition":uvPos
 	}
 
@@ -361,7 +361,7 @@ func loadCompiledSurfaces(matList:Array=[],positions:Array=[],normals:Array=[],b
 					faceData.decode_float(10+sub_offset*i)
 					)
 				)
-		var faceNormal = getNormalID(normals[faceData.decode_u32(38)])
+		var _faceNormal = getNormalID(normals[faceData.decode_u32(38)])
 		var face = meshFace.new(
 			self,faceVertexPositions,faceVertexUVs,
 			surfaceUsed)

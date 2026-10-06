@@ -15,7 +15,7 @@ func _ready() -> void:
 
 func updatedMeshSelection()->void:
 	mesh.clear_surfaces()
-	var activeObj=ParameterService.getParam(&"activeObject") as ObjectModel
+	var activeObj=ParameterService.getParam(&"activeObject")
 	if activeObj==null or not MeshEditService.isEditing():return
 	#normal editing for meshes
 	match activeObj.objectType:
