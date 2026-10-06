@@ -8,16 +8,28 @@ static func loadMapData(loadOnto:Node,data:PackedByteArray=[])->void:
 	#ParameterService.setParam(&"activeObject",null)
 	#this needs segmented still but the logic is mostly set up
 	var checkFrom:int=0
+	
+	var versionTXT:StringName
+	var versionEndMarker:int=data.find(0,1)
+	versionTXT=data.slice(0,versionEndMarker).get_string_from_ascii() as StringName
+	checkFrom+=versionEndMarker+1
+	print(versionTXT)
+	var stringList:Array=[]
+	var stringCount=data.decode_u32(checkFrom)
+	checkFrom+=4
+	for i in stringCount:
+		var stringEnd:int=data.find(0,checkFrom+1)
+		if stringEnd!=-1:
+			var stringText:StringName=data.slice(checkFrom,checkFrom+stringEnd+1).get_string_from_ascii() as StringName
+			stringList.push_back(stringText)
+		checkFrom=stringEnd+1
+		stringCount-=1
+	checkFrom+=1
+	
 	var fmtPaths:PackedInt64Array=[]
-	#while true:
-		#var matToLoad=data.find(0,checkFrom)
-		#if matToLoad==-1 or matToLoad-1<=checkFrom:break
-		#var materialFMTPath = data.slice(checkFrom,matToLoad).get_string_from_ascii()
-		#fmtPaths.push_back(materialFMTPath)
-		#checkFrom = matToLoad+1
-	#hash instead
-	checkFrom=4
-	for i in data.decode_u32(0):
+	var matCount:int=data.decode_u32(checkFrom)
+	checkFrom+=4
+	for i in matCount:
 		fmtPaths.push_back(data.decode_u32(checkFrom))
 		checkFrom+=4
 	checkFrom+=1
@@ -33,15 +45,15 @@ static func loadMapData(loadOnto:Node,data:PackedByteArray=[])->void:
 	for norm in normalIdCount:
 		normals.push_back(compilerService.decodeVector3Float(checkFrom,data))
 		checkFrom+=12
+	checkFrom+=1
 	var matList=[]
 	for mat in fmtPaths:
 		matList.push_back(MaterialService.getMaterialByHash(mat))
-	while true:
-		var loadingObject = data.find(0,checkFrom+1)
-		if loadingObject == -1 or loadingObject-1<=checkFrom:break
-		var _objectName = data.slice(checkFrom,loadingObject).get_string_from_ascii()
-		var objectType = data.slice(loadingObject+1,loadingObject+2)[0]
-		checkFrom=loadingObject+3
+	while data.size()>checkFrom:
+		var loadingObject = data.decode_u32(checkFrom)
+		var _objectName = stringList[loadingObject]
+		var objectType = data.decode_u8(checkFrom+4)
+		checkFrom+=5
 		# 2 vector3s 12*2 bytes
 		var objectTransform = data.slice(checkFrom,checkFrom+36)
 		checkFrom+=36
@@ -50,7 +62,6 @@ static func loadMapData(loadOnto:Node,data:PackedByteArray=[])->void:
 		decodedTransform.origin=compilerService.decodeVector3Float(0,objectTransform)
 		decodedTransform.basis=Basis.from_euler(compilerService.decodeVector3Float(12,objectTransform))
 		decodedTransform.basis=decodedTransform.basis.scaled_local(compilerService.decodeVector3Float(24,objectTransform))
-		
 		var obj:ObjectModel
 		var objData
 		match objectType:
@@ -102,19 +113,19 @@ static func loadMapData(loadOnto:Node,data:PackedByteArray=[])->void:
 		
 		#have to get the encoded parameters out as well
 		var paramBlockSize:int=data.decode_u32(checkFrom)
-		var paramData = compilerService.paramsDecode(data.slice(checkFrom+4,checkFrom+4+paramBlockSize))
+		var paramData = compilerService.paramsDecode(data.slice(checkFrom+4,checkFrom+4+paramBlockSize),stringList)
 		if paramData!=null:
 			for param in paramData.keys():
 				objData.setInstance(param,paramData[param][1])
+		
 		checkFrom+=paramBlockSize+4
 		#load the tag list in
 		var tagBlockSize:int=data.decode_u16(checkFrom)
 		checkFrom+=2
-		var startingFrom:int=checkFrom
-		while true:
-			var tagEnd:int=data.find(0,checkFrom+1)
-			if tagEnd==-1||tagEnd>tagBlockSize+startingFrom:break
-			var tagName=data.slice(checkFrom,tagEnd).get_string_from_ascii()
+		for i in tagBlockSize:
+			var tagName=stringList[
+				data.decode_u32(checkFrom)
+			]
 			objData.baseTags.push_back(tagName)
-			checkFrom=tagEnd+1
-		checkFrom=startingFrom+tagBlockSize
+			checkFrom+=4
+		checkFrom+=1

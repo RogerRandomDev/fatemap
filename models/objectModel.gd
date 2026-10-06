@@ -23,13 +23,13 @@ var objectDisplay:Node3D
 
 func getData()->ObjectDataResource:return null
 
-func getCompiledData(_compiler:compilerService.compilerMapData,_full:bool=false)->Dictionary:return {
+func getCompiledData(compiler:compilerService.compilerMapData,_full:bool=false)->Dictionary:return {
 	"Identifier":name,
 	"Position":global_position,
 	"Rotation":global_rotation,
 	"Scale":global_basis.get_scale(),
-	"Tags":objectData.getTagsForCompiler(),
-	"Parameters":objectData.getParametersForCompiler()
+	"Tags":objectData.getTagsForCompiler(compiler),
+	"Parameters":objectData.getParametersForCompiler(compiler)
 }
 
 func getBounds()->AABB:

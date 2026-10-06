@@ -75,19 +75,14 @@ static func paramValueEncode(paramValue)->PackedByteArray:
 			#needs done still
 	return encoded
 
-static func paramsEncode(parameters:Dictionary)->PackedByteArray:
+static func paramsEncode(parameters:Array)->PackedByteArray:
 	var encoded:PackedByteArray=[0,0] # store how many parameters there will be
 	encoded.encode_u16(0,parameters.size())
-	
 	for param in parameters:
 		var _paramBytes:=PackedByteArray()
-		var paramName=param.to_ascii_buffer()
-		var paramValue=parameters[param]
+		var paramValue=param
 		paramValue=paramValueEncode(paramValue)
-		encoded.append_array(paramName)
-		encoded.append(0)
 		encoded.append_array(paramValue)
-		
 	
 	return encoded
 
@@ -127,27 +122,27 @@ static func decodeFloat(from:int=0,value:PackedByteArray=[])->float:
 	return value.decode_float(from)
 
 static func paramValueDecode(paramValue)->Array:
-	var decoded:Array=["",null]
+	var decoded:Array=[null,null]
 	var skipBytes=0
 	match paramValue.decode_u8(0):
 		TYPE_INT:
-			decoded[0]="Integer"
+			decoded[0]=&"Integer"
 			decoded[1]=decodeInt(1,paramValue,true,3)
 			skipBytes=8
 		TYPE_FLOAT:
-			decoded[0]="Float"
+			decoded[0]=&"Float"
 			decoded[1]=decodeFloat(1,paramValue)
 			skipBytes=4
 		TYPE_VECTOR2:
-			decoded[0]="Vector2"
+			decoded[0]=&"Vector2"
 			decoded[1]=decodeVector2Float(1,paramValue)
 			skipBytes=8
 		TYPE_VECTOR3:
-			decoded[0]="Vector3"
+			decoded[0]=&"Vector3"
 			decoded[1]=decodeVector3Float(1,paramValue)
 			skipBytes=12
 		TYPE_BOOL:
-			decoded[0]="Boolean"
+			decoded[0]=&"Boolean"
 			decoded[1]=bool(paramValue[1])
 			skipBytes=1
 		TYPE_OBJECT:
@@ -155,23 +150,22 @@ static func paramValueDecode(paramValue)->Array:
 			pass
 	return [decoded,skipBytes]
 
-static func paramsDecode(parameters:PackedByteArray)->Dictionary:
+static func paramsDecode(parameters:PackedByteArray,stringList:Array)->Dictionary:
 	var decoded:Dictionary={}
 	var paramCount:int=parameters.decode_u16(0)
 	var checkFrom:int=2
-	for i in range(0,paramCount):
-		var nameEnd:int=parameters.find(0,checkFrom+1)
-		if nameEnd==-1||nameEnd<=checkFrom+1:break
-		var paramName=parameters.slice(checkFrom,nameEnd).get_string_from_ascii()
-		checkFrom=nameEnd+1
-		var paramValueData:Array=paramValueDecode(parameters.slice(checkFrom))
-		checkFrom+=paramValueData[1]+1
+	for i in paramCount:
+		var paramNameID:int=parameters.decode_u32(checkFrom)
+		decoded[stringList[paramNameID]]=null
+		checkFrom+=4
+	checkFrom+=2
+	parameters=parameters.slice(checkFrom)
+	for i in decoded.keys():
+		var paramValueData:Array=paramValueDecode(parameters)
+		parameters=parameters.slice(paramValueData[1]+1)
 		var paramValue=paramValueData[0]
-		decoded[paramName]=paramValue
-	
-	#encoded.append_array(paramName)
-	#encoded.append(0)
-	#encoded.append_array(paramValue)
+		decoded[i]=paramValue
+		
 	
 	return decoded
 
@@ -196,6 +190,8 @@ class compilerMapData extends RefCounted:
 	var normalIDs:Dictionary={}
 	## materials used by the map
 	var materialList:Array=[]
+	## List of any strings used by the map.
+	var stringList:PackedStringArray=[]
 	## external resources to load
 	var externalResourceList:Dictionary={}
 	
@@ -209,6 +205,11 @@ class compilerMapData extends RefCounted:
 		var binary:PackedByteArray=[]
 		return binary
 	
+	func getStringID(text:String)->int:
+		if not stringList.has(text):
+			stringList.push_back(text)
+		return stringList.find(text)
+	
 	func getPositionID(pos:Vector3)->int:
 		if not positionIDs.values().has(pos):
 			positionIDs[positionIDs.size()]=pos
@@ -219,17 +220,40 @@ class compilerMapData extends RefCounted:
 			normalIDs[normalIDs.size()]=norm
 			return normalIDs.size()-1
 		return normalIDs.values().find(norm)
+	
+	func getVersionBinary()->PackedByteArray:
+		var versionBin:PackedByteArray=[]
+		versionBin.append_array("0.0.1".to_ascii_buffer())
+		return versionBin
+	
+	func getStringListBinary()->PackedByteArray:
+		var stringBin:PackedByteArray=[0,0,0,0]
+		stringBin.encode_u32(0,stringList.size())
+		for string in stringList:
+			stringBin.append_array(string.to_ascii_buffer())
+			stringBin.append(0)
+		return stringBin
 
 
 class precompileMapData extends compilerMapData:
 	
 	func getBinary()->PackedByteArray:
 		var binary:PackedByteArray=[]
-		binary.append_array(getMaterialBinary())
-		binary.push_back(0) #ASCII buffer \n
-		binary.append_array(getIDListBinary())
-		binary.push_back(0) #ASCII buffer \n
-		binary.append_array(getObjectsBinary())
+		var versionBinary = getVersionBinary()
+		var materialBinary = getMaterialBinary()
+		var idListBinary = getIDListBinary()
+		var objectBinary = getObjectsBinary()
+		var stringBinary = getStringListBinary()
+		
+		binary.append_array(versionBinary)
+		binary.append(0)
+		binary.append_array(stringBinary)
+		binary.append(0)
+		binary.append_array(materialBinary)
+		binary.append(0)
+		binary.append_array(idListBinary)
+		binary.append(0)
+		binary.append_array(objectBinary)
 		return binary
 	
 	func getMaterialBinary()->PackedByteArray:
@@ -257,14 +281,13 @@ class precompileMapData extends compilerMapData:
 	
 	func getObjectsBinary() -> PackedByteArray:
 		var binary : PackedByteArray = []
-		
+		var nameID:PackedByteArray=[0,0,0,0]
 		var paramSize = PackedByteArray([0,0,0,0])
 		for object in objects:
 			var objectData = objects[object]
-			binary.append_array(object.to_ascii_buffer())
-			binary.push_back(0)
-			binary.append_array([objectData.get("Type")])
-			binary.push_back(0)
+			nameID.encode_u32(0,getStringID(object))
+			binary.append_array(nameID)
+			binary.append(objectData.get("Type"))
 			#object transform info. POSITION|ROTATION|SCALE
 			binary.append_array(compilerService.encodeVector3Float(objectData.get("Position")))
 			binary.append_array(compilerService.encodeVector3Float(objectData.get("Rotation")))
@@ -284,12 +307,12 @@ class precompileMapData extends compilerMapData:
 					binary.append_array(objectSize)
 					binary.append_array(objectData.get("Model"))
 			binary.push_back(0)
-			var params = compilerService.paramsEncode(objectData.get("Parameters",null))
+			var params = objectData.get("Parameters",[])
 			paramSize.encode_u32(0,params.size())
 			binary.append_array(paramSize)
 			binary.append_array(params)
 			var tagSize:=PackedByteArray([0,0])
-			tagSize.encode_u16(0,objectData.get("Tags").size())
+			tagSize.encode_u16(0,objectData.get("Tags").size()>>2)
 			binary.append_array(tagSize)
 			binary.append_array(objectData.get("Tags"))
 			binary.push_back(objectData.Group)
@@ -320,6 +343,7 @@ class precompileMapData extends compilerMapData:
 					"Parameters":compiledObjectData.Parameters,
 					"Group":currentGroup
 					}
+				
 				
 			ObjectModel.objectTypes.OBJECT:
 				var compiledObjectData = object.getCompiledData(self)
@@ -358,14 +382,21 @@ class fullCompileMapData extends compilerMapData:
 	
 	func getBinary()->PackedByteArray:
 		var binary:PackedByteArray=[]
-		binary.append_array(getMaterialBinary())
-		binary.push_back(0)
-		binary.append_array(getIDListBinary())
-		binary.push_back(0)
-		binary.append_array(getObjectsBinary())
-		#binary.push_back(0)
-		#binary.append_array(getCollisionObjects())
-		#return binary
+		var versionBinary = getVersionBinary()
+		var materialBinary = getMaterialBinary()
+		var idListBinary = getIDListBinary()
+		var objectBinary = getObjectsBinary()
+		var stringBinary = getStringListBinary()
+		
+		binary.append_array(versionBinary)
+		binary.append(0)
+		binary.append_array(stringBinary)
+		binary.append(0)
+		binary.append_array(materialBinary)
+		binary.append(0)
+		binary.append_array(idListBinary)
+		binary.append(0)
+		binary.append_array(objectBinary)
 		return binary
 	
 	func getMaterialBinary()->PackedByteArray:
@@ -411,13 +442,13 @@ class fullCompileMapData extends compilerMapData:
 	func getObjectsBinary() -> PackedByteArray:
 		var binary : PackedByteArray = [0,0,0,0]
 		binary.encode_u32(0,objects.size())
+		var nameID:PackedByteArray=PackedByteArray([0,0,0,0])
 		var paramSize = PackedByteArray([0,0,0,0])
 		for object in objects:
 			var objectData = objects[object]
-			binary.append_array(object.to_ascii_buffer())
-			binary.push_back(0)
-			binary.append_array([objectData.get("Type")])
-			binary.push_back(0)
+			nameID.encode_u32(0,getStringID(object))
+			binary.append_array(nameID)
+			binary.append(objectData.get("Type"))
 			#object transform info. POSITION|ROTATION|SCALE
 			binary.append_array(compilerService.encodeVector3Float(objectData.get("Position")))
 			binary.append_array(compilerService.encodeVector3Float(objectData.get("Rotation")))
@@ -443,15 +474,15 @@ class fullCompileMapData extends compilerMapData:
 					binary.append_array(objectSize)
 					binary.append_array(objectData.get("Model"))
 			binary.push_back(0)
-			var params = compilerService.paramsEncode(objectData.get("Parameters",null))
+			var params = objectData.get("Parameters",[])
 			paramSize.encode_u32(0,params.size())
 			binary.append_array(paramSize)
 			binary.append_array(params)
 			var tagSize:=PackedByteArray([0,0])
-			tagSize.encode_u16(0,objectData.get("Tags").size())
+			tagSize.encode_u16(0,objectData.get("Tags").size()>>2)
 			binary.append_array(tagSize)
 			binary.append_array(objectData.get("Tags"))
-			#binary.push_back(objectData.Group)
+			binary.push_back(objectData.Group)
 		
 		
 		return binary

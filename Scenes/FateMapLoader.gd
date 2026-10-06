@@ -13,13 +13,14 @@ signal id_loaded
 signal objects_loaded
 signal finished
 
-
+var versionTXT:StringName=&""
 ### DATA FOR PARSING OUT THE MAP
 var currentSeek:int=0
 var positions:PackedVector3Array=[]
 var normals:PackedVector3Array=[]
 var matList:Array[MaterialService.materialModel]=[]
 var objectList:Array=[]
+var stringList:Array=[]
 var collisionSets:Dictionary={}
 
 
@@ -51,30 +52,48 @@ func decodeVectorList(data:PackedByteArray,updateSeek:bool=false,scaler:float=1.
 	if updateSeek:currentSeek+=offset
 	return arr
 
+func loadVersionTXT(data:PackedByteArray=[])->void:
+	var versionEndMarker:int=data.find(0,1)
+	versionTXT=data.slice(0,versionEndMarker).get_string_from_ascii() as StringName
+	currentSeek+=versionEndMarker+1
+
+func loadStringList(data:PackedByteArray=[])->void:
+	stringList=[]
+	var stringCount:int=data.decode_u32(currentSeek)
+	currentSeek+=4
+	for i in stringCount:
+		var nextEnd:int=data.find(0,currentSeek+1)
+		var string=data.slice(currentSeek,nextEnd).get_string_from_ascii() as StringName
+		stringList.push_back(string)
+		currentSeek=nextEnd+1
+	currentSeek+=1
 
 func loadFMTS(data:PackedByteArray=[])->void:
 	matList=[] #emptied before filling with new materials grabbed
-	currentSeek=4
-	for i in data.decode_u32(0):
+	var matCount:int=data.decode_u32(currentSeek)
+	currentSeek+=4
+	for i in matCount:
 		matList.push_back(MaterialService.getMaterialByHash(data.decode_u32(currentSeek)))
 		currentSeek+=4
+	currentSeek+=1
 
 func loadVectorIDS(data:PackedByteArray)->void:
 	var idList = data.slice(currentSeek,currentSeek+8)
 	currentSeek+=8
 	positions=decodeVectorList(data.slice(currentSeek,currentSeek+idList.decode_u32(0)*12),true,1.0/size)
 	normals=decodeVectorList(data.slice(currentSeek,currentSeek+idList.decode_u32(4)*12),true)
+	currentSeek+=1
 
 func loadObjects(loadOnto:Node,data:PackedByteArray)->void:
 	var objectCount:int=data.decode_u32(currentSeek)
 	currentSeek+=4
 	var scaleVector:Vector3=Vector3(1.0/size,1.0/size,1.0/size)
 	
-	for i in objectCount:
-		var loadingObject = data.find(0,currentSeek+1)
-		var _objectName = data.slice(currentSeek,loadingObject).get_string_from_ascii()
-		var objectType = data.slice(loadingObject+1,loadingObject+2)[0]
-		currentSeek=loadingObject+3
+	for i in min(objectCount,100):
+		var loadingObject = data.decode_u32(currentSeek)
+		var _objectName = stringList[loadingObject]
+		var objectType = data.decode_u8(currentSeek+4)
+		currentSeek+=5
 		# 2 vector3s 12*2 bytes
 		var objectTransform = data.slice(currentSeek,currentSeek+36)
 		currentSeek+=36
@@ -136,26 +155,22 @@ func loadObjects(loadOnto:Node,data:PackedByteArray)->void:
 		
 		#have to get the encoded parameters out as well
 		var paramBlockSize:int=data.decode_u32(currentSeek)
-		var paramData = compilerService.paramsDecode(data.slice(currentSeek+4,currentSeek+4+paramBlockSize))
+		var paramData = compilerService.paramsDecode(data.slice(currentSeek+4,currentSeek+4+paramBlockSize),stringList)
 		if paramData!=null:
 			for param in paramData.keys():
 				objData.setInstance(param,paramData[param][1])
+		
 		currentSeek+=paramBlockSize+4
 		#load the tag list in
 		var tagBlockSize:int=data.decode_u16(currentSeek)
 		currentSeek+=2
-		var startingFrom:int=currentSeek
-		while true:
-			var tagEnd:int=data.find(0,currentSeek+1)
-			if tagEnd==-1||tagEnd>tagBlockSize+startingFrom:break
-			var tagName=data.slice(currentSeek,tagEnd).get_string_from_ascii()
+		for e in tagBlockSize:
+			var tagName=stringList[
+				data.decode_u32(currentSeek)
+			]
 			objData.baseTags.push_back(tagName)
-			currentSeek=tagEnd+1
-		currentSeek=startingFrom+tagBlockSize
-		objectList.push_back(obj)
-		# +4 later because the last part is the group
-		# we aren't going to handle that just yet
-		#currentSeek+=4
+			currentSeek+=4
+		currentSeek+=1
 
 func loadObjectCollision(collision:PackedByteArray)->SurfaceTool:
 	var st:SurfaceTool=SurfaceTool.new()
@@ -190,20 +205,19 @@ func attachObjectCollision(obj:Node,mode:int,collisionST:SurfaceTool)->void:
 
 func fullLoad(loadOnto:Node,data:PackedByteArray=[])->void:
 	currentSeek=0
+	loadVersionTXT(data)
+	loadStringList(data)
 	loadFMTS(data)
 	fmt_loaded.emit()
-	currentSeek+=1
-	#get position/normal IDS
 	loadVectorIDS(data)
 	id_loaded.emit()
-	currentSeek+=1
-	#load object data
 	loadObjects(loadOnto,data)
 	objects_loaded.emit()
 	currentSeek+=1
 	finished.emit()
 	collisionSets={}
 	objectList=[]
+	stringList=[]
 	if Engine.is_editor_hint():
 		for child in get_children():att(child)
 

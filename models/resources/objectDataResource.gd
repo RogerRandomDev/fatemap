@@ -168,15 +168,15 @@ func getInheritedPropertyList() -> Array[Dictionary]:
 	})
 	for i in inheritedParameters.size():
 		properties.append({
-				"name": "inheritedParameter%s/name" % i,
-				"type": TYPE_STRING,
-				&"hint_string": "inherited",
-				"hint": PROPERTY_HINT_NONE
+			"name": "inheritedParameter%s/name" % i,
+			"type": TYPE_STRING,
+			&"hint_string": "inherited",
+			"hint": PROPERTY_HINT_NONE
 			})
 		properties.append({
-				"name": "inheritedParameter%s/value" % i,
-				&"hint_string": "inherited",
-				"type": ObjectParameters.getTypeByName(inheritedParameters[i].type)[0]
+			"name": "inheritedParameter%s/value" % i,
+			&"hint_string": "inherited",
+			"type": ObjectParameters.getTypeByName(inheritedParameters[i].type)[0]
 			})
 		properties.append({
 			"name": "inheritedParameter%s/source" % i,
@@ -199,24 +199,24 @@ func getCustomPropertyList() -> Array[Dictionary]:
 	})
 	for i in parameterNames.size():
 		properties.append({
-				"name": "parameter_%s/name" % i,
-				"type": TYPE_STRING,
-				"hint": PROPERTY_HINT_NONE
+			"name": "parameter_%s/name" % i,
+			"type": TYPE_STRING,
+			"hint": PROPERTY_HINT_NONE
 			})
 		properties.append({
-				"name": "parameter_%s/description" % i,
-				"type": TYPE_STRING,
-				"hint": PROPERTY_HINT_MULTILINE_TEXT
+			"name": "parameter_%s/description" % i,
+			"type": TYPE_STRING,
+			"hint": PROPERTY_HINT_MULTILINE_TEXT
 			})
 		properties.append({
-				"name": "parameter_%s/type" % i,
-				"type": TYPE_STRING,
-				"hint": PROPERTY_HINT_ENUM,
-				"hint_string": ",".join(ObjectParameters.parameterTypeMap.keys()),
+			"name": "parameter_%s/type" % i,
+			"type": TYPE_STRING,
+			"hint": PROPERTY_HINT_ENUM,
+			"hint_string": ",".join(ObjectParameters.parameterTypeMap.keys()),
 			})
 		properties.append({
-				"name": "parameter_%s/value" % i,
-				"type": ObjectParameters.getTypeByName(parameterTypes[i])[0]
+			"name": "parameter_%s/value" % i,
+			"type": ObjectParameters.getTypeByName(parameterTypes[i])[0]
 			})
 	return properties
 
@@ -334,23 +334,32 @@ func addInstanceParam(parameter:String,value:Variant,type:String)->void:
 
 
 #region Compiler related methods
-func getParametersForCompiler()->Dictionary:
+func getParametersForCompiler(compiler:compilerService.compilerMapData)->PackedByteArray:
 	var neededParameters=getParameterDefaults(true,true,true)
-	var compiledParameters:Dictionary={}
+	var compiledParameters:PackedByteArray=[]
+	compiledParameters.resize(neededParameters.size()*4+2)
+	var nameIDs:PackedInt64Array=[]
+	var values:Array=[]
 	for param in neededParameters:
-		var paramName:String = param.name
-		var type:String = param.type
-		var value = param.value
-		compiledParameters[paramName]=[type,value]
+		nameIDs.push_back(compiler.getStringID(param.name))
+		values.push_back([param.type,param.value])
+	for i in nameIDs.size():
+		compiledParameters.encode_u32(i*4+2,nameIDs[i])
+	#encode how many parameters there are
+	compiledParameters.encode_u16(0,nameIDs.size())
+	compiledParameters.append_array(compilerService.paramsEncode(values))
 	
 	return compiledParameters
 
-func getTagsForCompiler()->PackedByteArray:
+func getTagsForCompiler(compiler:compilerService.compilerMapData)->PackedByteArray:
 	var tagList=getTagDefaults(true)
 	var compiledTags:PackedByteArray=[]
+	compiledTags.resize(tagList.size()*4)
+	var i:int=0
 	for tag in tagList:
-		compiledTags.append_array(tag.to_ascii_buffer())
-		compiledTags.append(0)
+		var stringID:int = compiler.getStringID(tag)
+		compiledTags.encode_u32(i*4,stringID)
+		i+=1
 	return compiledTags
 
 #endregion
