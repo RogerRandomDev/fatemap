@@ -231,7 +231,7 @@ class compilerMapData extends RefCounted:
 		stringBin.encode_u32(0,stringList.size())
 		for string in stringList:
 			stringBin.append_array(string.to_ascii_buffer())
-			stringBin.append(0)
+			stringBin.append(10)
 		return stringBin
 
 
@@ -375,7 +375,28 @@ static func fullCompile(makerViewport:SubViewport)->PackedByteArray:
 	compiledMap = uncompiledData.getBinary()
 	return compiledMap
 
-## TODO: replace with previous version we reverted.
+
+# format
+# version_binary + \n
+# 4 byte u32 count + string binary list \n separated.
+# 0 separator
+# 4 byte u32 counter + list of 4 byte u32 hashes
+# 0 separator
+# 2X4 byte u32 counters (position count,id count) + (3x4 byte floats -> Vector3)
+# 0 separator
+# 4 byte u32 counter for objects
+#  4 byte u32 index for object name in string binary
+#  1 byte u8 object type identifire
+#  36 byte (3x(3x4 byte float vectors)) transform3d info
+#  4 byte u32 counter for parameter binary size
+#    4 byte u32 counter # of parameters
+#    ALL 4 byte u32 id for parameter name string in string list
+#    arbitrary size parameter value bytes
+#  4 byte u32 counter for tag count
+#   ALL 4 byte u32 index for tag name in string list
+# TYPE_SPECIFIC_INFO
+
+
 class fullCompileMapData extends compilerMapData:
 	## all meshes in a group should stick together, unless tagged otherwise.
 	var mapCollision:PackedByteArray
@@ -389,7 +410,7 @@ class fullCompileMapData extends compilerMapData:
 		var stringBinary = getStringListBinary()
 		
 		binary.append_array(versionBinary)
-		binary.append(0)
+		binary.append(10) # \n so get_line works
 		binary.append_array(stringBinary)
 		binary.append(0)
 		binary.append_array(materialBinary)
@@ -454,6 +475,15 @@ class fullCompileMapData extends compilerMapData:
 			binary.append_array(compilerService.encodeVector3Float(objectData.get("Rotation")))
 			binary.append_array(compilerService.encodeVector3Float(objectData.get("Scale")))
 			#no gap as it isnt necessary
+			var params = objectData.get("Parameters",[])
+			paramSize.encode_u32(0,params.size())
+			binary.append_array(paramSize)
+			binary.append_array(params)
+			var tagSize:=PackedByteArray([0,0])
+			tagSize.encode_u16(0,objectData.get("Tags").size()>>2)
+			binary.append_array(tagSize)
+			binary.append_array(objectData.get("Tags"))
+			#binary.push_back(objectData.Group)
 			
 			match objectData.get("Type"):
 				ObjectModel.objectTypes.MESH:
@@ -462,7 +492,7 @@ class fullCompileMapData extends compilerMapData:
 					surfaceSize.encode_u32(0,objectData.Surface.size())
 					binary.append_array(surfaceSize)
 					binary.append_array(objectData.Surface)
-					binary.append_array(objectData.UV)
+					#binary.append_array(objectData.UV)
 					collisionSize.encode_u16(0,objectData.Collision.size())
 					binary.append_array(collisionSize)
 					binary.append_array(objectData.Collision)
@@ -473,16 +503,7 @@ class fullCompileMapData extends compilerMapData:
 					objectSize.encode_u32(0,objectData.get("Model").size())
 					binary.append_array(objectSize)
 					binary.append_array(objectData.get("Model"))
-			binary.push_back(0)
-			var params = objectData.get("Parameters",[])
-			paramSize.encode_u32(0,params.size())
-			binary.append_array(paramSize)
-			binary.append_array(params)
-			var tagSize:=PackedByteArray([0,0])
-			tagSize.encode_u16(0,objectData.get("Tags").size()>>2)
-			binary.append_array(tagSize)
-			binary.append_array(objectData.get("Tags"))
-			binary.push_back(objectData.Group)
+			
 		
 		
 		return binary

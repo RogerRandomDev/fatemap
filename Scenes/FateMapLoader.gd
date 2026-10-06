@@ -34,69 +34,58 @@ func reloadMap()->void:
 		child.queue_free()
 	if mapFile.is_empty():return
 	var f=FileAccess.open_compressed(mapFile,FileAccess.READ,FileAccess.COMPRESSION_GZIP)
-	var data=f.get_buffer(f.get_length())
 	currentSeek=0
-	fullLoad(self,data)
+	fullLoad(self,f)
 	#if in editor remove any processing to prevent problems
 	if not Engine.is_editor_hint():return
 	for child in get_children():
 		child.process_mode=Node.PROCESS_MODE_DISABLED
 
 
-func decodeVectorList(data:PackedByteArray,updateSeek:bool=false,scaler:float=1.0)->PackedVector3Array:
+func decodeVectorList(file:FileAccess,seekDistance:int=0,scaler:float=1.0)->PackedVector3Array:
 	var arr=PackedVector3Array()
 	var offset:int=0
-	while offset<data.size():
-		arr.push_back(compilerService.decodeVector3Float(offset,data)*scaler)
+	while offset<seekDistance:
+		arr.push_back(compilerService.decodeVector3Float(0,file.get_buffer(12))*scaler)
 		offset+=12
-	if updateSeek:currentSeek+=offset
 	return arr
 
-func loadVersionTXT(data:PackedByteArray=[])->void:
-	var versionEndMarker:int=data.find(0,1)
-	versionTXT=data.slice(0,versionEndMarker).get_string_from_ascii() as StringName
-	currentSeek+=versionEndMarker+1
+func loadVersionTXT(file:FileAccess)->void:
+	versionTXT=file.get_line() as StringName
 
-func loadStringList(data:PackedByteArray=[])->void:
+func loadStringList(file:FileAccess)->void:
 	stringList=[]
-	var stringCount:int=data.decode_u32(currentSeek)
-	currentSeek+=4
+	var stringCount:int=file.get_buffer(4).decode_u32(0)
 	for i in stringCount:
-		var nextEnd:int=data.find(0,currentSeek+1)
-		var string=data.slice(currentSeek,nextEnd).get_string_from_ascii() as StringName
+		var string=file.get_line() as StringName
 		stringList.push_back(string)
-		currentSeek=nextEnd+1
-	currentSeek+=1
+	file.get_8()
 
-func loadFMTS(data:PackedByteArray=[])->void:
+func loadFMTS(file:FileAccess)->void:
 	matList=[] #emptied before filling with new materials grabbed
-	var matCount:int=data.decode_u32(currentSeek)
-	currentSeek+=4
+	var matCount:int=file.get_buffer(4).decode_u32(0)
 	for i in matCount:
-		matList.push_back(MaterialService.getMaterialByHash(data.decode_u32(currentSeek)))
-		currentSeek+=4
-	currentSeek+=1
+		matList.push_back(MaterialService.getMaterialByHash(file.get_buffer(4).decode_u32(0)))
+	file.get_8()
 
-func loadVectorIDS(data:PackedByteArray)->void:
-	var idList = data.slice(currentSeek,currentSeek+8)
+func loadVectorIDS(file:FileAccess)->void:
+	var positionCount:int=file.get_buffer(4).decode_u32(0)
+	var normalCount:int=file.get_buffer(4).decode_u32(0)
 	currentSeek+=8
-	positions=decodeVectorList(data.slice(currentSeek,currentSeek+idList.decode_u32(0)*12),true,1.0/size)
-	normals=decodeVectorList(data.slice(currentSeek,currentSeek+idList.decode_u32(4)*12),true)
-	currentSeek+=1
+	positions=decodeVectorList(file,positionCount*12,1.0/size)
+	normals=decodeVectorList(file,normalCount*12)
+	file.get_8()
 
-func loadObjects(loadOnto:Node,data:PackedByteArray)->void:
-	var objectCount:int=data.decode_u32(currentSeek)
-	currentSeek+=4
+func loadObjects(loadOnto:Node,file:FileAccess)->void:
+	var objectCount:int=file.get_buffer(4).decode_u32(0)
 	var scaleVector:Vector3=Vector3(1.0/size,1.0/size,1.0/size)
 	
 	for i in min(objectCount,100):
-		var loadingObject = data.decode_u32(currentSeek)
+		var loadingObject = file.get_buffer(4).decode_u32(0)
 		var _objectName = stringList[loadingObject]
-		var objectType = data.decode_u8(currentSeek+4)
-		currentSeek+=5
-		# 2 vector3s 12*2 bytes
-		var objectTransform = data.slice(currentSeek,currentSeek+36)
-		currentSeek+=36
+		var objectType = file.get_8()
+		#file.get_8()
+		var objectTransform = file.get_buffer(36)
 		var decodedTransform:Transform3D=Transform3D()
 		# applies position|rotation|scale
 		decodedTransform.origin=compilerService.decodeVector3Float(0,objectTransform)
@@ -104,25 +93,39 @@ func loadObjects(loadOnto:Node,data:PackedByteArray)->void:
 		decodedTransform.basis=decodedTransform.basis.scaled_local(compilerService.decodeVector3Float(24,objectTransform))
 		
 		var obj:CompiledObjectModel.ObjectModelData=CompiledObjectModel.ObjectModelData.new()
-		var objData
+		var objData=ObjectDataResource.new()
+		
+		#have to get the encoded parameters out as well
+		var paramBlockSize:int=file.get_buffer(4).decode_u32(0)
+		var paramData = compilerService.paramsDecode(file.get_buffer(paramBlockSize),stringList)
+		if paramData!=null:
+			for param in paramData.keys():
+				objData.setInstance(param,paramData[param][1])
+		#load the tag list in
+		var tagBlockSize:int=file.get_buffer(2).decode_u16(0)
+		for e in tagBlockSize:
+			var tagName=stringList[
+				file.get_buffer(4).decode_u32(0)
+			]
+			objData.baseTags.push_back(tagName)
+		#file.get_8()
+		
+		
 		match objectType:
 			ObjectModel.objectTypes.MESH:
-				var surfaceSize=data.decode_u32(currentSeek)
+				var surfaceSize=file.get_buffer(4).decode_u32(0)
 				var objectMesh:ArrayMesh
 				if surfaceSize!=0:
 					objectMesh=CompiledObjectModel.ObjectMesh.loadCompiledMesh(
 					matList,
 					positions,
 					normals,
-					data.slice(currentSeek+4,currentSeek+4+surfaceSize)
+					file.get_buffer(surfaceSize)
 				)
-				currentSeek+=surfaceSize+28
-				var collisionSize:int=data.decode_u16(currentSeek)
-				currentSeek+=2
-				var objectColliderST = loadObjectCollision(data.slice(currentSeek,currentSeek+collisionSize))
-				currentSeek+=collisionSize+1
+				var collisionSize:int=file.get_buffer(2).decode_u16(0)
+				var objectColliderST = loadObjectCollision(file.get_buffer(collisionSize))
 				obj.objectType=ObjectModel.objectTypes.MESH
-				objData = ObjectPhysicalDataResource.new()
+				objData = ObjectPhysicalDataResource.new(objData)
 				objData.inheritedData=load("res://modelData/meshObject.tres")
 				objData.mesh=objectMesh
 				obj.objectData=objData
@@ -137,40 +140,20 @@ func loadObjects(loadOnto:Node,data:PackedByteArray)->void:
 				
 			ObjectModel.objectTypes.OBJECT:
 				obj.objectType=ObjectModel.objectTypes.OBJECT
-				objData = ObjectDataResource.new()
+				objData = ObjectDataResource.new(objData)
 				obj.objectData=objData
 				#TODO: parse and actually load OBJECT contents
-				var objectSize:int=data.decode_u32(currentSeek)
-				obj.objectTargetFile=data.slice(currentSeek+4,currentSeek+4+objectSize).get_string_from_ascii()
-				currentSeek+=objectSize+4
+				var objectSize:int=file.get_buffer(4).decode_u32(0)
+				obj.objectTargetFile=file.get_buffer(objectSize).get_string_from_ascii()
 				var placedObjects=loadOnto
 				var builtObj=obj.build()
 				placedObjects.add_child(builtObj)
-				currentSeek+=1
+				#file.get_8()
 				decodedTransform=decodedTransform.scaled_local(scaleVector)
 				
 		#set object transform we already calculated
 		obj.global_transform=decodedTransform
 		obj.global_transform.origin/=size
-		
-		#have to get the encoded parameters out as well
-		var paramBlockSize:int=data.decode_u32(currentSeek)
-		var paramData = compilerService.paramsDecode(data.slice(currentSeek+4,currentSeek+4+paramBlockSize),stringList)
-		if paramData!=null:
-			for param in paramData.keys():
-				objData.setInstance(param,paramData[param][1])
-		
-		currentSeek+=paramBlockSize+4
-		#load the tag list in
-		var tagBlockSize:int=data.decode_u16(currentSeek)
-		currentSeek+=2
-		for e in tagBlockSize:
-			var tagName=stringList[
-				data.decode_u32(currentSeek)
-			]
-			objData.baseTags.push_back(tagName)
-			currentSeek+=4
-		currentSeek+=1
 
 func loadObjectCollision(collision:PackedByteArray)->SurfaceTool:
 	var st:SurfaceTool=SurfaceTool.new()
@@ -203,15 +186,15 @@ func attachObjectCollision(obj:Node,mode:int,collisionST:SurfaceTool)->void:
 	if body!=obj:obj.add_child(body)
 
 
-func fullLoad(loadOnto:Node,data:PackedByteArray=[])->void:
+func fullLoad(loadOnto:Node,file:FileAccess)->void:
 	currentSeek=0
-	loadVersionTXT(data)
-	loadStringList(data)
-	loadFMTS(data)
+	loadVersionTXT(file)
+	loadStringList(file)
+	loadFMTS(file)
 	fmt_loaded.emit()
-	loadVectorIDS(data)
+	loadVectorIDS(file)
 	id_loaded.emit()
-	loadObjects(loadOnto,data)
+	loadObjects(loadOnto,file)
 	objects_loaded.emit()
 	currentSeek+=1
 	finished.emit()

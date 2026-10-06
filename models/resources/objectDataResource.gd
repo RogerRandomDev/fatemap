@@ -30,6 +30,17 @@ var owner:Object=null
 signal parameterChanged(parameter:StringName,value:Variant)
 
 
+func _init(old:ObjectDataResource=null) -> void:
+	if old==null:return
+	parameterNames=old.parameterNames
+	parameterTypes=old.parameterTypes
+	parameterDescriptions=old.parameterDescriptions
+	parameterValues=old.parameterValues
+	baseTags=old.baseTags
+	inheritedTags=old.inheritedTags
+	owner=old.owner
+	
+
 func getTagDefaults(includeInherited:bool=true)->PackedStringArray:
 	var tagList:PackedStringArray=[]
 	if includeInherited and inheritedData!=null:
