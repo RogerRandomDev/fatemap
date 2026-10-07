@@ -52,7 +52,7 @@ static func encodeFloat(value:float)->PackedByteArray:
 	return encoded
 
 
-static func paramValueEncode(paramValue)->PackedByteArray:
+static func paramValueEncode(paramValue,compiler:compilerService.compilerMapData)->PackedByteArray:
 	var encoded:PackedByteArray=[0]
 	match paramValue[0]:
 		"Integer":
@@ -70,18 +70,24 @@ static func paramValueEncode(paramValue)->PackedByteArray:
 		"Boolean":
 			encoded.encode_u8(0,TYPE_BOOL)
 			encoded.append(paramValue[1])
+		"Text":
+			encoded.encode_u8(0,TYPE_STRING)
+			if paramValue[1]:
+				encoded.append_array(encodeInt(compiler.getStringID(paramValue[1]),false,2))
+			else:
+				encoded.append_array(encodeInt(compiler.getStringID(&""),false,2))
 		"Reference":
 			encoded.encode_u8(0,TYPE_OBJECT)
 			#needs done still
 	return encoded
 
-static func paramsEncode(parameters:Array)->PackedByteArray:
+static func paramsEncode(parameters:Array,compiler:compilerService.compilerMapData)->PackedByteArray:
 	var encoded:PackedByteArray=[0,0] # store how many parameters there will be
 	encoded.encode_u16(0,parameters.size())
 	for param in parameters:
 		var _paramBytes:=PackedByteArray()
 		var paramValue=param
-		paramValue=paramValueEncode(paramValue)
+		paramValue=paramValueEncode(paramValue,compiler)
 		encoded.append_array(paramValue)
 	
 	return encoded
@@ -105,23 +111,23 @@ static func decodeInt(from:int=0,value:PackedByteArray=[],signed:bool=false,size
 	var decoded:int=0
 	match size:
 		0:
-			if signed:value.decode_s8(from)
-			else:value.decode_u8(from)
+			if signed:decoded = value.decode_s8(from)
+			else:decoded = value.decode_u8(from)
 		1:
-			if signed:value.decode_s16(from)
-			else:value.decode_u16(from)
+			if signed:decoded = value.decode_s16(from)
+			else:decoded = value.decode_u16(from)
 		2:
-			if signed:value.decode_s32(from)
-			else:value.decode_u32(from)
+			if signed:decoded = value.decode_s32(from)
+			else:decoded = value.decode_u32(from)
 		3:
-			if signed:value.decode_s64(from)
-			else:value.decode_u64(from)
+			if signed:decoded = value.decode_s64(from)
+			else:decoded = value.decode_u64(from)
 	return decoded
 
 static func decodeFloat(from:int=0,value:PackedByteArray=[])->float:
 	return value.decode_float(from)
 
-static func paramValueDecode(paramValue)->Array:
+static func paramValueDecode(paramValue,decompiler:compilerService.decompilerInfo)->Array:
 	var decoded:Array=[null,null]
 	var skipBytes=0
 	match paramValue.decode_u8(0):
@@ -148,20 +154,24 @@ static func paramValueDecode(paramValue)->Array:
 		TYPE_OBJECT:
 			#needs done still
 			pass
+		TYPE_STRING:
+			decoded[0]=&"Text"
+			decoded[1]=decompiler.stringList[decodeInt(1,paramValue,false,2)]
+			skipBytes=4
 	return [decoded,skipBytes]
 
-static func paramsDecode(parameters:PackedByteArray,stringList:Array)->Dictionary:
+static func paramsDecode(parameters:PackedByteArray,decompiler:compilerService.decompilerInfo)->Dictionary:
 	var decoded:Dictionary={}
 	var paramCount:int=parameters.decode_u16(0)
 	var checkFrom:int=2
 	for i in paramCount:
 		var paramNameID:int=parameters.decode_u32(checkFrom)
-		decoded[stringList[paramNameID]]=null
+		decoded[decompiler.stringList[paramNameID]]=null
 		checkFrom+=4
 	checkFrom+=2
 	parameters=parameters.slice(checkFrom)
 	for i in decoded.keys():
-		var paramValueData:Array=paramValueDecode(parameters)
+		var paramValueData:Array=paramValueDecode(parameters,decompiler)
 		parameters=parameters.slice(paramValueData[1]+1)
 		var paramValue=paramValueData[0]
 		decoded[i]=paramValue
@@ -191,7 +201,7 @@ class compilerMapData extends RefCounted:
 	## materials used by the map
 	var materialList:Array=[]
 	## List of any strings used by the map.
-	var stringList:PackedStringArray=[]
+	var stringList:PackedStringArray=[&""]
 	## external resources to load
 	var externalResourceList:Dictionary={}
 	
@@ -231,7 +241,7 @@ class compilerMapData extends RefCounted:
 		stringBin.encode_u32(0,stringList.size())
 		for string in stringList:
 			stringBin.append_array(string.to_ascii_buffer())
-			stringBin.append(10)
+			stringBin.append(0)
 		return stringBin
 
 
@@ -410,7 +420,7 @@ class fullCompileMapData extends compilerMapData:
 		var stringBinary = getStringListBinary()
 		
 		binary.append_array(versionBinary)
-		binary.append(10) # \n so get_line works
+		binary.append(0)
 		binary.append_array(stringBinary)
 		binary.append(0)
 		binary.append_array(materialBinary)
@@ -556,3 +566,15 @@ class fullCompileMapData extends compilerMapData:
 				)
 
 #endregion
+
+#region decompiler class
+
+class decompilerInfo extends RefCounted:
+	var stringList:Array=[]
+	var materialList:Array[MaterialService.materialModel]=[]
+	var vertexList:PackedVector3Array=[]
+	var normalList:PackedVector3Array=[]
+	
+	var objectList:Array=[]
+	
+	

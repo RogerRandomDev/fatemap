@@ -2,6 +2,8 @@ extends Node
 class_name EditLoader
 
 static func loadMapData(loadOnto:Node,data:PackedByteArray=[])->void:
+	var decompiler=compilerService.decompilerInfo.new()
+	
 	for child in loadOnto.get_children():
 		child.free()
 	MeshEditService.setEditing(null)
@@ -14,18 +16,16 @@ static func loadMapData(loadOnto:Node,data:PackedByteArray=[])->void:
 	versionTXT=data.slice(0,versionEndMarker).get_string_from_ascii() as StringName
 	checkFrom+=versionEndMarker+1
 	print(versionTXT)
-	var stringList:Array=[]
 	var stringCount=data.decode_u32(checkFrom)
 	checkFrom+=4
 	for i in stringCount:
-		var stringEnd:int=data.find(0,checkFrom+1)
+		var stringEnd:int=data.find(0,checkFrom)
 		if stringEnd!=-1:
-			var stringText:StringName=data.slice(checkFrom,checkFrom+stringEnd+1).get_string_from_ascii() as StringName
-			stringList.push_back(stringText)
-		checkFrom=stringEnd+1
-		stringCount-=1
+			var stringText:StringName=data.slice(checkFrom,stringEnd).get_string_from_ascii() as StringName
+			decompiler.stringList.push_back(stringText)
+			checkFrom=stringEnd+1
+		#stringCount-=1
 	checkFrom+=1
-	
 	var fmtPaths:PackedInt64Array=[]
 	var matCount:int=data.decode_u32(checkFrom)
 	checkFrom+=4
@@ -37,21 +37,18 @@ static func loadMapData(loadOnto:Node,data:PackedByteArray=[])->void:
 	checkFrom+=8
 	var positionIdCount:=idList.decode_u32(0)
 	var normalIdCount:=idList.decode_u32(4)
-	var positions:Array=[]
-	var normals:Array=[]
 	for pos in positionIdCount:
-		positions.push_back(compilerService.decodeVector3Float(checkFrom,data))
+		decompiler.vertexList.push_back(compilerService.decodeVector3Float(checkFrom,data))
 		checkFrom+=12
 	for norm in normalIdCount:
-		normals.push_back(compilerService.decodeVector3Float(checkFrom,data))
+		decompiler.normalList.push_back(compilerService.decodeVector3Float(checkFrom,data))
 		checkFrom+=12
 	checkFrom+=1
-	var matList=[]
 	for mat in fmtPaths:
-		matList.push_back(MaterialService.getMaterialByHash(mat))
+		decompiler.materialList.push_back(MaterialService.getMaterialByHash(mat))
 	while data.size()>checkFrom:
 		var loadingObject = data.decode_u32(checkFrom)
-		var _objectName = stringList[loadingObject]
+		var _objectName = decompiler.stringList[loadingObject]
 		var objectType = data.decode_u8(checkFrom+4)
 		checkFrom+=5
 		# 2 vector3s 12*2 bytes
@@ -73,7 +70,7 @@ static func loadMapData(loadOnto:Node,data:PackedByteArray=[])->void:
 				objectMesh.globalTransform=Transform3D(
 					Basis.from_euler(compilerService.decodeVector3Float(12,UVTransform)),Vector3(
 					compilerService.decodeVector3Float(0,UVTransform)))
-				objectMesh.loadCompiledSurfaces(matList,positions,normals,data.slice(checkFrom+4,checkFrom+4+surfaceSize),1.0)
+				objectMesh.loadCompiledSurfaces(decompiler.materialList,decompiler.vertexList,decompiler.normalList,data.slice(checkFrom+4,checkFrom+4+surfaceSize),1.0)
 				checkFrom+=surfaceSize+4+25
 				obj = PhysicalObjectModel.new()
 				obj.objectType=ObjectModel.objectTypes.MESH
@@ -113,7 +110,7 @@ static func loadMapData(loadOnto:Node,data:PackedByteArray=[])->void:
 		
 		#have to get the encoded parameters out as well
 		var paramBlockSize:int=data.decode_u32(checkFrom)
-		var paramData = compilerService.paramsDecode(data.slice(checkFrom+4,checkFrom+4+paramBlockSize),stringList)
+		var paramData = compilerService.paramsDecode(data.slice(checkFrom+4,checkFrom+4+paramBlockSize),decompiler)
 		if paramData!=null:
 			for param in paramData.keys():
 				objData.setInstance(param,paramData[param][1])
@@ -123,7 +120,7 @@ static func loadMapData(loadOnto:Node,data:PackedByteArray=[])->void:
 		var tagBlockSize:int=data.decode_u16(checkFrom)
 		checkFrom+=2
 		for i in tagBlockSize:
-			var tagName=stringList[
+			var tagName=decompiler.stringList[
 				data.decode_u32(checkFrom)
 			]
 			objData.baseTags.push_back(tagName)

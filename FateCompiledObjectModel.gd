@@ -32,7 +32,8 @@ class ObjectModelData extends RefCounted:
 	
 	func build()->Node:
 		var built:Node
-		var setClass:String = objectData.findParam("Class").get("value","")
+		var setClass = objectData.getInstance("class")
+		if setClass == null:setClass=""
 		if not setClass.is_empty():built=ClassDB.instantiate(setClass)
 		
 		match objectType:

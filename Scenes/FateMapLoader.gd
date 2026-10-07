@@ -15,12 +15,9 @@ signal finished
 
 var versionTXT:StringName=&""
 ### DATA FOR PARSING OUT THE MAP
+var decompiler:compilerService.decompilerInfo
+
 var currentSeek:int=0
-var positions:PackedVector3Array=[]
-var normals:PackedVector3Array=[]
-var matList:Array[MaterialService.materialModel]=[]
-var objectList:Array=[]
-var stringList:Array=[]
 var collisionSets:Dictionary={}
 
 
@@ -51,38 +48,45 @@ func decodeVectorList(file:FileAccess,seekDistance:int=0,scaler:float=1.0)->Pack
 	return arr
 
 func loadVersionTXT(file:FileAccess)->void:
-	versionTXT=file.get_line() as StringName
+	var n_byte=file.get_8()
+	while n_byte!=0:
+		#slow but works
+		versionTXT+=PackedByteArray([n_byte]).get_string_from_ascii()
+		n_byte=file.get_8()
 
 func loadStringList(file:FileAccess)->void:
-	stringList=[]
 	var stringCount:int=file.get_buffer(4).decode_u32(0)
 	for i in stringCount:
-		var string=file.get_line() as StringName
-		stringList.push_back(string)
+		var n_byte=file.get_8()
+		var string=""
+		while n_byte!=0:
+			#slow but works
+			string+=PackedByteArray([n_byte]).get_string_from_ascii()
+			n_byte=file.get_8()
+		decompiler.stringList.push_back(string as StringName)
 	file.get_8()
 
 func loadFMTS(file:FileAccess)->void:
-	matList=[] #emptied before filling with new materials grabbed
 	var matCount:int=file.get_buffer(4).decode_u32(0)
 	for i in matCount:
-		matList.push_back(MaterialService.getMaterialByHash(file.get_buffer(4).decode_u32(0)))
+		decompiler.materialList.push_back(MaterialService.getMaterialByHash(file.get_buffer(4).decode_u32(0)))
 	file.get_8()
 
 func loadVectorIDS(file:FileAccess)->void:
 	var positionCount:int=file.get_buffer(4).decode_u32(0)
 	var normalCount:int=file.get_buffer(4).decode_u32(0)
 	currentSeek+=8
-	positions=decodeVectorList(file,positionCount*12,1.0/size)
-	normals=decodeVectorList(file,normalCount*12)
+	decompiler.vertexList=decodeVectorList(file,positionCount*12,1.0/size)
+	decompiler.normalList=decodeVectorList(file,normalCount*12)
 	file.get_8()
 
 func loadObjects(loadOnto:Node,file:FileAccess)->void:
 	var objectCount:int=file.get_buffer(4).decode_u32(0)
 	var scaleVector:Vector3=Vector3(1.0/size,1.0/size,1.0/size)
 	
-	for i in min(objectCount,100):
+	for i in objectCount:
 		var loadingObject = file.get_buffer(4).decode_u32(0)
-		var _objectName = stringList[loadingObject]
+		var _objectName = decompiler.stringList[loadingObject]
 		var objectType = file.get_8()
 		#file.get_8()
 		var objectTransform = file.get_buffer(36)
@@ -97,14 +101,14 @@ func loadObjects(loadOnto:Node,file:FileAccess)->void:
 		
 		#have to get the encoded parameters out as well
 		var paramBlockSize:int=file.get_buffer(4).decode_u32(0)
-		var paramData = compilerService.paramsDecode(file.get_buffer(paramBlockSize),stringList)
+		var paramData = compilerService.paramsDecode(file.get_buffer(paramBlockSize),decompiler)
 		if paramData!=null:
 			for param in paramData.keys():
-				objData.setInstance(param,paramData[param][1])
+				objData.addInstanceParam(param,paramData[param][1],paramData[param][0])
 		#load the tag list in
 		var tagBlockSize:int=file.get_buffer(2).decode_u16(0)
 		for e in tagBlockSize:
-			var tagName=stringList[
+			var tagName=decompiler.stringList[
 				file.get_buffer(4).decode_u32(0)
 			]
 			objData.baseTags.push_back(tagName)
@@ -117,16 +121,18 @@ func loadObjects(loadOnto:Node,file:FileAccess)->void:
 				var objectMesh:ArrayMesh
 				if surfaceSize!=0:
 					objectMesh=CompiledObjectModel.ObjectMesh.loadCompiledMesh(
-					matList,
-					positions,
-					normals,
+					decompiler.materialList,
+					decompiler.vertexList,
+					decompiler.normalList,
 					file.get_buffer(surfaceSize)
 				)
 				var collisionSize:int=file.get_buffer(2).decode_u16(0)
 				var objectColliderST = loadObjectCollision(file.get_buffer(collisionSize))
 				obj.objectType=ObjectModel.objectTypes.MESH
 				objData = ObjectPhysicalDataResource.new(objData)
+				
 				objData.inheritedData=load("res://modelData/meshObject.tres")
+				
 				objData.mesh=objectMesh
 				obj.objectData=objData
 				var placedObjects=loadOnto
@@ -162,7 +168,7 @@ func loadObjectCollision(collision:PackedByteArray)->SurfaceTool:
 	while curAt<collision.size():
 		var pID=collision.decode_u32(curAt)
 		curAt+=4
-		st.add_vertex(positions[pID])
+		st.add_vertex(decompiler.vertexList[pID])
 	return st
 
 func attachObjectCollision(obj:Node,mode:int,collisionST:SurfaceTool)->void:
@@ -179,15 +185,15 @@ func attachObjectCollision(obj:Node,mode:int,collisionST:SurfaceTool)->void:
 	if obj and obj.has_meta("replace"):
 		body.global_transform=obj.global_transform
 		obj.get_parent().add_child(body)
-		objectList.erase(obj)
-		objectList.push_back(body)
+		decompiler.objectList.erase(obj)
+		decompiler.objectList.push_back(body)
 		obj.queue_free()
 		return
 	if body!=obj:obj.add_child(body)
 
 
 func fullLoad(loadOnto:Node,file:FileAccess)->void:
-	currentSeek=0
+	decompiler=compilerService.decompilerInfo.new()
 	loadVersionTXT(file)
 	loadStringList(file)
 	loadFMTS(file)
@@ -196,11 +202,7 @@ func fullLoad(loadOnto:Node,file:FileAccess)->void:
 	id_loaded.emit()
 	loadObjects(loadOnto,file)
 	objects_loaded.emit()
-	currentSeek+=1
 	finished.emit()
-	collisionSets={}
-	objectList=[]
-	stringList=[]
 	if Engine.is_editor_hint():
 		for child in get_children():att(child)
 

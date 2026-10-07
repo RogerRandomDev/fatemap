@@ -32,6 +32,7 @@ signal parameterChanged(parameter:StringName,value:Variant)
 
 func _init(old:ObjectDataResource=null) -> void:
 	if old==null:return
+	inheritedData=old.inheritedData
 	parameterNames=old.parameterNames
 	parameterTypes=old.parameterTypes
 	parameterDescriptions=old.parameterDescriptions
@@ -39,7 +40,8 @@ func _init(old:ObjectDataResource=null) -> void:
 	baseTags=old.baseTags
 	inheritedTags=old.inheritedTags
 	owner=old.owner
-	
+
+
 
 func getTagDefaults(includeInherited:bool=true)->PackedStringArray:
 	var tagList:PackedStringArray=[]
@@ -304,7 +306,7 @@ func setUndoRedoParamValue(parameter:String,value:Variant)->void:
 
 func getInstance(parameter:String)->Variant:
 	var index:int=parameterNames.find(parameter)
-	var inheritedParam=inheritedData.findParam(parameter)
+	var inheritedParam=null if inheritedData==null else inheritedData.findParam(parameter)
 	if index==-1:return null if inheritedParam==null else inheritedParam.value
 	return parameterValues[index]
 
@@ -332,7 +334,7 @@ func setInstance(parameter:String,value:Variant)->void:
 
 func addInstanceParam(parameter:String,value:Variant,type:String)->void:
 	var index:int=parameterNames.find(parameter)
-	var inheritedParam=inheritedData.findParam(parameter)
+	var inheritedParam=null if inheritedData==null else inheritedData.findParam(parameter)
 	if index!=-1:return
 	parameterNames.push_back(parameter)
 	parameterTypes.push_back(type)
@@ -358,7 +360,7 @@ func getParametersForCompiler(compiler:compilerService.compilerMapData)->PackedB
 		compiledParameters.encode_u32(i*4+2,nameIDs[i])
 	#encode how many parameters there are
 	compiledParameters.encode_u16(0,nameIDs.size())
-	compiledParameters.append_array(compilerService.paramsEncode(values))
+	compiledParameters.append_array(compilerService.paramsEncode(values,compiler))
 	
 	return compiledParameters
 

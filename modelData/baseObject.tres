@@ -4,17 +4,21 @@
 
 [resource]
 script = ExtResource("1_eov51")
-parameterCount = 3
-parameter_0/name = "positionRelativeToWorld"
-parameter_0/description = "aligns UV mapping relative to world"
-parameter_0/type = "Boolean"
-parameter_0/value = false
-parameter_1/name = "rotationRelativeToWorld"
-parameter_1/description = "aligns UV mapping relative to world"
-parameter_1/type = "Boolean"
-parameter_1/value = false
-parameter_2/name = "rotation_degrees"
-parameter_2/description = "rotation of the mesh in the world"
-parameter_2/type = "Vector3"
-parameter_2/value = Vector3(0, 0, 0)
+parameterCount = 4
+parameter_0/name = "class"
+parameter_0/description = "class name of default or custom class script in godot."
+parameter_0/type = "Text"
+parameter_0/value = ""
+parameter_1/name = "rotation_degrees"
+parameter_1/description = "rotation of the mesh in the world"
+parameter_1/type = "Vector3"
+parameter_1/value = Vector3(0, 0, 0)
+parameter_2/name = "positionRelativeToWorld"
+parameter_2/description = "aligns UV mapping relative to world"
+parameter_2/type = "Boolean"
+parameter_2/value = false
+parameter_3/name = "rotationRelativeToWorld"
+parameter_3/description = "aligns UV mapping relative to world"
+parameter_3/type = "Boolean"
+parameter_3/value = false
 metadata/_custom_type_script = "uid://dmuurymqm5l"
