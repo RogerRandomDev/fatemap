@@ -278,10 +278,10 @@ func convertSurfacesToBinary(compiler:compilerService.compilerMapData=null)->Pac
 		
 		binarySurfaceData.encode_u16(offset,compiledSurfaceId)
 		for i in 3:
-			binarySurfaceData.encode_u32(offset+2+sub_offset*i,compiler.getPositionID(face.vertices[i].position))
+			binarySurfaceData.encode_u32(offset+2+sub_offset*i,compiler.getVector3ID(face.vertices[i].position))
 			binarySurfaceData.encode_float(offset+6+sub_offset*i,face.vertices[i].uv.x)
 			binarySurfaceData.encode_float(offset+10+sub_offset*i,face.vertices[i].uv.y)
-		binarySurfaceData.encode_u32(offset+38,compiler.getNormalID(face.normal))
+		binarySurfaceData.encode_u32(offset+38,compiler.getVector3ID(face.normal))
 		binarySurfaceData.encode_float(offset+42,face.uvRotation)
 		binarySurfaceData.encode_float(offset+46,face.uvOffset.x)
 		binarySurfaceData.encode_float(offset+50,face.uvOffset.y)
@@ -314,11 +314,11 @@ func convertSurfacesToBinaryCompiled(compiler:compilerService.compilerMapData=nu
 		binarySurfaceData.encode_u16(offset,compiledSurfaceId)
 		for i in 3:
 			var active_vertex=face.vertices[i]
-			binarySurfaceData.encode_u32(offset+2+sub_offset*i,compiler.getPositionID(active_vertex.position))
+			binarySurfaceData.encode_u32(offset+2+sub_offset*i,compiler.getVector3ID(active_vertex.position))
 			var vertex_actual_uv:Vector2=(active_vertex.uv*face.uvScale+face.uvOffset).rotated(face.uvRotation)
 			binarySurfaceData.encode_float(offset+6+sub_offset*i,vertex_actual_uv.x)
 			binarySurfaceData.encode_float(offset+10+sub_offset*i,vertex_actual_uv.y)
-		binarySurfaceData.encode_u32(offset+38,compiler.getNormalID(face.normal))
+		binarySurfaceData.encode_u32(offset+38,compiler.getVector3ID(face.normal))
 		offset+=BYTES_PER_FACE_COMPILED
 	binarySurfaceData.resize(offset)
 	return binarySurfaceData
@@ -333,16 +333,16 @@ func getCollisionFaces(compiler:compilerService.compilerMapData=null)->PackedByt
 	for face in faces:
 		if face.surfaceMaterial.materialTags.has("ignore_collision"):continue
 		for i in 3:
-			collisionBinary.encode_u32(offset,compiler.getPositionID(face.vertices[i].position))
+			collisionBinary.encode_u32(offset,compiler.getVector3ID(face.vertices[i].position))
 			offset+=4
 		keptFaces+=1
 	collisionBinary.resize(keptFaces*BYTES_PER_COLLISION_FACE)
 	
 	return collisionBinary
 
-func loadCompiledSurfaces(matList:Array=[],positions:Array=[],normals:Array=[],binary:PackedByteArray=[],scaled:float=1.0)->void:
+func loadCompiledSurfaces(matList:Array=[],vectors:PackedVector3Array=[],binary:PackedByteArray=[],scaled:float=1.0)->void:
 	var checkFrom:int=0
-	scaler=scaled
+	scaler=1.0/scaled
 	while true:
 		var faceData = binary.slice(checkFrom,checkFrom+BYTES_PER_FACE)
 		checkFrom+=BYTES_PER_FACE
@@ -353,7 +353,7 @@ func loadCompiledSurfaces(matList:Array=[],positions:Array=[],normals:Array=[],b
 		const sub_offset = 12
 		for i in 3:
 			faceVertexPositions.push_back(
-				positions[faceData.decode_u32(2+sub_offset*i)]/scaler
+				vectors[faceData.decode_u32(2+sub_offset*i)]*scaler
 				)
 			faceVertexUVs.push_back(
 				Vector2(
@@ -361,7 +361,7 @@ func loadCompiledSurfaces(matList:Array=[],positions:Array=[],normals:Array=[],b
 					faceData.decode_float(10+sub_offset*i)
 					)
 				)
-		var _faceNormal = getNormalID(normals[faceData.decode_u32(38)])
+		var _faceNormal = getNormalID(vectors[faceData.decode_u32(38)])
 		var face = meshFace.new(
 			self,faceVertexPositions,faceVertexUVs,
 			surfaceUsed)

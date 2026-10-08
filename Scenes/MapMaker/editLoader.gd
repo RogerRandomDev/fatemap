@@ -33,15 +33,11 @@ static func loadMapData(loadOnto:Node,data:PackedByteArray=[])->void:
 		fmtPaths.push_back(data.decode_u32(checkFrom))
 		checkFrom+=4
 	checkFrom+=1
-	var idList = data.slice(checkFrom,checkFrom+8)
-	checkFrom+=8
-	var positionIdCount:=idList.decode_u32(0)
-	var normalIdCount:=idList.decode_u32(4)
-	for pos in positionIdCount:
-		decompiler.vertexList.push_back(compilerService.decodeVector3Float(checkFrom,data))
-		checkFrom+=12
-	for norm in normalIdCount:
-		decompiler.normalList.push_back(compilerService.decodeVector3Float(checkFrom,data))
+	var idList = data.slice(checkFrom,checkFrom+4)
+	checkFrom+=4
+	var vector3Count:=idList.decode_u32(0)
+	for vector in vector3Count:
+		decompiler.vector3List.push_back(compilerService.decodeVector3Float(checkFrom,data))
 		checkFrom+=12
 	checkFrom+=1
 	for mat in fmtPaths:
@@ -52,13 +48,16 @@ static func loadMapData(loadOnto:Node,data:PackedByteArray=[])->void:
 		var objectType = data.decode_u8(checkFrom+4)
 		checkFrom+=5
 		# 2 vector3s 12*2 bytes
-		var objectTransform = data.slice(checkFrom,checkFrom+36)
-		checkFrom+=36
+		var objectTransform = data.slice(checkFrom,checkFrom+12)
+		checkFrom+=12
 		var decodedTransform:Transform3D=Transform3D()
 		# applies position|rotation|scale
-		decodedTransform.origin=compilerService.decodeVector3Float(0,objectTransform)
-		decodedTransform.basis=Basis.from_euler(compilerService.decodeVector3Float(12,objectTransform))
-		decodedTransform.basis=decodedTransform.basis.scaled_local(compilerService.decodeVector3Float(24,objectTransform))
+		decodedTransform.origin=decompiler.vector3List[objectTransform.decode_u32(0)]
+		decodedTransform.basis=Basis.from_euler(decompiler.vector3List[objectTransform.decode_u32(4)])
+		decodedTransform.basis=decodedTransform.basis.scaled_local(decompiler.vector3List[objectTransform.decode_u32(8)])
+		#decodedTransform.origin=compilerService.decodeVector3Float(0,objectTransform)
+		#decodedTransform.basis=Basis.from_euler(compilerService.decodeVector3Float(12,objectTransform))
+		#decodedTransform.basis=decodedTransform.basis.scaled_local(compilerService.decodeVector3Float(24,objectTransform))
 		var obj:ObjectModel
 		var objData
 		match objectType:
@@ -70,7 +69,7 @@ static func loadMapData(loadOnto:Node,data:PackedByteArray=[])->void:
 				objectMesh.globalTransform=Transform3D(
 					Basis.from_euler(compilerService.decodeVector3Float(12,UVTransform)),Vector3(
 					compilerService.decodeVector3Float(0,UVTransform)))
-				objectMesh.loadCompiledSurfaces(decompiler.materialList,decompiler.vertexList,decompiler.normalList,data.slice(checkFrom+4,checkFrom+4+surfaceSize),1.0)
+				objectMesh.loadCompiledSurfaces(decompiler.materialList,decompiler.vector3List,data.slice(checkFrom+4,checkFrom+4+surfaceSize),1.0)
 				checkFrom+=surfaceSize+4+25
 				obj = PhysicalObjectModel.new()
 				obj.objectType=ObjectModel.objectTypes.MESH

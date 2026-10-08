@@ -57,7 +57,7 @@ class ObjectMesh extends ArrayMesh:
 	
 	func _init()->void:
 		pass
-	static func loadCompiledMesh(matList:Array=[],positions:Array=[],normals:Array=[],binary:PackedByteArray=[])->ArrayMesh:
+	static func loadCompiledMesh(matList:Array=[],vectors:Array=[],binary:PackedByteArray=[],scaler:float=1.0)->ArrayMesh:
 		var checkFrom:int=0
 		var surfaces:Dictionary={}
 		
@@ -78,8 +78,8 @@ class ObjectMesh extends ArrayMesh:
 						faceData.decode_float(6+sub_offset*i),
 						faceData.decode_float(10+sub_offset*i)
 					))
-				surface_st.set_normal(normals[faceData.decode_u32(38)])
-				surface_st.add_vertex(positions[faceData.decode_u32(2+sub_offset*i)])
+				surface_st.set_normal(vectors[faceData.decode_u32(38)])
+				surface_st.add_vertex(vectors[faceData.decode_u32(2+sub_offset*i)]*scaler)
 		var outputMesh:ArrayMesh=ArrayMesh.new()
 		for st in surfaces.values():
 			st.commit(outputMesh)

@@ -73,11 +73,8 @@ func loadFMTS(file:FileAccess)->void:
 	file.get_8()
 
 func loadVectorIDS(file:FileAccess)->void:
-	var positionCount:int=file.get_buffer(4).decode_u32(0)
-	var normalCount:int=file.get_buffer(4).decode_u32(0)
-	currentSeek+=8
-	decompiler.vertexList=decodeVectorList(file,positionCount*12,1.0/size)
-	decompiler.normalList=decodeVectorList(file,normalCount*12)
+	var vector3Count:int=file.get_buffer(4).decode_u32(0)
+	decompiler.vector3List=decodeVectorList(file,vector3Count*12)
 	file.get_8()
 
 func loadObjects(loadOnto:Node,file:FileAccess)->void:
@@ -89,12 +86,12 @@ func loadObjects(loadOnto:Node,file:FileAccess)->void:
 		var _objectName = decompiler.stringList[loadingObject]
 		var objectType = file.get_8()
 		#file.get_8()
-		var objectTransform = file.get_buffer(36)
+		var objectTransform = file.get_buffer(12)
 		var decodedTransform:Transform3D=Transform3D()
 		# applies position|rotation|scale
-		decodedTransform.origin=compilerService.decodeVector3Float(0,objectTransform)
-		decodedTransform.basis=Basis.from_euler(compilerService.decodeVector3Float(12,objectTransform))
-		decodedTransform.basis=decodedTransform.basis.scaled_local(compilerService.decodeVector3Float(24,objectTransform))
+		decodedTransform.origin=decompiler.vector3List[objectTransform.decode_u32(0)]
+		decodedTransform.basis=Basis.from_euler(decompiler.vector3List[objectTransform.decode_u32(4)])
+		decodedTransform.basis=decodedTransform.basis.scaled_local(decompiler.vector3List[objectTransform.decode_u32(8)])
 		
 		var obj:CompiledObjectModel.ObjectModelData=CompiledObjectModel.ObjectModelData.new()
 		var objData=ObjectDataResource.new()
@@ -122,9 +119,9 @@ func loadObjects(loadOnto:Node,file:FileAccess)->void:
 				if surfaceSize!=0:
 					objectMesh=CompiledObjectModel.ObjectMesh.loadCompiledMesh(
 					decompiler.materialList,
-					decompiler.vertexList,
-					decompiler.normalList,
-					file.get_buffer(surfaceSize)
+					decompiler.vector3List,
+					file.get_buffer(surfaceSize),
+					1.0/size
 				)
 				var collisionSize:int=file.get_buffer(2).decode_u16(0)
 				var objectColliderST = loadObjectCollision(file.get_buffer(collisionSize))
@@ -165,10 +162,11 @@ func loadObjectCollision(collision:PackedByteArray)->SurfaceTool:
 	var st:SurfaceTool=SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var curAt:int=0
+	var scaler:float= 1.0/size
 	while curAt<collision.size():
 		var pID=collision.decode_u32(curAt)
 		curAt+=4
-		st.add_vertex(decompiler.vertexList[pID])
+		st.add_vertex(decompiler.vector3List[pID]*scaler)
 	return st
 
 func attachObjectCollision(obj:Node,mode:int,collisionST:SurfaceTool)->void:

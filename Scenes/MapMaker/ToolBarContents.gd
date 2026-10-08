@@ -54,7 +54,7 @@ func loadContents()->void:
 	ToolMethodService.addToolMethod(&"LoadMapCustom",
 	func(_v=null):
 		var worldChecked = get_tree().current_scene.mapViewport
-		var f=FileAccess.open_compressed("user://test.fatemapEditor",FileAccess.READ,FileAccess.COMPRESSION_GZIP)
+		var f=FileAccess.open_compressed("user://test.fatemapEditor",FileAccess.READ,FileAccess.COMPRESSION_ZSTD)
 		EditLoader.loadMapData(worldChecked.get_node("PlacedObjects"),f.get_buffer(f.get_length()))
 		UndoRedoService.clearAllActions()
 		)

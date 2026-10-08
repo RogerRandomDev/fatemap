@@ -66,7 +66,8 @@ static func paramValueEncode(paramValue,compiler:compilerService.compilerMapData
 			encoded.append_array(encodeVector2Float(paramValue[1]))
 		"Vector3":
 			encoded.encode_u8(0,TYPE_VECTOR3)
-			encoded.append_array(encodeVector3Float(paramValue[1]))
+			encoded.resize(5)
+			encoded.encode_u32(1,compiler.getVector3ID(paramValue[1]))
 		"Boolean":
 			encoded.encode_u8(0,TYPE_BOOL)
 			encoded.append(paramValue[1])
@@ -145,8 +146,8 @@ static func paramValueDecode(paramValue,decompiler:compilerService.decompilerInf
 			skipBytes=8
 		TYPE_VECTOR3:
 			decoded[0]=&"Vector3"
-			decoded[1]=decodeVector3Float(1,paramValue)
-			skipBytes=12
+			decoded[1]=decompiler.vector3List[paramValue.decode_u32(1)]
+			skipBytes=4
 		TYPE_BOOL:
 			decoded[0]=&"Boolean"
 			decoded[1]=bool(paramValue[1])
@@ -194,10 +195,8 @@ class compilerMapData extends RefCounted:
 	## dictionary of all objects to store
 	var objects:Dictionary={}
 	var objectGroups:Dictionary={}
-	## mesh reference positions
-	var positionIDs:Dictionary={}
-	## mesh reference normals
-	var normalIDs:Dictionary={}
+	## vector3 references
+	var vector3IDs:Dictionary={}
 	## materials used by the map
 	var materialList:Array=[]
 	## List of any strings used by the map.
@@ -220,16 +219,11 @@ class compilerMapData extends RefCounted:
 			stringList.push_back(text)
 		return stringList.find(text)
 	
-	func getPositionID(pos:Vector3)->int:
-		if not positionIDs.values().has(pos):
-			positionIDs[positionIDs.size()]=pos
-			return positionIDs.size()-1
-		return positionIDs.values().find(pos)
-	func getNormalID(norm:Vector3)->int:
-		if not normalIDs.values().has(norm):
-			normalIDs[normalIDs.size()]=norm
-			return normalIDs.size()-1
-		return normalIDs.values().find(norm)
+	func getVector3ID(pos:Vector3)->int:
+		if not vector3IDs.values().has(pos):
+			vector3IDs[vector3IDs.size()]=pos
+			return vector3IDs.size()-1
+		return vector3IDs.values().find(pos)
 	
 	func getVersionBinary()->PackedByteArray:
 		var versionBin:PackedByteArray=[]
@@ -278,30 +272,29 @@ class precompileMapData extends compilerMapData:
 	func getIDListBinary()->PackedByteArray:
 		var binary:PackedByteArray=[]
 		#track how many of each ID we need to go through to have them all
-		var idCounts:PackedByteArray=[0,0,0,0,0,0,0,0]
-		idCounts.encode_u32(0,positionIDs.size())
-		idCounts.encode_u32(4,normalIDs.size())
+		var idCounts:PackedByteArray=[0,0,0,0]
+		idCounts.encode_u32(0,vector3IDs.size())
 		binary.append_array(idCounts)
 		
-		for pos in positionIDs.values():
-			binary.append_array(compilerService.encodeVector3Float(pos))
-		for pos in normalIDs.values():
-			binary.append_array(compilerService.encodeVector3Float(pos))
+		for vector in vector3IDs.values():
+			binary.append_array(compilerService.encodeVector3Float(vector))
 		return binary
 	
 	func getObjectsBinary() -> PackedByteArray:
 		var binary : PackedByteArray = []
 		var nameID:PackedByteArray=[0,0,0,0]
 		var paramSize = PackedByteArray([0,0,0,0])
+		var transform_binary:PackedByteArray=[0,0,0,0,0,0,0,0,0,0,0,0]
 		for object in objects:
 			var objectData = objects[object]
-			nameID.encode_u32(0,getStringID(object))
+			nameID.encode_u32(0,objectData["Identifier"])
 			binary.append_array(nameID)
 			binary.append(objectData.get("Type"))
 			#object transform info. POSITION|ROTATION|SCALE
-			binary.append_array(compilerService.encodeVector3Float(objectData.get("Position")))
-			binary.append_array(compilerService.encodeVector3Float(objectData.get("Rotation")))
-			binary.append_array(compilerService.encodeVector3Float(objectData.get("Scale")))
+			transform_binary.encode_u32(0,objectData.get("Position"))
+			transform_binary.encode_u32(4,objectData.get("Rotation"))
+			transform_binary.encode_u32(8,objectData.get("Scale"))
+			binary.append_array(transform_binary)
 			#no gap as it isnt necessary
 			
 			match objectData.get("Type"):
@@ -343,6 +336,7 @@ class precompileMapData extends compilerMapData:
 					if materialList.has(mat):continue
 					materialList.push_back(mat)
 				objects[compiledObjectData.Identifier]={
+					"Identifier":getStringID(compiledObjectData.Identifier),
 					"Type":ObjectModel.objectTypes.MESH,
 					"Tags":compiledObjectData.Tags,
 					"Surface":compiledObjectData.Mesh.Surfaces,
@@ -358,6 +352,7 @@ class precompileMapData extends compilerMapData:
 			ObjectModel.objectTypes.OBJECT:
 				var compiledObjectData = object.getCompiledData(self)
 				objects[compiledObjectData.Identifier]={
+					"Identifier":getStringID(compiledObjectData.Identifier),
 					"Type":ObjectModel.objectTypes.OBJECT,
 					"Tags":compiledObjectData.Tags,
 					"Position":compiledObjectData.Position,
@@ -386,25 +381,6 @@ static func fullCompile(makerViewport:SubViewport)->PackedByteArray:
 	return compiledMap
 
 
-# format
-# version_binary + \n
-# 4 byte u32 count + string binary list \n separated.
-# 0 separator
-# 4 byte u32 counter + list of 4 byte u32 hashes
-# 0 separator
-# 2X4 byte u32 counters (position count,id count) + (3x4 byte floats -> Vector3)
-# 0 separator
-# 4 byte u32 counter for objects
-#  4 byte u32 index for object name in string binary
-#  1 byte u8 object type identifire
-#  36 byte (3x(3x4 byte float vectors)) transform3d info
-#  4 byte u32 counter for parameter binary size
-#    4 byte u32 counter # of parameters
-#    ALL 4 byte u32 id for parameter name string in string list
-#    arbitrary size parameter value bytes
-#  4 byte u32 counter for tag count
-#   ALL 4 byte u32 index for tag name in string list
-# TYPE_SPECIFIC_INFO
 
 
 class fullCompileMapData extends compilerMapData:
@@ -442,15 +418,13 @@ class fullCompileMapData extends compilerMapData:
 	func getIDListBinary()->PackedByteArray:
 		var binary:PackedByteArray=[]
 		#track how many of each ID we need to go through to have them all
-		var idCounts:PackedByteArray=[0,0,0,0,0,0,0,0]
-		idCounts.encode_u32(0,positionIDs.size())
-		idCounts.encode_u32(4,normalIDs.size())
+		var idCounts:PackedByteArray=[0,0,0,0]
+		idCounts.encode_u32(0,vector3IDs.size())
+		#idCounts.encode_u32(4,normalIDs.size())
 		binary.append_array(idCounts)
 		
-		for pos in positionIDs.values():
-			binary.append_array(compilerService.encodeVector3Float(pos))
-		for pos in normalIDs.values():
-			binary.append_array(compilerService.encodeVector3Float(pos))
+		for vector in vector3IDs.values():
+			binary.append_array(compilerService.encodeVector3Float(vector))
 		return binary
 	
 	func getCollisionObjects() -> PackedByteArray:
@@ -475,15 +449,17 @@ class fullCompileMapData extends compilerMapData:
 		binary.encode_u32(0,objects.size())
 		var nameID:PackedByteArray=PackedByteArray([0,0,0,0])
 		var paramSize = PackedByteArray([0,0,0,0])
+		var transform_binary:PackedByteArray=[0,0,0,0,0,0,0,0,0,0,0,0]
 		for object in objects:
 			var objectData = objects[object]
-			nameID.encode_u32(0,getStringID(object))
+			nameID.encode_u32(0,objectData.get("Identifier"))
 			binary.append_array(nameID)
 			binary.append(objectData.get("Type"))
 			#object transform info. POSITION|ROTATION|SCALE
-			binary.append_array(compilerService.encodeVector3Float(objectData.get("Position")))
-			binary.append_array(compilerService.encodeVector3Float(objectData.get("Rotation")))
-			binary.append_array(compilerService.encodeVector3Float(objectData.get("Scale")))
+			transform_binary.encode_u32(0,objectData.get("Position"))
+			transform_binary.encode_u32(4,objectData.get("Rotation"))
+			transform_binary.encode_u32(8,objectData.get("Scale"))
+			binary.append_array(transform_binary)
 			#no gap as it isnt necessary
 			var params = objectData.get("Parameters",[])
 			paramSize.encode_u32(0,params.size())
@@ -531,6 +507,7 @@ class fullCompileMapData extends compilerMapData:
 					if materialList.has(mat):continue
 					materialList.push_back(mat)
 				objects[compiledObjectData.Identifier]={
+					"Identifier":getStringID(compiledObjectData.Identifier),
 					"Type":ObjectModel.objectTypes.MESH,
 					"Tags":compiledObjectData.Tags,
 					"Surface":compiledObjectData.Mesh.Surfaces,
@@ -547,6 +524,7 @@ class fullCompileMapData extends compilerMapData:
 			ObjectModel.objectTypes.OBJECT:
 				var compiledObjectData = object.getCompiledData(self,true)
 				objects[compiledObjectData.Identifier]={
+					"Identifier":getStringID(compiledObjectData.Identifier),
 					"Type":ObjectModel.objectTypes.OBJECT,
 					"Tags":compiledObjectData.Tags,
 					"Position":compiledObjectData.Position,
@@ -572,6 +550,7 @@ class fullCompileMapData extends compilerMapData:
 class decompilerInfo extends RefCounted:
 	var stringList:Array=[]
 	var materialList:Array[MaterialService.materialModel]=[]
+	var vector3List:PackedVector3Array=[]
 	var vertexList:PackedVector3Array=[]
 	var normalList:PackedVector3Array=[]
 	
