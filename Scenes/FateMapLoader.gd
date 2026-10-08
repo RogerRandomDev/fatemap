@@ -9,7 +9,6 @@ extends Node3D
 	get:return false
 
 signal fmt_loaded
-signal id_loaded
 signal objects_loaded
 signal finished
 
@@ -38,15 +37,6 @@ func reloadMap()->void:
 	for child in get_children():
 		child.process_mode=Node.PROCESS_MODE_DISABLED
 
-
-func decodeVectorList(file:FileAccess,seekDistance:int=0,scaler:float=1.0)->PackedVector3Array:
-	var arr=PackedVector3Array()
-	var offset:int=0
-	while offset<seekDistance:
-		arr.push_back(compilerService.decodeVector3Float(0,file.get_buffer(12))*scaler)
-		offset+=12
-	return arr
-
 func loadVersionTXT(file:FileAccess)->void:
 	var n_byte=file.get_8()
 	while n_byte!=0:
@@ -72,10 +62,6 @@ func loadFMTS(file:FileAccess)->void:
 		decompiler.materialList.push_back(MaterialService.getMaterialByHash(file.get_buffer(4).decode_u32(0)))
 	file.get_8()
 
-func loadVectorIDS(file:FileAccess)->void:
-	var vector3Count:int=file.get_buffer(4).decode_u32(0)
-	decompiler.vector3List=decodeVectorList(file,vector3Count*12)
-	file.get_8()
 
 func loadObjects(loadOnto:Node,file:FileAccess)->void:
 	var objectCount:int=file.get_buffer(4).decode_u32(0)
@@ -86,12 +72,12 @@ func loadObjects(loadOnto:Node,file:FileAccess)->void:
 		var _objectName = decompiler.stringList[loadingObject]
 		var objectType = file.get_8()
 		#file.get_8()
-		var objectTransform = file.get_buffer(12)
+		var objectTransform = file.get_buffer(24)
 		var decodedTransform:Transform3D=Transform3D()
 		# applies position|rotation|scale
-		decodedTransform.origin=decompiler.vector3List[objectTransform.decode_u32(0)]
-		decodedTransform.basis=Basis.from_euler(decompiler.vector3List[objectTransform.decode_u32(4)])
-		decodedTransform.basis=decodedTransform.basis.scaled_local(decompiler.vector3List[objectTransform.decode_u32(8)])
+		decodedTransform.origin=compilerService.decodeVector3Float(0,objectTransform,false)
+		decodedTransform.basis=Basis.from_euler(compilerService.decodeVector3Float(12,objectTransform,true))
+		decodedTransform.basis=decodedTransform.basis.scaled_local(compilerService.decodeVector3Float(18,objectTransform,true))
 		
 		var obj:CompiledObjectModel.ObjectModelData=CompiledObjectModel.ObjectModelData.new()
 		var objData=ObjectDataResource.new()
@@ -119,7 +105,6 @@ func loadObjects(loadOnto:Node,file:FileAccess)->void:
 				if surfaceSize!=0:
 					objectMesh=CompiledObjectModel.ObjectMesh.loadCompiledMesh(
 					decompiler.materialList,
-					decompiler.vector3List,
 					file.get_buffer(surfaceSize),
 					1.0/size
 				)
@@ -164,9 +149,9 @@ func loadObjectCollision(collision:PackedByteArray)->SurfaceTool:
 	var curAt:int=0
 	var scaler:float= 1.0/size
 	while curAt<collision.size():
-		var pID=collision.decode_u32(curAt)
-		curAt+=4
-		st.add_vertex(decompiler.vector3List[pID]*scaler)
+		var collision_vertex=compilerService.decodeVector3Float(curAt,collision,true)
+		curAt+=6
+		st.add_vertex(collision_vertex*scaler)
 	return st
 
 func attachObjectCollision(obj:Node,mode:int,collisionST:SurfaceTool)->void:
@@ -196,8 +181,8 @@ func fullLoad(loadOnto:Node,file:FileAccess)->void:
 	loadStringList(file)
 	loadFMTS(file)
 	fmt_loaded.emit()
-	loadVectorIDS(file)
-	id_loaded.emit()
+	#loadVectorIDS(file)
+	#id_loaded.emit()
 	loadObjects(loadOnto,file)
 	objects_loaded.emit()
 	finished.emit()

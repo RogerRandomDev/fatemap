@@ -21,6 +21,7 @@ func _ready() -> void:
 			face.uvScale.x=value
 		MeshEditService.editing.mesh.rebuild()
 	)
+	uvScaleX.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	var uvScaleY:SpinBox=createSpinBox(
 		-10000,
 		10000,
@@ -33,9 +34,52 @@ func _ready() -> void:
 			face.uvScale.y=value
 		MeshEditService.editing.mesh.rebuild()
 	)
+	uvScaleY.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	var uvOffsetX:SpinBox=createSpinBox(
+		-10000,
+		10000,
+		0.001,
+		&"OffsetX",
+		func(value):
+		var updateFaces=MeshEditService.editing.selectedFaces
+		if updateFaces.size()==0:updateFaces=MeshEditService.editing.mesh.faces
+		for face in updateFaces:
+			face.uvOffset.x=value
+		MeshEditService.editing.mesh.rebuild()
+	)
+	uvOffsetX.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	var uvOffsetY:SpinBox=createSpinBox(
+		-10000,
+		10000,
+		0.001,
+		&"OffsetY",
+		func(value):
+		var updateFaces=MeshEditService.editing.selectedFaces
+		if updateFaces.size()==0:updateFaces=MeshEditService.editing.mesh.faces
+		for face in updateFaces:
+			face.uvOffset.y=value
+		MeshEditService.editing.mesh.rebuild()
+	)
+	uvOffsetY.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	var uvRotation:SpinBox=createSpinBox(
+		-360,
+		360,
+		0.001,
+		&"Rotation",
+		func(value):
+		var updateFaces=MeshEditService.editing.selectedFaces
+		if updateFaces.size()==0:updateFaces=MeshEditService.editing.mesh.faces
+		for face in updateFaces:
+			face.uvRotation=value/180 * PI
+		MeshEditService.editing.mesh.rebuild()
+	)
+	uvRotation.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	
 	infoSet.add_child(uvScaleX)
 	infoSet.add_child(uvScaleY)
+	infoSet.add_child(uvOffsetX)
+	infoSet.add_child(uvOffsetY)
+	infoSet.add_child(uvRotation)
 	
 	add_child(infoSet)
 	add_child(selectionInfo)
@@ -51,6 +95,9 @@ func updateWithSelectedObject()->void:
 		firstFace=MeshEditService.editing.selectedFaces[0]
 	infoSet.get_node("ScaleX").set_value_no_signal(firstFace.uvScale.x)
 	infoSet.get_node("ScaleY").set_value_no_signal(firstFace.uvScale.y)
+	infoSet.get_node("OffsetX").set_value_no_signal(firstFace.uvOffset.x)
+	infoSet.get_node("OffsetY").set_value_no_signal(firstFace.uvOffset.y)
+	infoSet.get_node("Rotation").set_value_no_signal(firstFace.uvRotation/PI * 180)
 
 func displaySelectedFaceInfo()->void:
 	for child in selectionInfo.get_children():child.queue_free()
@@ -83,6 +130,7 @@ func createSpinBox(minV:float,maxV:float,step:float,boxName:StringName,method:Ca
 	box.step=step
 	box.name=boxName
 	box.value_changed.connect(method)
+	box.tooltip_text=boxName
 	return box
 
 func createLabel(on:Control,text:String)->void:

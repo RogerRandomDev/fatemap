@@ -52,12 +52,12 @@ class ObjectModelData extends RefCounted:
 		return built
 
 
-const BYTES_PER_FACE_COMPILED:int=30
+const BYTES_PER_FACE_COMPILED:int=50
 class ObjectMesh extends ArrayMesh:
 	
 	func _init()->void:
 		pass
-	static func loadCompiledMesh(matList:Array=[],vectors:Array=[],binary:PackedByteArray=[],scaler:float=1.0)->ArrayMesh:
+	static func loadCompiledMesh(matList:Array=[],binary:PackedByteArray=[],scaler:float=1.0)->ArrayMesh:
 		var checkFrom:int=0
 		var surfaces:Dictionary={}
 		
@@ -72,14 +72,13 @@ class ObjectMesh extends ArrayMesh:
 				st.set_material(surfaceUsed.materialMat)
 				surfaces[surfaceUsed]=st
 			var surface_st:SurfaceTool=surfaces[surfaceUsed]
-			const sub_offset = 8
-			surface_st.set_normal(vectors[faceData.decode_u32(26)])
+			const sub_offset = 16
 			for i in 3:
 				surface_st.set_uv(Vector2(
-						faceData.decode_half(6+sub_offset*i),
-						faceData.decode_half(8+sub_offset*i)
+						faceData.decode_half(14+sub_offset*i),
+						faceData.decode_half(16+sub_offset*i)
 					))
-				surface_st.add_vertex(vectors[faceData.decode_u32(2+sub_offset*i)]*scaler)
+				surface_st.add_vertex(compilerService.decodeVector3Float(2+sub_offset*i,faceData,false)*scaler)
 		var outputMesh:ArrayMesh=ArrayMesh.new()
 		for st in surfaces.values():
 			st.commit(outputMesh)
