@@ -291,7 +291,7 @@ func convertSurfacesToBinary(compiler:compilerService.compilerMapData=null)->Pac
 	binarySurfaceData.resize(offset)
 	return binarySurfaceData
 
-const BYTES_PER_FACE_COMPILED:int=42
+const BYTES_PER_FACE_COMPILED:int=30
 func convertSurfacesToBinaryCompiled(compiler:compilerService.compilerMapData=null)->PackedByteArray:
 	var binarySurfaceData:PackedByteArray=[]
 	for mat in faceMaterialMap.keys():
@@ -307,7 +307,7 @@ func convertSurfacesToBinaryCompiled(compiler:compilerService.compilerMapData=nu
 		face_bytes
 	)
 	var offset:int=0
-	const sub_offset = 12
+	const sub_offset = 8
 	for face in faces:
 		var compiledSurfaceId=compiler.materialList.find(face.surfaceMaterial)
 		if face.surfaceMaterial.materialTags.has("ignore_render"):continue
@@ -316,9 +316,9 @@ func convertSurfacesToBinaryCompiled(compiler:compilerService.compilerMapData=nu
 			var active_vertex=face.vertices[i]
 			binarySurfaceData.encode_u32(offset+2+sub_offset*i,compiler.getVector3ID(active_vertex.position))
 			var vertex_actual_uv:Vector2=(active_vertex.uv*face.uvScale+face.uvOffset).rotated(face.uvRotation)
-			binarySurfaceData.encode_float(offset+6+sub_offset*i,vertex_actual_uv.x)
-			binarySurfaceData.encode_float(offset+10+sub_offset*i,vertex_actual_uv.y)
-		binarySurfaceData.encode_u32(offset+38,compiler.getVector3ID(face.normal))
+			binarySurfaceData.encode_half(offset+6+sub_offset*i,vertex_actual_uv.x)
+			binarySurfaceData.encode_half(offset+8+sub_offset*i,vertex_actual_uv.y)
+		binarySurfaceData.encode_u32(offset+26,compiler.getVector3ID(face.normal))
 		offset+=BYTES_PER_FACE_COMPILED
 	binarySurfaceData.resize(offset)
 	return binarySurfaceData
@@ -356,10 +356,11 @@ func loadCompiledSurfaces(matList:Array=[],vectors:PackedVector3Array=[],binary:
 				vectors[faceData.decode_u32(2+sub_offset*i)]*scaler
 				)
 			faceVertexUVs.push_back(
-				Vector2(
-					faceData.decode_float(6+sub_offset*i),
-					faceData.decode_float(10+sub_offset*i)
-					)
+				#Vector2(
+					#faceData.decode_float(6+sub_offset*i),
+					#faceData.decode_float(10+sub_offset*i)
+					#)
+				Vector2.ZERO
 				)
 		var _faceNormal = getNormalID(vectors[faceData.decode_u32(38)])
 		var face = meshFace.new(
