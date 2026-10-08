@@ -19,5 +19,5 @@ static func executeMethod(methodName:StringName,params:Array=[])->Variant:
 	var method=ToolMethods.get(methodName,null)
 	if method==null:return
 	if method.get_unbound_arguments_count()-params.size()>0:return
-	return method.callv(params)
+	return await method.callv(params)
 	

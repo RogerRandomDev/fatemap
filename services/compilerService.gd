@@ -556,9 +556,6 @@ class fullCompileMapData extends compilerMapData:
 class decompilerInfo extends RefCounted:
 	var stringList:Array=[]
 	var materialList:Array[MaterialService.materialModel]=[]
-	var vector3List:PackedVector3Array=[]
-	var vertexList:PackedVector3Array=[]
-	var normalList:PackedVector3Array=[]
 	
 	var objectList:Array=[]
 	

@@ -58,4 +58,4 @@ func transformed()->void:
 
 func paramChanged(param:StringName,value:Variant)->void:
 	set(param,value)
-	signalService.emitSignal(&"meshSelectionChanged")
+	paramUpdated.emit()

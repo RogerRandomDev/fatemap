@@ -2,11 +2,12 @@ extends Node
 
 ## placeholder that should be removed for an actual file at some point
 var mapData=null
+var mapFileDialog=load("res://Scenes/MapMaker/SaveLoadMapDialog.tscn").instantiate()
 
 
 func _ready() -> void:
 	loadContents.call_deferred()
-
+	add_child(mapFileDialog)
 
 func loadContents()->void:
 	#var FileItem := GUIToolbarService.AddToolbarItem(
@@ -45,16 +46,22 @@ func loadContents()->void:
 	ToolMethodService.addToolMethod(&"ExportMapCustom",
 	func(_v=null):
 		var worldChecked = get_tree().current_scene.mapViewport
+		var filePath :String= await mapFileDialog.saveOrLoad(0,ParameterService.getParam("loadedMapFile"))
+		if filePath.is_empty():return
 		mapData = compilerService.compileMapData(worldChecked)
 		#temporary file
-		var f=FileAccess.open_compressed("user://test.fatemapEditor",FileAccess.WRITE,FileAccess.COMPRESSION_GZIP)
+		var f=FileAccess.open_compressed(filePath,FileAccess.WRITE,FileAccess.COMPRESSION_GZIP)
 		f.store_buffer(mapData)
 		f.close()
 		)
 	ToolMethodService.addToolMethod(&"LoadMapCustom",
 	func(_v=null):
 		var worldChecked = get_tree().current_scene.mapViewport
-		var f=FileAccess.open_compressed("user://test.fatemapEditor",FileAccess.READ,FileAccess.COMPRESSION_ZSTD)
+		var filePath :String= await mapFileDialog.saveOrLoad(1)
+		if filePath.is_empty():return
+		var f=FileAccess.open_compressed(filePath,FileAccess.READ,FileAccess.COMPRESSION_ZSTD)
+		ParameterService.setParam("loadedMapFile",filePath)
+		
 		EditLoader.loadMapData(worldChecked.get_node("PlacedObjects"),f.get_buffer(f.get_length()))
 		UndoRedoService.clearAllActions()
 		)

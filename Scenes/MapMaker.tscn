@@ -67,9 +67,6 @@ mesh = SubResource("QuadMesh_mmgm2")
 
 [sub_resource type="GDScript" id="GDScript_mmgm2"]
 script/source = "extends SubViewportContainer
-
-
-
 "
 
 [node name="MapMaker" type="VBoxContainer"]
