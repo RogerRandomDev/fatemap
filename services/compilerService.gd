@@ -257,6 +257,10 @@ class compilerMapData extends RefCounted:
 	func getVersionBinary()->PackedByteArray:
 		var versionBin:PackedByteArray=[]
 		versionBin.append_array("0.0.1".to_ascii_buffer())
+		var compileParameters=ParameterService.getParam(&"compileParameters")
+		if compileParameters==null:compileParameters={}
+		versionBin.append_array(var_to_bytes(compileParameters))
+		
 		return versionBin
 	
 	func getStringListBinary()->PackedByteArray:
@@ -556,10 +560,13 @@ class fullCompileMapData extends compilerMapData:
 class decompilerInfo extends RefCounted:
 	var stringList:Array=[]
 	var materialList:Array[MaterialService.materialModel]=[]
-	var vector3List:PackedVector3Array=[]
-	var vertexList:PackedVector3Array=[]
-	var normalList:PackedVector3Array=[]
 	
 	var objectList:Array=[]
 	
+	var formatVersion:int=0
+	var formatParameters:Dictionary={}
+	
+	func loadFormat(formatData:PackedByteArray)->void:
+		formatVersion=formatData.decode_u16(0)
+		formatParameters=bytes_to_var(formatData.slice(2))
 	

@@ -1,0 +1,15 @@
+[gd_scene load_steps=2 format=3 uid="uid://d0cdth36gxlht"]
+
+[ext_resource type="Script" path="res://Scenes/MapMaker/save_load_map_dialog.gd" id="1_bx4pl"]
+
+[node name="SaveLoadMapDialog" type="FileDialog"]
+oversampling_override = 1.0
+title = "Open a File"
+initial_position = 4
+ok_button_text = "Save"
+file_mode = 0
+access = 1
+root_subfolder = "Maps/Editor"
+filters = PackedStringArray("*.fmpe")
+hidden_files_toggle_enabled = false
+script = ExtResource("1_bx4pl")

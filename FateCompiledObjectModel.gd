@@ -34,8 +34,13 @@ class ObjectModelData extends RefCounted:
 		var built:Node
 		var setClass = objectData.getInstance("class")
 		if setClass == null:setClass=""
-		if not setClass.is_empty():built=ClassDB.instantiate(setClass)
 		
+		if not setClass.is_empty():
+			#VERY MUCH TEMPORARY TODO: replace with faster lookup
+			var id = ProjectSettings.get_global_class_list().find_custom(func(v):return v.class==setClass)
+			if id!=-1:built=load(ProjectSettings.get_global_class_list()[id].path).new()
+			if id==-1 and ClassDB.class_exists(setClass):built=ClassDB.instantiate(setClass)
+			elif id==-1:push_warning("invalid/unloaded class (%s)"%setClass)
 		match objectType:
 			ObjectModel.objectTypes.MESH:
 				var objectMesh=MeshInstance3D.new()

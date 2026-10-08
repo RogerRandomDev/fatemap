@@ -164,7 +164,15 @@ func moveSelection(moveBy:Vector3,local:bool=true)->void:
 	#if its a normal object just offset its position
 	if MeshEditService.isEditing():
 		if MeshEditService.editing.selectedVertices.size()==0:
-			MeshEditService.editing.dataObject.position+=moveBy
+			UndoRedoService.startAction("MoveObject",UndoRedo.MERGE_ALL if hasDragged else UndoRedo.MERGE_DISABLE)
+			UndoRedoService.addDoProperty(selectedObj,"global_position",selectedObj.global_position+moveBy)
+			UndoRedoService.addUndoProperty(selectedObj,"global_position",selectedObj.global_position)
+			UndoRedoService.addMethods(
+				func():signalService.emitSignal.call_deferred(&"meshSelectionChanged"),
+				func():signalService.emitSignal.call_deferred(&"meshSelectionChanged"),
+			)
+			UndoRedoService.commitAction(true)
+			signalService.emitSignal(&"meshSelectionChanged")
 			if MeshEditService.editing.dataObject.has_method("transformed"):
 				MeshEditService.editing.dataObject.call("transformed")
 		MeshEditService.editing.translateSelection(moveBy,local)
