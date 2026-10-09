@@ -21,7 +21,7 @@ var objectData:ObjectDataResource:
 var objectDisplay:Node3D
 
 
-func getData()->ObjectDataResource:return null
+func getData()->ObjectDataResource:return objectData
 
 func getCompiledData(compiler:compilerService.compilerMapData,_full:bool=false)->Dictionary:return {
 	"Identifier":name,
@@ -30,7 +30,7 @@ func getCompiledData(compiler:compilerService.compilerMapData,_full:bool=false)-
 	"Rotation":global_rotation,
 	"Scale":global_basis.get_scale(),
 	"Tags":objectData.getTagsForCompiler(compiler),
-	"Parameters":objectData.getParametersForCompiler(compiler)
+	"Parameters":objectData.getParametersForCompiler(compiler,true)
 }
 
 func getBounds()->AABB:
@@ -47,5 +47,23 @@ func setObjectData(data)->void:
 	data.parameterChanged.connect(self.paramChanged)
 
 func paramChanged(param:StringName,value:Variant)->void:
-	set(param,value)
-	paramUpdated.emit()
+	if !get_property_list().any(func(r):return r.name==param):
+		objectDisplay.set(param,value)
+	else:
+		set(param,value)
+	paramUpdated.emit.call_deferred()
+
+func initializeDefaults()->void:
+	for param in objectData.parameterNames:
+		if get(param)!=null:
+			objectData.setInstance(param,get(param))
+	for param in objectData.inheritedParameterNames:
+		if get(param)!=null:
+			objectData.setInstance(param,get(param))
+
+
+
+func _notification(what: int) -> void:
+	match what:
+		NOTIFICATION_TRANSFORM_CHANGED:
+			paramUpdated.emit()

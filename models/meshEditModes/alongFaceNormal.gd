@@ -28,9 +28,9 @@ func updateSelectionLocation(mousePosition:Vector2,mergeMoves:bool=false)->bool:
 	#snap the slide location and push it back onto the ray afterwards
 	#targetSlideLocation=getPointAlongRay(targetSlideLocation.snappedf(ParameterService.getParam(&"snapDistance")))
 	
-	var currentEditLocation=referenceFace.getCenter()*editingObject.global_transform.basis.get_rotation_quaternion().inverse()+editingObject.global_position
+	var currentEditLocation=referenceFace.getCenter()*editingObject.global_transform.basis.get_scale()+editingObject.global_position
 	
-	var slideBy=(targetSlideLocation-currentEditLocation)
+	var slideBy=(targetSlideLocation-currentEditLocation)*editingObject.global_transform.basis.inverse().get_scale()
 	slideBy=slideBy.normalized()*snappedf(slideBy.length(),ParameterService.getParam(&"snapDistance"))
 	#slideBy*=editingObject.global_transform.basis.get_rotation_quaternion()
 	MeshEditService.editing.translateSelection(slideBy,true,mergeMoves)

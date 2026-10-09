@@ -13,9 +13,21 @@ inheritedParameter1/name = null
 inheritedParameter1/value = null
 inheritedParameter2/name = null
 inheritedParameter2/value = null
-parameterCount = 1
+inheritedParameter3/name = null
+inheritedParameter3/value = null
+parameterCount = 3
 parameter_0/name = "concave"
 parameter_0/description = "Specifies if this collision object should be convex or concave."
 parameter_0/type = "Boolean"
 parameter_0/value = false
+parameter_1/name = "positionRelativeToWorld"
+parameter_1/description = "#edit_only\\r
+aligns UV mapping relative to world"
+parameter_1/type = "Boolean"
+parameter_1/value = false
+parameter_2/name = "rotationRelativeToWorld"
+parameter_2/description = "#edit_only\\r
+aligns UV mapping relative to world"
+parameter_2/type = "Boolean"
+parameter_2/value = false
 metadata/_custom_type_script = "uid://dmuurymqm5l"

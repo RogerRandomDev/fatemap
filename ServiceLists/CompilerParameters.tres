@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="paramServiceParams" load_steps=2 format=3 uid="uid://3buj3j2b8al8"]
+
+[ext_resource type="Script" uid="uid://v2l1xtifo1ch" path="res://models/resources/paramServiceResource.gd" id="1_7dbxn"]
+
+[resource]
+script = ExtResource("1_7dbxn")
+parameterCount = 2
+parameter_0/name = "compilerVersion"
+parameter_0/description = "version of the compiler"
+parameter_0/type = "int"
+parameter_0/value = 0
+parameter_1/name = "compileParameters"
+parameter_1/description = "all compiler parameters"
+parameter_1/type = "Dictionary"
+parameter_1/value = {
+"precision:half_precision_collision": true,
+"precision:half_precision_vertex": true
+}
+metadata/_custom_type_script = "uid://v2l1xtifo1ch"

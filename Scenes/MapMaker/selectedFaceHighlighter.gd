@@ -72,4 +72,34 @@ func updatedMeshSelection()->void:
 							st.add_vertex(corners[edge[1]])
 			st.set_material(load("res://debugMaterial.tres"))
 			st.commit(mesh)
+		ObjectModel.objectTypes.DATA:
+			m.global_transform=Transform3D()
+			var pickableShapes = activeObj.get_node_or_null("PICKABLE_OBJECT")
+			if pickableShapes==null:return
+			var st=SurfaceTool.new()
+			st.begin(Mesh.PRIMITIVE_LINES)
+			for child in pickableShapes.get_children():
+				if child is CollisionShape3D:
+					var shape = child.shape
+					if shape is BoxShape3D:
+						var extents = shape.size * 0.5
+						var corners = [
+							Vector3(-extents.x, -extents.y, -extents.z),
+							Vector3( extents.x, -extents.y, -extents.z),
+							Vector3( extents.x,  extents.y, -extents.z),
+							Vector3(-extents.x,  extents.y, -extents.z),
+
+							Vector3(-extents.x, -extents.y,  extents.z),
+							Vector3( extents.x, -extents.y,  extents.z),
+							Vector3( extents.x,  extents.y,  extents.z),
+							Vector3(-extents.x,  extents.y,  extents.z),
+						]
+						for i in corners.size():
+							corners[i] = child.global_transform * corners[i]
+						var edges = [[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]]
+						for edge in edges:
+							st.add_vertex(corners[edge[0]])
+							st.add_vertex(corners[edge[1]])
+			st.set_material(load("res://debugMaterial.tres"))
+			st.commit(mesh)
 	m.mesh=mesh

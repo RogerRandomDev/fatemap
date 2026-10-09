@@ -63,12 +63,18 @@ func setupParamCreationBar()->void:
 		nameLine.caret_column=columnAt
 	)
 
+func reloadContents()->void:
+	loadContents.call_deferred(editingResource)
+
 func loadContents(contents:ObjectDataResource)->void:
+	if editingResource!=null:
+		editingResource.owner.paramUpdated.get_connections().map(func(f):if f.callable==reloadContents:editingResource.owner.paramUpdated.disconnect(f.callable))
 	editingResource=contents
 	tree.clear()
-	var rootItem=tree.create_item()
 	if contents==null:return
+	editingResource.owner.paramUpdated.connect(reloadContents)
 	var parameterValues = contents.getParameterDefaults(true,true,true)
+	var rootItem=tree.create_item()
 	for index in len(parameterValues):
 		var value=parameterValues[index]
 		var parameterItem = rootItem.create_child()
@@ -79,12 +85,14 @@ func loadContents(contents:ObjectDataResource)->void:
 			
 		parameterItem.set_metadata(0,value.name)
 		parameterItem.set_metadata(1,value.type)
-		parameterItem.set_tooltip_text(0,value.description)
+		parameterItem.set_tooltip_text(0,value.description.split("\\r")[-1])
 		match value.type:
 			"Boolean":
 				parameterItem.set_cell_mode(1,TreeItem.CELL_MODE_CHECK)
 			"Resource":
 				parameterItem.set_cell_mode(1,TreeItem.CELL_MODE_CUSTOM)
+			"Text":
+				parameterItem.set_edit_multiline(1,true)
 		parameterItem.set_editable(1,true)
 		parameterItem.set_tooltip_text(1,value.type)
 		updateValueShown(parameterItem,value.value)
@@ -112,7 +120,6 @@ func parameterEdited()->void:
 		newValue
 	)
 	if newValue==oldValue:return
-	await get_tree().process_frame
 	var undoRedoValueNew=editingResource.getUndoRedoParamValue(editedParam)
 	#only if we are a new changed value
 	UndoRedoService.startAction(&"ObjectParamChanged")

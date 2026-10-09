@@ -27,7 +27,7 @@ func _init(oldObject:meshEditMode=null)->void:
 func localNormal()->Vector3:
 	return editingNormal*editingObject.global_basis.get_rotation_quaternion().inverse()
 func  localPos()->Vector3:
-	return editingOrigin*editingObject.global_basis.get_rotation_quaternion().inverse()+editingObject.global_position
+	return editingOrigin*editingObject.global_basis.inverse()+editingObject.global_position
 
 
 ## clears all data so that you dont retain info from previous selections
@@ -62,12 +62,12 @@ func updateSelected(cleanPoint:RefCounted)->void:
 ## updates the selected face we will use for the edit direction and location info
 func updateSelectedCleanFace(cleanFace:objectMeshModel.cleanedFace)->void:
 	editingNormal=cleanFace.getNormal()
-	editingOrigin=cleanFace.getCenter()
+	editingOrigin=cleanFace.getCenter()*editingObject.global_basis.inverse()
 	referenceFace=cleanFace
 	updatePlane()
 func updateSelectedCleanEdge(cleanEdge:objectMeshModel.cleanedEdge)->void:
 	editingNormal=cleanEdge.getNormal()
-	editingOrigin=cleanEdge.getCenter()
+	editingOrigin=cleanEdge.getCenter()*editingObject.global_basis.inverse()
 	referenceEdge=cleanEdge
 	updatePlane()
 

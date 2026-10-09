@@ -42,6 +42,16 @@ func _init(old:ObjectDataResource=null) -> void:
 	owner=old.owner
 
 
+func getValueFromOwner(id:int=0):
+	var ownerValue=null if owner==null else owner.get(parameterNames[id])
+	return ownerValue if ownerValue!=null else parameterValues[id]
+
+func setValueFromOwner(id,value):
+	if owner==null:
+		parameterValues[id]=value
+	else:
+		owner.set(parameterNames[id],value)
+
 
 func getTagDefaults(includeInherited:bool=true)->PackedStringArray:
 	var tagList:PackedStringArray=[]
@@ -65,7 +75,7 @@ func getParameterDefaults(includeDefaults:bool=true,includeInherited:bool=true,o
 		var paramDictionary={
 			"name":parameterNames[index],
 			"type":parameterTypes[index],
-			"value":parameterValues[index],
+			"value":getValueFromOwner(index),
 			"description":parameterDescriptions[index]
 		}
 		
@@ -77,7 +87,6 @@ func getParameterDefaults(includeDefaults:bool=true,includeInherited:bool=true,o
 				parameterList[removeParamIndex]=paramDictionary
 				continue
 		parameterList.push_back(paramDictionary)
-	
 	
 	return parameterList
 
@@ -147,16 +156,18 @@ func getOwnParameter(property: StringName):
 		"type":
 			return parameterTypes[index]
 		"value":
-			return parameterValues[index]
+			return getValueFromOwner(index)
 		"description":
 			return parameterDescriptions[index]
 ## Gets the [param property] to the correlated parameter data section.[br]
 ## See [method getOwnParameter] for parameters from Self.
 func getInheritedParameter(property:StringName):
-	if property.split("parameter_").size()<2:return null
-	var index=property.split("parameter_")[1].split("/")[0]
+	if property.split("Parameter_").size()<2:return null
+	var index=property.split("Parameter_")[1].split("/")[0]
+	
 	if str(index.to_int()) != index:return null
 	index = index.to_int()
+	
 	match(property.split("/")[1]):
 		"name":
 			return inheritedParameterNames[index]
@@ -177,22 +188,22 @@ func getInheritedPropertyList() -> Array[Dictionary]:
 		&"usage": PROPERTY_USAGE_DEFAULT |  PROPERTY_USAGE_READ_ONLY | PROPERTY_USAGE_GROUP,
 		&"hint": PROPERTY_HINT_NONE,
 		&"hint_string": "inherited",
-		&"class_name": "inheritedParameter",
+		&"class_name": "inheritedParameter,inheritedParameter_",
 	})
 	for i in inheritedParameters.size():
 		properties.append({
-			"name": "inheritedParameter%s/name" % i,
+			"name": "inheritedParameter_%s/name" % i,
 			"type": TYPE_STRING,
 			&"hint_string": "inherited",
 			"hint": PROPERTY_HINT_NONE
 			})
 		properties.append({
-			"name": "inheritedParameter%s/value" % i,
+			"name": "inheritedParameter_%s/value" % i,
 			&"hint_string": "inherited",
 			"type": ObjectParameters.getTypeByName(inheritedParameters[i].type)[0]
 			})
 		properties.append({
-			"name": "inheritedParameter%s/source" % i,
+			"name": "inheritedParameter_%s/source" % i,
 			"type":TYPE_OBJECT,
 			&"hint_string": "inherited",
 			"usage":PROPERTY_USAGE_READ_ONLY | PROPERTY_USAGE_DEFAULT
@@ -264,6 +275,7 @@ func _set(property: StringName, value: Variant) -> bool:
 				return true
 			"value":
 				parameterValues[index]=value
+				setValueFromOwner(index,value)
 				return true
 			"description":
 				parameterDescriptions[index]=value
@@ -276,7 +288,6 @@ func _set(property: StringName, value: Variant) -> bool:
 			"value":
 				inheritedParameterValues[index]=value
 				return true
-	
 	return false
 
 func _get_property_list() -> Array[Dictionary]:
@@ -308,19 +319,22 @@ func getInstance(parameter:String)->Variant:
 	var index:int=parameterNames.find(parameter)
 	var inheritedParam=null if inheritedData==null else inheritedData.findParam(parameter)
 	if index==-1:return null if inheritedParam==null else inheritedParam.value
-	return parameterValues[index]
+	return getValueFromOwner(index)
 
 func setInstance(parameter:String,value:Variant)->void:
 	var index:int=parameterNames.find(parameter)
 	var inheritedParam=null if inheritedData == null else inheritedData.findParam(parameter)
 	#inherited and matching new value
-	if inheritedParam==null || inheritedParam.is_empty():return
-	if inheritedParam.value==value and index!=-1:
+	if (inheritedParam==null || inheritedParam.is_empty()) and index==-1:return
+	if index!=-1:
+		parameterValues[index]=value
+	if inheritedParam and inheritedParam.value==value and index!=-1:
 		parameterNames.remove_at(index)
 		parameterTypes.remove_at(index)
 		parameterDescriptions.remove_at(index)
 		parameterValues.remove_at(index)
-	if inheritedParam.value!=value and inheritedParam!=null and not inheritedParam.is_empty():
+	
+	if inheritedParam!=null and not inheritedParam.is_empty() and inheritedParam.value!=value:
 		if index==-1:
 			parameterNames.push_back(parameter)
 			parameterTypes.push_back(inheritedParam.type)
@@ -328,18 +342,18 @@ func setInstance(parameter:String,value:Variant)->void:
 				"custom parameter" if inheritedParam == null else inheritedParam.description
 			)
 			parameterValues.push_back(value)
-		else:
-			parameterValues[index]=value
 	parameterChanged.emit(parameter,value)
 
 func addInstanceParam(parameter:String,value:Variant,type:String)->void:
 	var index:int=parameterNames.find(parameter)
 	var inheritedParam=null if inheritedData==null else inheritedData.findParam(parameter)
-	if index!=-1:return
+	if index!=-1:
+		parameterValues[index]=value
+		return
 	parameterNames.push_back(parameter)
 	parameterTypes.push_back(type)
 	parameterDescriptions.push_back(
-		"custom parameter" if inheritedParam == null else inheritedParam.description
+		"custom parameter" if inheritedParam == null else inheritedParam.get("description","")
 	)
 	parameterValues.push_back(value)
 
@@ -347,12 +361,13 @@ func addInstanceParam(parameter:String,value:Variant,type:String)->void:
 
 
 #region Compiler related methods
-func getParametersForCompiler(compiler:compilerService.compilerMapData)->PackedByteArray:
+func getParametersForCompiler(compiler:compilerService.compilerMapData,full:bool=false)->PackedByteArray:
 	var neededParameters=getParameterDefaults(true,true,true)
 	var compiledParameters:PackedByteArray=[]
-	compiledParameters.resize(neededParameters.size()*4+2)
 	var nameIDs:PackedInt64Array=[]
 	var values:Array=[]
+	neededParameters=neededParameters.filter(func(param):return !(param.get("description","").contains("#dont_store") || full and param.get("description","").contains("#edit_only")))
+	compiledParameters.resize(neededParameters.size()*4+2)
 	for param in neededParameters:
 		nameIDs.push_back(compiler.getStringID(param.name))
 		values.push_back([param.type,param.value])

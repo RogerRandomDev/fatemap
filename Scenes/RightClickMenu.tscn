@@ -1,0 +1,40 @@
+[gd_scene load_steps=2 format=3 uid="uid://hdi1dbiy6hdd"]
+
+[sub_resource type="GDScript" id="GDScript_yd8wa"]
+script/source = "extends PopupPanel
+
+
+func _ready() -> void:
+	about_to_popup.connect(
+		func():
+			var m_pos:Vector2 = get_viewport().get_mouse_position()
+			await visibility_changed
+			position=m_pos
+			createByType(\"Label3D\")
+	)
+
+
+func createByType(type:String)->void:
+	match type:
+		\"Label3D\":
+			var obj=load(\"res://models/dataObjectModel.gd\").new()
+			obj.objectData=load(\"res://modelData/generic/Label3D.tres\").duplicate()
+			var lbl=Label3D.new()
+			obj.objectDisplay=lbl
+			obj.add_child(lbl)
+			lbl.text=\"Placeholder\"
+			var placeOn:Node3D = get_tree().current_scene.mapViewport.get_node(\"PlacedObjects\")
+			placeOn.add_child(obj)
+"
+
+[node name="RightClickMenu" type="PopupPanel"]
+oversampling_override = 1.0
+visible = true
+wrap_controls = false
+script = SubResource("GDScript_yd8wa")
+
+[node name="CreateObject" type="MenuButton" parent="."]
+offset_left = 4.0
+offset_top = 4.0
+offset_right = 96.0
+offset_bottom = 96.0

@@ -1,5 +1,4 @@
 extends Node
-class_name EditLoader
 
 static func loadMapData(loadOnto:Node,data:PackedByteArray=[])->void:
 	var decompiler=compilerService.decompilerInfo.new()
@@ -7,15 +6,14 @@ static func loadMapData(loadOnto:Node,data:PackedByteArray=[])->void:
 	for child in loadOnto.get_children():
 		child.free()
 	MeshEditService.setEditing(null)
-	#ParameterService.setParam(&"activeObject",null)
-	#this needs segmented still but the logic is mostly set up
 	var checkFrom:int=0
 	
-	var versionTXT:StringName
-	var versionEndMarker:int=data.find(0,1)
-	versionTXT=data.slice(0,versionEndMarker).get_string_from_ascii() as StringName
-	checkFrom+=versionEndMarker+1
-	print(versionTXT)
+	var versionEndMarker:int=data.decode_u32(2)
+	decompiler.loadFormat(data.slice(0,6+versionEndMarker))
+	
+	ParameterService.setParam(&"compileParameters",decompiler.formatParameters)
+	print(ParameterService.getParam(&"compileParameters"))
+	checkFrom+=versionEndMarker+7
 	var stringCount=data.decode_u32(checkFrom)
 	checkFrom+=4
 	for i in stringCount:
@@ -33,12 +31,6 @@ static func loadMapData(loadOnto:Node,data:PackedByteArray=[])->void:
 		fmtPaths.push_back(data.decode_u32(checkFrom))
 		checkFrom+=4
 	checkFrom+=1
-	#var idList = data.slice(checkFrom,checkFrom+4)
-	#checkFrom+=4
-	#var vector3Count:=idList.decode_u32(0)
-	#for vector in vector3Count:
-		#decompiler.vector3List.push_back(compilerService.decodeVector3Float(checkFrom,data))
-		#checkFrom+=12
 	for mat in fmtPaths:
 		decompiler.materialList.push_back(MaterialService.getMaterialByHash(mat))
 	while data.size()>checkFrom:
@@ -96,9 +88,14 @@ static func loadMapData(loadOnto:Node,data:PackedByteArray=[])->void:
 				var placedObjects=loadOnto
 				placedObjects.add_child(obj)
 				checkFrom+=1
+			ObjectModel.objectTypes.DATA:
+				obj=load("res://models/dataObjectModel.gd").new()
+				objData = ObjectDataResource.new()
+				obj.objectData=objData
+				loadOnto.add_child.call_deferred(obj)
+				checkFrom+=1
 		#set object transform we already calculated
 		obj.global_transform=decodedTransform
-		
 		obj.paramUpdated.connect(
 			signalService.emitSignal.bind(&"meshSelectionChanged")
 		)
@@ -107,8 +104,16 @@ static func loadMapData(loadOnto:Node,data:PackedByteArray=[])->void:
 		var paramBlockSize:int=data.decode_u32(checkFrom)
 		var paramData = compilerService.paramsDecode(data.slice(checkFrom+4,checkFrom+4+paramBlockSize),decompiler)
 		if paramData!=null:
+			if obj.objectType==ObjectModel.objectTypes.DATA:
+				if FileAccess.file_exists("res://modelData/generic/%s.tres"%paramData.get("class")[1]):
+					objData = load("res://modelData/generic/%s.tres"%paramData.get("class")[1]).duplicate()
+				obj.objectData=objData
+				var classObj=loadClass(objData.getInstance("class"))
+				obj.add_child(classObj)
+				obj.objectDisplay=classObj
 			for param in paramData.keys():
-				objData.setInstance(param,paramData[param][1])
+				if paramData[param][0]==null:continue
+				objData.addInstanceParam(param,paramData[param][1],paramData[param][0])
 		
 		checkFrom+=paramBlockSize+4
 		#load the tag list in
@@ -120,4 +125,14 @@ static func loadMapData(loadOnto:Node,data:PackedByteArray=[])->void:
 			]
 			objData.baseTags.push_back(tagName)
 			checkFrom+=4
+		obj.initializeDefaults()
 		checkFrom+=1
+
+
+static func loadClass(setClass:String):
+	var built=null
+	var id = ProjectSettings.get_global_class_list().find_custom(func(v):return v.class==setClass)
+	if id!=-1:built=load(ProjectSettings.get_global_class_list()[id].path).new()
+	if id==-1 and ClassDB.class_exists(setClass):built=ClassDB.instantiate(setClass)
+	elif id==-1:push_warning("invalid/unloaded class (%s)"%setClass)
+	return built

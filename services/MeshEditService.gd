@@ -21,11 +21,16 @@ static func setEditing(object:ObjectModel)->void:
 	if object==null:
 		editing=null
 		return
-	
 	editor=ParameterService.getParam(&"CurrentMeshEditMode").new()
 	editor.camera=object.get_viewport().get_camera_3d()
 	editor.updateEditingObject(object)
 	match object.objectType:
+		ObjectModel.objectTypes.DATA:
+			editor=load("res://models/meshEditModes/basicObject.gd").new()
+			editor.camera=object.get_viewport().get_camera_3d()
+			editor.updateEditingObject(object)
+			editing=editingMesh.new(object,null)
+			return
 		ObjectModel.objectTypes.OBJECT:
 			editor=load("res://models/meshEditModes/basicObject.gd").new()
 			editor.camera=object.get_viewport().get_camera_3d()
@@ -216,8 +221,8 @@ class editingMesh extends Resource:
 		aabb.size-=aabb.position
 		for vertex in mesh.positionIDs:
 			mesh.positionIDs[vertex]-=aabb.get_center()
-		meshObject.get_parent().position+=aabb.get_center()*meshObject.global_basis.get_rotation_quaternion().inverse()
-		mesh.globalTransform.origin+=aabb.get_center()*meshObject.global_basis.get_rotation_quaternion().inverse()
+		meshObject.get_parent().position+=aabb.get_center()*meshObject.global_basis
+		mesh.globalTransform.origin+=aabb.get_center()*meshObject.global_basis.inverse()
 		meshObject.get_parent().notification(Node3D.NOTIFICATION_TRANSFORM_CHANGED)
 	
 	func snapSelectedToGrid()->void:

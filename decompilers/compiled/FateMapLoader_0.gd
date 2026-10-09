@@ -1,6 +1,8 @@
 @tool
 extends Node3D
 
+const compilerVersion:int=0
+
 @export_file_path(".fatemap") var mapFile:String
 @export var size:float=1.0
 @export var reload:bool=false:
@@ -12,7 +14,6 @@ signal fmt_loaded
 signal objects_loaded
 signal finished
 
-var versionTXT:StringName=&""
 ### DATA FOR PARSING OUT THE MAP
 var decompiler:compilerService.decompilerInfo
 
@@ -37,12 +38,11 @@ func reloadMap()->void:
 	for child in get_children():
 		child.process_mode=Node.PROCESS_MODE_DISABLED
 
-func loadVersionTXT(file:FileAccess)->void:
-	var n_byte=file.get_8()
-	while n_byte!=0:
-		#slow but works
-		versionTXT+=PackedByteArray([n_byte]).get_string_from_ascii()
-		n_byte=file.get_8()
+func loadVersionFormat(file:FileAccess)->void:
+	var versionBytes:PackedByteArray=file.get_buffer(6)
+	versionBytes.append_array(file.get_buffer(versionBytes.decode_u32(2)))
+	decompiler.loadFormat(versionBytes)
+	file.get_8()
 
 func loadStringList(file:FileAccess)->void:
 	var stringCount:int=file.get_buffer(4).decode_u32(0)
@@ -104,6 +104,7 @@ func loadObjects(loadOnto:Node,file:FileAccess)->void:
 				var objectMesh:ArrayMesh
 				if surfaceSize!=0:
 					objectMesh=CompiledObjectModel.ObjectMesh.loadCompiledMesh(
+					decompiler,
 					decompiler.materialList,
 					file.get_buffer(surfaceSize),
 					1.0/size
@@ -138,19 +139,27 @@ func loadObjects(loadOnto:Node,file:FileAccess)->void:
 				placedObjects.add_child(builtObj)
 				#file.get_8()
 				decodedTransform=decodedTransform.scaled_local(scaleVector)
+			ObjectModel.objectTypes.DATA:
+				obj.objectType=ObjectModel.objectTypes.DATA
+				objData=ObjectDataResource.new(objData)
+				obj.objectData=objData
+				var builtObj=obj.build()
+				loadOnto.add_child(builtObj)
 				
 		#set object transform we already calculated
 		obj.global_transform=decodedTransform
 		obj.global_transform.origin/=size
 
 func loadObjectCollision(collision:PackedByteArray)->SurfaceTool:
+	var use_half_precision:bool=decompiler.formatParameters.get("precision:half_precision_collision",false)
+	var use_bytes:int=6<<int(!use_half_precision)
 	var st:SurfaceTool=SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var curAt:int=0
 	var scaler:float= 1.0/size
 	while curAt<collision.size():
-		var collision_vertex=compilerService.decodeVector3Float(curAt,collision,true)
-		curAt+=6
+		var collision_vertex=compilerService.decodeVector3Float(curAt,collision,use_half_precision)
+		curAt+=use_bytes
 		st.add_vertex(collision_vertex*scaler)
 	return st
 
@@ -177,7 +186,11 @@ func attachObjectCollision(obj:Node,mode:int,collisionST:SurfaceTool)->void:
 
 func fullLoad(loadOnto:Node,file:FileAccess)->void:
 	decompiler=compilerService.decompilerInfo.new()
-	loadVersionTXT(file)
+	loadVersionFormat(file)
+	if decompiler.formatVersion!=compilerVersion:
+		push_error("Mismatched compiler/decompiler versions. %s:%s"%[decompiler.formatVersion,compilerVersion])
+		return
+	
 	loadStringList(file)
 	loadFMTS(file)
 	fmt_loaded.emit()

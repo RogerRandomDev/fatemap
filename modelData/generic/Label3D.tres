@@ -1,0 +1,31 @@
+[gd_resource type="Resource" script_class="ObjectDataResource" load_steps=3 format=3 uid="uid://b43iem43i8ue7"]
+
+[ext_resource type="Resource" uid="uid://cw24807ltrvdv" path="res://modelData/baseObject.tres" id="1_117s7"]
+[ext_resource type="Script" uid="uid://dmuurymqm5l" path="res://models/resources/objectDataResource.gd" id="1_r84oq"]
+
+[resource]
+script = ExtResource("1_r84oq")
+inheritedData = ExtResource("1_117s7")
+inherited = null
+inheritedParameter_0/name = "class"
+inheritedParameter_0/value = ""
+inheritedParameter_0/source = ExtResource("1_117s7")
+inheritedParameter_1/name = "position"
+inheritedParameter_1/value = Vector3(0, 0, 0)
+inheritedParameter_1/source = ExtResource("1_117s7")
+inheritedParameter_2/name = "rotation_degrees"
+inheritedParameter_2/value = Vector3(0, 0, 0)
+inheritedParameter_2/source = ExtResource("1_117s7")
+inheritedParameter_3/name = "scale"
+inheritedParameter_3/value = Vector3(1, 1, 1)
+inheritedParameter_3/source = ExtResource("1_117s7")
+parameterCount = 2
+parameter_0/name = "text"
+parameter_0/description = "content for the label3D"
+parameter_0/type = "Text"
+parameter_0/value = "placeholder"
+parameter_1/name = "class"
+parameter_1/description = ""
+parameter_1/type = "Text"
+parameter_1/value = "Label3D"
+metadata/_custom_type_script = "uid://dmuurymqm5l"

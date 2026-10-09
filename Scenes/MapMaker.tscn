@@ -1,4 +1,4 @@
-[gd_scene load_steps=30 format=4 uid="uid://gq185wjg7pqu"]
+[gd_scene load_steps=32 format=4 uid="uid://gq185wjg7pqu"]
 
 [ext_resource type="Script" uid="uid://ctkdd8bryxxtr" path="res://Scenes/MapMaker/mapMaker.gd" id="1_cyx2k"]
 [ext_resource type="Theme" uid="uid://8cjq1xuuwswd" path="res://Scenes/MapMakerTheme.tres" id="1_ni7vo"]
@@ -13,9 +13,11 @@
 [ext_resource type="Script" uid="uid://bwfu3qiinbjdw" path="res://Scenes/MapMaker/WorldInteractions/EditPoints.gd" id="7_ni25v"]
 [ext_resource type="Shader" uid="uid://bi36atq3uupmr" path="res://Scenes/EditGrabPoint.gdshader" id="7_qtfr5"]
 [ext_resource type="Script" uid="uid://bllkwqns16g0j" path="res://Scenes/SelectObject.gd" id="8_bgu1o"]
+[ext_resource type="Script" uid="uid://b2nnfx4rj3ojo" path="res://Scenes/MapMaker/ViewCompilerParams.gd" id="8_gv50h"]
 [ext_resource type="Script" uid="uid://ddmd3kxolmy7b" path="res://Scenes/MapMaker/WorldInteractions/EditDeleteSelected.gd" id="8_ysyqw"]
 [ext_resource type="Script" uid="uid://dxjm221ox8g4l" path="res://Scenes/MapMaker/RightInspector.gd" id="9_nposp"]
 [ext_resource type="Script" uid="uid://bgtxjyyro3vut" path="res://Scenes/MapMaker/WorldInteractions/EditCreateMesh.gd" id="9_qtfr5"]
+[ext_resource type="Script" uid="uid://brcic2pa4abxp" path="res://Scenes/right_click_menu.gd" id="10_2xmiw"]
 [ext_resource type="Script" uid="uid://6sr3giptw1ue" path="res://Scenes/MapMaker/meshToolbar.gd" id="11_6lnv8"]
 [ext_resource type="Script" uid="uid://d276is10q1qdh" path="res://Scenes/MapMaker/WorldInteractions/EditObject.gd" id="14_ajyq3"]
 [ext_resource type="Script" uid="uid://chdkupotchpee" path="res://Scenes/MapMaker/WorldInteractions/EditInteractor.gd" id="14_qtfr5"]
@@ -67,9 +69,6 @@ mesh = SubResource("QuadMesh_mmgm2")
 
 [sub_resource type="GDScript" id="GDScript_mmgm2"]
 script/source = "extends SubViewportContainer
-
-
-
 "
 
 [node name="MapMaker" type="VBoxContainer"]
@@ -101,6 +100,9 @@ selectorItems = {
 "Sphere": SubResource("SphereMesh_54ncs")
 }
 
+[node name="ViewCompilerParams" type="Node" parent="."]
+script = ExtResource("8_gv50h")
+
 [node name="MapView" type="SubViewport" parent="."]
 world_3d = SubResource("World3D_l3yla")
 handle_input_locally = false
@@ -115,6 +117,9 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 1
 script = ExtResource("14_qtfr5")
+
+[node name="RightClickMenu" type="Node" parent="MapView/EditInteractions"]
+script = ExtResource("10_2xmiw")
 
 [node name="EditDeleteSelected" type="Node" parent="MapView/EditInteractions"]
 script = ExtResource("8_ysyqw")

@@ -4,7 +4,7 @@
 
 [resource]
 script = ExtResource("1_chr00")
-option_count = 4
+option_count = 5
 option_0/name = "Export as GLB"
 option_0/type = "default"
 option_0/description = "Exports the current map as a GLB"
@@ -25,4 +25,9 @@ option_3/type = "default"
 option_3/description = "testing compile for finalized maps if it works."
 option_3/value = &"TestingFullCompile"
 option_3/param = ""
+option_4/name = "Compile Settings"
+option_4/type = "default"
+option_4/description = "View and change settings for the compiler."
+option_4/value = &"ViewCompilerParams"
+option_4/param = ""
 metadata/_custom_type_script = "uid://56abiotdxm3f"

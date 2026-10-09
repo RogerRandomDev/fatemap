@@ -52,24 +52,31 @@ class ObjectModelData extends RefCounted:
 				var objectModel=load(objectTargetFile).instantiate()
 				if not built:built = objectModel
 				else:built.add_child(objectModel)
+			ObjectModel.objectTypes.DATA:
+				for param in len(objectData.parameterNames):
+					built.set(objectData.parameterNames[param],objectData.parameterValues[param])
 		
 		lastBuilt=built
 		return built
 
 
-const BYTES_PER_FACE_COMPILED:int=50
 class ObjectMesh extends ArrayMesh:
 	
 	func _init()->void:
 		pass
-	static func loadCompiledMesh(matList:Array=[],binary:PackedByteArray=[],scaler:float=1.0)->ArrayMesh:
+	static func loadCompiledMesh(decompiler:compilerService.decompilerInfo=null,matList:Array=[],binary:PackedByteArray=[],scaler:float=1.0)->ArrayMesh:
+		var use_half_precision:bool=decompiler.formatParameters.get("precision:half_precision_vertex",false)
+		var vertex_bytes:int=6<<int(!use_half_precision)
+		var bytes_used:int=14+vertex_bytes*3
+		var sub_offset :int= vertex_bytes+4
+		
 		var checkFrom:int=0
 		var surfaces:Dictionary={}
 		
 		while true:
-			var faceData = binary.slice(checkFrom,checkFrom+BYTES_PER_FACE_COMPILED)
-			checkFrom+=BYTES_PER_FACE_COMPILED
-			if(faceData.size()<BYTES_PER_FACE_COMPILED):break;
+			var faceData = binary.slice(checkFrom,checkFrom+bytes_used)
+			checkFrom+=bytes_used
+			if(faceData.size()<bytes_used):break;
 			var surfaceUsed = matList[faceData.decode_u16(0)]
 			if not surfaces.has(surfaceUsed):
 				var st=SurfaceTool.new()
@@ -77,13 +84,12 @@ class ObjectMesh extends ArrayMesh:
 				st.set_material(surfaceUsed.materialMat)
 				surfaces[surfaceUsed]=st
 			var surface_st:SurfaceTool=surfaces[surfaceUsed]
-			const sub_offset = 16
 			for i in 3:
 				surface_st.set_uv(Vector2(
-						faceData.decode_half(14+sub_offset*i),
-						faceData.decode_half(16+sub_offset*i)
+						faceData.decode_half(2+vertex_bytes+sub_offset*i),
+						faceData.decode_half(4+vertex_bytes+sub_offset*i)
 					))
-				surface_st.add_vertex(compilerService.decodeVector3Float(2+sub_offset*i,faceData,false)*scaler)
+				surface_st.add_vertex(compilerService.decodeVector3Float(2+sub_offset*i,faceData,use_half_precision)*scaler)
 		var outputMesh:ArrayMesh=ArrayMesh.new()
 		for st in surfaces.values():
 			st.commit(outputMesh)

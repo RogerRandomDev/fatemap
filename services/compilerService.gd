@@ -255,12 +255,13 @@ class compilerMapData extends RefCounted:
 		return stringList.find(text)
 	
 	func getVersionBinary()->PackedByteArray:
-		var versionBin:PackedByteArray=[]
-		versionBin.append_array("0.0.1".to_ascii_buffer())
+		var versionBin:PackedByteArray=[0,0,0,0,0,0]
+		versionBin.encode_u16(0,ParameterService.getParam(&"compilerVersion"))
 		var compileParameters=ParameterService.getParam(&"compileParameters")
 		if compileParameters==null:compileParameters={}
-		versionBin.append_array(var_to_bytes(compileParameters))
-		
+		compileParameters = var_to_bytes(compileParameters)
+		versionBin.append_array(compileParameters)
+		versionBin.encode_u32(2,compileParameters.size())
 		return versionBin
 	
 	func getStringListBinary()->PackedByteArray:
@@ -329,6 +330,8 @@ class precompileMapData extends compilerMapData:
 					objectSize.encode_u32(0,objectData.get("Model").size())
 					binary.append_array(objectSize)
 					binary.append_array(objectData.get("Model"))
+				ObjectModel.objectTypes.DATA:
+					pass
 			binary.push_back(0)
 			var params = objectData.get("Parameters",[])
 			paramSize.encode_u32(0,params.size())
@@ -362,9 +365,6 @@ class precompileMapData extends compilerMapData:
 					"Surface":compiledObjectData.Mesh.Surfaces,
 					"UV":compiledObjectData.Mesh.UVPosition,
 					"Transform":compiledObjectData.Transform,
-					"Position":compiledObjectData.Position,
-					"Rotation":compiledObjectData.Rotation,
-					"Scale":compiledObjectData.Scale,
 					"Parameters":compiledObjectData.Parameters,
 					"Group":currentGroup
 					}
@@ -377,15 +377,20 @@ class precompileMapData extends compilerMapData:
 					"Type":ObjectModel.objectTypes.OBJECT,
 					"Tags":compiledObjectData.Tags,
 					"Transform":compiledObjectData.Transform,
-					"Position":compiledObjectData.Position,
-					"Rotation":compiledObjectData.Rotation,
-					"Scale":compiledObjectData.Scale,
 					"Model":compiledObjectData.get("Object"),
 					"Parameters":compiledObjectData.Parameters,
 					"Group":currentGroup
 					}
 			ObjectModel.objectTypes.DATA:
-				pass
+				var compiledObjectData = object.getCompiledData(self)
+				objects[compiledObjectData.Identifier]={
+					"Identifier":getStringID(compiledObjectData.Identifier),
+					"Type":ObjectModel.objectTypes.DATA,
+					"Tags":compiledObjectData.Tags,
+					"Transform":compiledObjectData.Transform,
+					"Parameters":compiledObjectData.Parameters,
+					"Group":currentGroup
+					}
 			ObjectModel.objectTypes.GROUP:
 				addObjectList(
 					object.get_children(),
@@ -522,9 +527,6 @@ class fullCompileMapData extends compilerMapData:
 					"Collision":compiledObjectData.Mesh.Collision,
 					"UV":compiledObjectData.Mesh.UVPosition,
 					"Transform":compiledObjectData.Transform,
-					"Position":compiledObjectData.Position,
-					"Rotation":compiledObjectData.Rotation,
-					"Scale":compiledObjectData.Scale,
 					"Parameters":compiledObjectData.Parameters,
 					"Group":objects.size() if object.objectData.baseTags.has("no_group") else currentGroup
 					}
@@ -537,16 +539,23 @@ class fullCompileMapData extends compilerMapData:
 					"Type":ObjectModel.objectTypes.OBJECT,
 					"Tags":compiledObjectData.Tags,
 					"Transform":compiledObjectData.Transform,
-					"Position":compiledObjectData.Position,
-					"Rotation":compiledObjectData.Rotation,
-					"Scale":compiledObjectData.Scale,
 					"Model":compiledObjectData.get("Object"),
 					"Parameters":compiledObjectData.Parameters,
 					"Group":objects.size() if object.objectData.baseTags.has("no_group") else currentGroup
 					}
 				objectGroups.get_or_add(currentGroup,[]).push_back(compiledObjectData.Identifier)
 			ObjectModel.objectTypes.DATA:
-				pass
+				var compiledObjectData = object.getCompiledData(self,true)
+				objects[compiledObjectData.Identifier]={
+					"Identifier":getStringID(compiledObjectData.Identifier),
+					"Type":ObjectModel.objectTypes.DATA,
+					"Tags":compiledObjectData.Tags,
+					"Transform":compiledObjectData.Transform,
+					"Model":compiledObjectData.get("Object"),
+					"Parameters":compiledObjectData.Parameters,
+					"Group":objects.size() if object.objectData.baseTags.has("no_group") else currentGroup
+					}
+				objectGroups.get_or_add(currentGroup,[]).push_back(compiledObjectData.Identifier)
 			ObjectModel.objectTypes.GROUP:
 				addObjectList(
 					object.get_children(),
@@ -568,5 +577,4 @@ class decompilerInfo extends RefCounted:
 	
 	func loadFormat(formatData:PackedByteArray)->void:
 		formatVersion=formatData.decode_u16(0)
-		formatParameters=bytes_to_var(formatData.slice(2))
-	
+		formatParameters=bytes_to_var(formatData.slice(6))

@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=3 uid="uid://blklka1o5ijhc"]
 
-[ext_resource type="Script" uid="uid://whoevay6xrwu" path="res://Scenes/FateMapLoader.gd" id="1_bqyd2"]
+[ext_resource type="Script" uid="uid://whoevay6xrwu" path="res://decompilers/compiled/FateMapLoader_0.gd" id="1_bqyd2"]
 [ext_resource type="PackedScene" uid="uid://cc1m2a1obsyn4" path="res://character3D-2f9aa62bbb55e1ac17d277f5008d9df982168336/character.tscn" id="2_50pdt"]
 
 [node name="Testing" type="Node3D"]

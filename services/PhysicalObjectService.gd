@@ -81,6 +81,28 @@ static func buildPickableArea(object:ObjectPhysicalDataResource,instance:Node3D,
 	#area.input_event.connect(PhysicalObjectInputController.objectInputEvent.bind(instance))
 	return area
 
+
+static func buildPickableAreaFromDisplay(instance:ObjectModel)->StaticBody3D:
+	var area=StaticBody3D.new()
+	var body=CollisionShape3D.new()
+	if instance:instance.add_child(area)
+	var instanceDisplay=instance.objectDisplay
+	area.name="PICKABLE_OBJECT"
+	area.add_child(body)
+	
+	match instanceDisplay.get_class():
+		"Label3D":
+			var aabb=instanceDisplay.get_aabb()
+			body.shape=BoxShape3D.new()
+			body.shape.size=Vector3(0.25,0.25,0.25)
+			#body.position=-aabb.get_center()
+	
+	area.mouse_entered.connect(func():signalService.emitSignal(&"MouseEnteredObject",[instance]))
+	area.mouse_exited.connect(func():signalService.emitSignal(&"MouseExitedObject",[instance]))
+	#area.input_event.connect(PhysicalObjectInputController.objectInputEvent.bind(instance))
+	return area
+
+
 static func updatePickableArea(object:Node3D)->void:
 	var meshObject=object.get_node_or_null("MESH_OBJECT")
 	var areaObject=object.get_node_or_null("PICKABLE_OBJECT")

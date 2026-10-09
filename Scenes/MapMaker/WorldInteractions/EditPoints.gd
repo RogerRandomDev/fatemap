@@ -38,7 +38,7 @@ func updateMeshSelection()->void:
 	match(editMode):
 		MeshEditService.MeshEditMode.FACE:
 			for index in MeshEditService.editing.mesh.cleanedFaces:
-				var pointAt=index.getCenter()*MeshEditService.editing.meshObject.global_transform.basis.inverse()+MeshEditService.editing.meshObject.global_transform.origin
+				var pointAt=index.getCenter()*MeshEditService.editing.meshObject.global_transform.basis+MeshEditService.editing.meshObject.global_transform.origin
 				renderPoints[pointAt]=index
 				renderPointFaces.push_back(index.faces)
 		MeshEditService.MeshEditMode.EDGE:
