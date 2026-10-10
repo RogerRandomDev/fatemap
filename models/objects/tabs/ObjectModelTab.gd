@@ -35,13 +35,10 @@ func clearObjectList()->void:
 
 func loadMaterialList()->void:
 	var meshOptionsList:Dictionary={}
-	var searchDirectory="%sImported/Models/"%ProjectSettings.get_setting("fatemap/project_directory","res://")
+	var searchDirectory="%s/Imported/Models/"%ProjectSettings.get_setting("fatemap/project_directory","res://")
 	var doc = GLTFDocument.new()
 	for s in DirAccess.get_files_at(searchDirectory):
 		if not s.ends_with(".glb"):continue
-		if ResourceLoader.exists(searchDirectory+s):
-			meshOptionsList[searchDirectory+s]=ResourceLoader.load(searchDirectory+s)
-			continue
 		#on load fail load GLB directly
 		var state = GLTFState.new()
 		var error = doc.append_from_file(searchDirectory+s,state)

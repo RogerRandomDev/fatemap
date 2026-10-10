@@ -61,6 +61,14 @@ func moveObjToCursor(obj)->void:
 	
 	
 
+func applyScaleOnSelected(_v=null)->void:
+	var selectedObj = ParameterService.getParam(&\"activeObject\")
+	if selectedObj==null:return
+	if selectedObj.objectType==ObjectModel.objectTypes.MESH:
+		if not MeshEditService.isEditing():return
+		MeshEditService.editing.applyScale()
+		MeshEditService.editing.mesh.rebuild()
+		PhysicalObjectService.updatePickableArea(MeshEditService.editor.editingObject)
 
 
 #very much a placeholder currently
@@ -79,6 +87,8 @@ func buildRightMenu()->void:
 			createByType,type.trim_suffix(\".tres\"),\"Create a %s\"%type.trim_suffix(\".tres\")
 			)
 	
+	AddOption(base,&\"Apply Scale\",applyScaleOnSelected,\"\",\"Apply the scale of the selected mesh object\")
+	
 	AddOption(base,\"Extrude Selected\",func(_v=null):
 		var meshes = meshCreateExtruded.createExtrudedFromSelected()
 		for m in meshes:
@@ -87,6 +97,7 @@ func buildRightMenu()->void:
 		,
 		\"\",\"extrued selected faces on editing mesh\"
 		)
+	
 	
 	
 

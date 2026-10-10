@@ -12,4 +12,5 @@ func _init(old:ObjectDataResource=null) -> void:
 	parameterValues=old.parameterValues
 	baseTags=old.baseTags
 	inheritedTags=old.inheritedTags
+	inheritedData=old.inheritedData
 	owner=old.owner

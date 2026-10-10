@@ -10,7 +10,7 @@ static func createExtrudedFromSelected(extrudeLength:float=0.25)->Array[Physical
 		selectedCleanFaces[face._mesh.getCleanFaceForFace(face)]=null
 	for face:objectMeshModel.cleanedFace in selectedCleanFaces.keys():
 		var newExtruded=PhysicalObjectModel.new()
-		newExtruded.objectData=ObjectPhysicalDataResource.new()
+		newExtruded.objectData=ObjectPhysicalDataResource.new(face._mesh.ownerInstance.get_parent().objectData.inheritedData)
 		var extrudedMesh=objectMeshModel.new()
 		extrudedMesh.globalTransform=MeshEditService.editing.mesh.globalTransform
 		newExtruded.objectData.mesh=extrudedMesh

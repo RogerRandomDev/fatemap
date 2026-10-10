@@ -213,6 +213,11 @@ class editingMesh extends Resource:
 		
 		UndoRedoService.commitAction(true)
 	
+	func applyScale()->void:
+		for id in mesh.positionIDs:
+			mesh.positionIDs[id]*=dataObject.scale
+		dataObject.scale=Vector3.ONE
+	
 	func centerMesh()->void:
 		var aabb=AABB(mesh.positionIDs.values()[0],Vector3.ZERO)
 		for vertex in mesh.positionIDs.values():
