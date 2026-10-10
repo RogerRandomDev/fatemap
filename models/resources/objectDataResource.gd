@@ -408,11 +408,25 @@ func getTagsForCompiler(compiler:compilerService.compilerMapData)->PackedByteArr
 #region parameter special processing before providing their value
 
 func processParameter(param,type):
+	#much simpler for the compiled version.
 	match type:
 		"File":#file
+			var source=ProjectSettings.get_setting("fatemap/project_directory","res://")
+			param=param.replace("res://",source)
 			if not FileAccess.file_exists(param):return null
-			
-			return ResourceLoader.load(param)
+			if ResourceLoader.has_cached(param):return ResourceLoader.load(param)
+			#if ResourceLoader.exists(param):return ResourceLoader.load(param)
+			var file_type=param.split(".")[-1]
+			match file_type:
+				"svg":
+					var tex=Image.new()
+					tex.load(param)
+					return ImageTexture.create_from_image(tex)
+				"png":
+					var tex=Image.new()
+					tex.load(param)
+					return ImageTexture.create_from_image(tex)
+				#return load(param)
 	return param
 
 

@@ -35,7 +35,7 @@ func clearObjectList()->void:
 
 func loadMaterialList()->void:
 	var meshOptionsList:Dictionary={}
-	var searchDirectory="%sImported/Models/"%ParameterService.getParam("editorSettings").get("project_directory","res://")
+	var searchDirectory="%sImported/Models/"%ProjectSettings.get_setting("fatemap/project_directory","res://")
 	var doc = GLTFDocument.new()
 	for s in DirAccess.get_files_at(searchDirectory):
 		if not s.ends_with(".glb"):continue

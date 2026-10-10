@@ -10,7 +10,6 @@ parameter_0/description = ""
 parameter_0/type = "Dictionary"
 parameter_0/value = {
 "data_model_svg_scale": 2.0,
-"project_directory": "/home/roger/Documents/fatemap-example-test/",
 "show_data_model_svg": true
 }
 metadata/_custom_type_script = "uid://v2l1xtifo1ch"

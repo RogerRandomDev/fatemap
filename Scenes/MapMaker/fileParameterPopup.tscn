@@ -6,12 +6,16 @@ script/source = "extends FileDialog
 
 func _ready() -> void:
 	canceled.connect(file_selected.emit.bind(\"\"))
+	root_subfolder=ProjectSettings.get_setting(\"fatemap/project_directory\",\"res://\")
+	
 
 func selectFile(item:TreeItem)->String:
 	popup()
 	var context=item.get_meta(\"context\")
 	
 	var selected=await file_selected
+	selected = selected.replace(root_subfolder,\"res://\")
+	
 	return selected
 	
 "
@@ -20,6 +24,7 @@ func selectFile(item:TreeItem)->String:
 title = "Select file"
 initial_position = 4
 file_mode = 0
+access = 2
 hidden_files_toggle_enabled = false
 folder_creation_enabled = false
 layout_toggle_enabled = false
