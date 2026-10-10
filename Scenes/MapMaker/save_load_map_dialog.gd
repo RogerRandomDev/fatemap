@@ -14,11 +14,11 @@ func _ready() -> void:
 
 
 
-func saveOrLoad(mode:int=0,currentPath=null)->String:
+func saveOrLoad(_mode:int=0,currentPath=null)->String:
 	if currentPath!=null:
 		current_path=currentPath
 	popup()
-	match mode:
+	match _mode:
 		0:
 			file_mode=FileDialog.FILE_MODE_SAVE_FILE
 			root_subfolder="user://Maps/Editor"

@@ -87,7 +87,8 @@ static func paramValueEncode(paramValue,compiler:compilerService.compilerMapData
 	match paramValue[0]:
 		"Integer":
 			encoded.encode_u8(0,TYPE_INT)
-			encoded.append_array(encodeInt(paramValue[1],true,3))
+			var precision=!ParameterService.getParam(&"compileParameters").get("precision:32_bit_integers",false)
+			encoded.append_array(encodeInt(paramValue[1] if paramValue[1]!=null else 0,true,2+int(precision)))
 		"Float":
 			encoded.encode_u8(0,TYPE_FLOAT)
 			encoded.append_array(encodeFloat(paramValue[1]))
@@ -97,11 +98,23 @@ static func paramValueEncode(paramValue,compiler:compilerService.compilerMapData
 		"Vector3":
 			encoded.encode_u8(0,TYPE_VECTOR3)
 			encoded.append_array(compilerService.encodeVector3Float(paramValue[1]))
+		"Color":
+			encoded.encode_u8(0,TYPE_COLOR)
+			var val=paramValue[1].to_rgba32()
+			var bytes=PackedByteArray([0,0,0,0])
+			bytes.encode_u32(0,val)
+			encoded.append_array(bytes)
 		"Boolean":
 			encoded.encode_u8(0,TYPE_BOOL)
-			encoded.append(paramValue[1])
+			encoded.append(paramValue[1] if paramValue[1]!=null else false)
 		"Text":
 			encoded.encode_u8(0,TYPE_STRING)
+			if paramValue[1]:
+				encoded.append_array(encodeInt(compiler.getStringID(paramValue[1]),false,2))
+			else:
+				encoded.append_array(encodeInt(compiler.getStringID(&""),false,2))
+		"File":
+			encoded.encode_u8(0,TYPE_STRING+64) #offset to specify what it actually is
 			if paramValue[1]:
 				encoded.append_array(encodeInt(compiler.getStringID(paramValue[1]),false,2))
 			else:
@@ -169,8 +182,9 @@ static func paramValueDecode(paramValue,decompiler:compilerService.decompilerInf
 	match paramValue.decode_u8(0):
 		TYPE_INT:
 			decoded[0]=&"Integer"
-			decoded[1]=decodeInt(1,paramValue,true,3)
-			skipBytes=8
+			var precision=!decompiler.formatParameters.get("precision:32_bit_integers",false)
+			decoded[1]=decodeInt(1,paramValue,true,2+int(precision))
+			skipBytes=4<<int(precision)
 		TYPE_FLOAT:
 			decoded[0]=&"Float"
 			decoded[1]=decodeFloat(1,paramValue)
@@ -185,6 +199,10 @@ static func paramValueDecode(paramValue,decompiler:compilerService.decompilerInf
 			#skipBytes=4
 			decoded[1]=compilerService.decodeVector3Float(1,paramValue)
 			skipBytes=12
+		TYPE_COLOR:
+			decoded[0]=&"Color"
+			decoded[1]=Color.from_rgba8(paramValue.decode_u8(1),paramValue.decode_u8(2),paramValue.decode_u8(3),paramValue.decode_u8(4))
+			skipBytes=4
 		TYPE_BOOL:
 			decoded[0]=&"Boolean"
 			decoded[1]=bool(paramValue[1])
@@ -194,6 +212,10 @@ static func paramValueDecode(paramValue,decompiler:compilerService.decompilerInf
 			pass
 		TYPE_STRING:
 			decoded[0]=&"Text"
+			decoded[1]=decompiler.stringList[decodeInt(1,paramValue,false,2)]
+			skipBytes=4
+		TYPE_STRING+64:
+			decoded[0]=&"File"
 			decoded[1]=decompiler.stringList[decodeInt(1,paramValue,false,2)]
 			skipBytes=4
 	return [decoded,skipBytes]
@@ -578,3 +600,4 @@ class decompilerInfo extends RefCounted:
 	func loadFormat(formatData:PackedByteArray)->void:
 		formatVersion=formatData.decode_u16(0)
 		formatParameters=bytes_to_var(formatData.slice(6))
+	

@@ -106,6 +106,7 @@ script = ExtResource("8_gv50h")
 [node name="MapView" type="SubViewport" parent="."]
 world_3d = SubResource("World3D_l3yla")
 handle_input_locally = false
+canvas_item_default_texture_filter = 0
 physics_object_picking = true
 
 [node name="EditInteractions" type="Control" parent="MapView"]

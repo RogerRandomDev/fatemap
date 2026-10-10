@@ -5,13 +5,17 @@ var tree:Tree=Tree.new()
 
 var editingResource:ObjectDataResource
 
-
+var fileEditPopup=load("res://Scenes/MapMaker/fileParameterPopup.tscn").instantiate()
 
 func _ready() -> void:
 	size_flags_vertical=Control.SIZE_EXPAND_FILL
 	add_theme_constant_override("separation",2)
 	setupTree()
 	setupParamCreationBar()
+	setupFileEditPopup()
+
+func setupFileEditPopup()->void:
+	add_child(fileEditPopup)
 
 func setupTree()->void:
 	tree.size_flags_vertical=Control.SIZE_EXPAND_FILL
@@ -67,7 +71,7 @@ func reloadContents()->void:
 	loadContents.call_deferred(editingResource)
 
 func loadContents(contents:ObjectDataResource)->void:
-	if editingResource!=null:
+	if editingResource!=null and editingResource.owner!=null:
 		editingResource.owner.paramUpdated.get_connections().map(func(f):if f.callable==reloadContents:editingResource.owner.paramUpdated.disconnect(f.callable))
 	editingResource=contents
 	tree.clear()
@@ -82,17 +86,27 @@ func loadContents(contents:ObjectDataResource)->void:
 			0,
 			value.name
 			)
-			
+		var descriptionContext=value.description.split("\\r")
 		parameterItem.set_metadata(0,value.name)
 		parameterItem.set_metadata(1,value.type)
-		parameterItem.set_tooltip_text(0,value.description.split("\\r")[-1])
+		parameterItem.set_tooltip_text(0,descriptionContext[-1].strip_edges())
+		var context=Array(descriptionContext[0].split(" "))
+		parameterItem.set_meta("context",context)
 		match value.type:
+			"Integer":
+				if context.has("#type_enum"):
+					parameterItem.set_cell_mode(1,TreeItem.CELL_MODE_RANGE)
+					var enum_vals=context.find_custom(func(v):return v.begins_with("#enum_vals:"))
+					var vals=context[enum_vals].trim_prefix("#enum_vals:")
+					parameterItem.set_text(1,vals)
 			"Boolean":
 				parameterItem.set_cell_mode(1,TreeItem.CELL_MODE_CHECK)
 			"Resource":
 				parameterItem.set_cell_mode(1,TreeItem.CELL_MODE_CUSTOM)
 			"Text":
 				parameterItem.set_edit_multiline(1,true)
+			"File":
+				parameterItem.set_cell_mode(1,TreeItem.CELL_MODE_CUSTOM)
 		parameterItem.set_editable(1,true)
 		parameterItem.set_tooltip_text(1,value.type)
 		updateValueShown(parameterItem,value.value)
@@ -100,11 +114,16 @@ func loadContents(contents:ObjectDataResource)->void:
 func parameterEdited()->void:
 	var editedItem:TreeItem=tree.get_edited()
 	var editedParam:String=editedItem.get_metadata(0)
-	if editedItem.get_cell_mode(1)==TreeItem.CELL_MODE_CUSTOM:return
 	var newValue
+	if editedItem.get_cell_mode(1)==TreeItem.CELL_MODE_CUSTOM:return
 	match editedItem.get_metadata(1):
+		"Integer":
+			if editedItem.get_meta("context").has("#type_enum"):
+				newValue=editedItem.get_range(1)
 		"Boolean":
 			newValue=editedItem.is_checked(1)
+		"File":
+			pass
 	if newValue==null:
 		newValue=StringVarTypedService.toVar(
 			editedItem.get_text(1),editedItem.get_metadata(1)
@@ -159,26 +178,82 @@ func parameterEdited()->void:
 
 func customEdited(mouse_button_index: int)->void:
 	var _editedItem:TreeItem=tree.get_edited()
-	var _editedParam:String=_editedItem.get_metadata(0)
+	var index = _editedItem.get_index()
+	var editedParam:String=_editedItem.get_metadata(0)
 	if mouse_button_index==MOUSE_BUTTON_LEFT:
-		pass
+		var oldValue=editingResource.getInstance(editedParam)
+		var newValue=oldValue
+		match _editedItem.get_metadata(1):
+			"File":
+				var selectedFile = await fileEditPopup.selectFile(_editedItem)
+				_editedItem=tree.get_root().get_child(index)
+				if !selectedFile.is_empty():
+					newValue=selectedFile
+					_editedItem.set_text(1,selectedFile)
+				
+		editingResource.setInstance(editedParam,newValue)
+		var undoRedoValueOld=editingResource.getUndoRedoParamValue(editedParam)
+		if newValue==oldValue:return
+		var undoRedoValueNew=editingResource.getUndoRedoParamValue(editedParam)
+		#only if we are a new changed value
+		UndoRedoService.startAction(&"ObjectParamChanged")
+		UndoRedoService.addMethods(
+			func():
+				editingResource.setUndoRedoParamValue(
+					editedParam,
+					undoRedoValueNew
+				)
+				editingResource.setInstance(
+					editedParam,
+					newValue
+				)
+				var checkOn=tree.get_root().get_child(0)
+				while checkOn!=null && checkOn.get_metadata(0)!=editedParam:
+					checkOn=checkOn.get_next()
+				if checkOn!=null:
+					updateValueShown(checkOn,newValue)
+				,
+			func():
+				editingResource.setUndoRedoParamValue(
+					editedParam,
+					undoRedoValueOld
+				)
+				editingResource.setInstance(
+					editedParam,
+					oldValue
+				)
+				var checkOn=tree.get_root().get_child(0)
+				while checkOn!=null && checkOn.get_metadata(0)!=editedParam:
+					checkOn=checkOn.get_next()
+				if checkOn!=null:
+					updateValueShown(checkOn,oldValue)
+		)
+		UndoRedoService.commitAction()
 	if mouse_button_index==MOUSE_BUTTON_RIGHT:
 		pass
 
 func updateValueShown(item:TreeItem,value)->void:
 	match item.get_metadata(1):
 		"Boolean":
-			item.set_checked(1,value)
+			item.set_checked(1,value if value else false)
 		"Vector2":
 			item.set_text(1,StringVarTypedService.toStr(value))
 		"Vector3":
 			item.set_text(1,StringVarTypedService.toStr(value))
+		"Color":
+			item.set_text(1,StringVarTypedService.toStr(value))
+			item.set_custom_color(1,value)
 		"Text":
 			item.set_text(1,StringVarTypedService.toStr(value))
+		"File":
+			item.set_text(1,StringVarTypedService.toStr(value))
 		"Float":
-			item.set_text(1,StringVarTypedService.toStr(value))
+			item.set_text(1,StringVarTypedService.toStr(snappedf(value,0.0001)))
 		"Integer":
-			item.set_text(1,StringVarTypedService.toStr(value))
+			if item.get_meta("context").has("#type_enum"):
+				item.set_range(1,value if value else 0)
+			else:
+				item.set_text(1,StringVarTypedService.toStr(value))
 		"Object":
 			item.set_text(1,StringVarTypedService.toStr(value))
 		

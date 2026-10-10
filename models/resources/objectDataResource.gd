@@ -6,7 +6,9 @@ class_name ObjectDataResource
 @export var inheritedData:ObjectDataResource=null:
 	set(value):
 		if value==self:value = null
-		inheritedData=value
+		if value!=null:
+			inheritedData=value
+			inheritedData.owner=owner
 		updateInheritedParameters(true)
 	get:return inheritedData
 
@@ -24,7 +26,12 @@ var inheritedTags:PackedStringArray=[]
 
 var baseTags:PackedStringArray=[]
 
-var owner:Object=null
+var owner:Object=null:
+	set(v):
+		if inheritedData!=null:
+			inheritedData.owner=v
+		owner=v
+	get:return owner
 
 
 signal parameterChanged(parameter:StringName,value:Variant)
@@ -65,12 +72,13 @@ func getTagDefaults(includeInherited:bool=true)->PackedStringArray:
 	#ensure only unique tags, no duplicates allowed
 	return tagList
 
-func getParameterDefaults(includeDefaults:bool=true,includeInherited:bool=true,overrideMatchingNames:bool=true)->Array[Dictionary]:
+func getParameterDefaults(includeDefaults:bool=true,includeInherited:bool=true,overrideMatchingNames:bool=true,ignoreMatchingOverrides:bool=false)->Array[Dictionary]:
 	var parameterList:Array[Dictionary]=[]
+	var inheritedParams:Array[Dictionary]=[]
 	if includeInherited and inheritedData!=null:
-		parameterList.append_array(
-			inheritedData.getParameterDefaults(includeDefaults,includeInherited)
-		)
+		inheritedParams=inheritedData.getParameterDefaults(includeDefaults,includeInherited,overrideMatchingNames,ignoreMatchingOverrides)
+		parameterList.append_array(inheritedParams)
+		
 	for index in len(parameterNames):
 		var paramDictionary={
 			"name":parameterNames[index],
@@ -78,16 +86,21 @@ func getParameterDefaults(includeDefaults:bool=true,includeInherited:bool=true,o
 			"value":getValueFromOwner(index),
 			"description":parameterDescriptions[index]
 		}
-		
-		
 		#makes sure all parameter names are a unique value
 		if overrideMatchingNames:
 			var removeParamIndex=parameterList.find_custom(func(param):return param.name==parameterNames[index])
 			if removeParamIndex>-1:
+				paramDictionary.description=parameterList[removeParamIndex].description
 				parameterList[removeParamIndex]=paramDictionary
 				continue
 		parameterList.push_back(paramDictionary)
-	
+	#remove anything set to its default still.
+	if ignoreMatchingOverrides:
+		for parameter in inheritedParams:
+			var removeParamIndex=parameterList.find_custom(func(param):return param.name==parameter.name && param.value==parameter.value)
+			if removeParamIndex>-1:
+				if parameterList[removeParamIndex].description.contains("#keep_always"):continue
+				parameterList.remove_at(removeParamIndex)
 	return parameterList
 
 #region manage inheritance property set/get
@@ -342,7 +355,7 @@ func setInstance(parameter:String,value:Variant)->void:
 				"custom parameter" if inheritedParam == null else inheritedParam.description
 			)
 			parameterValues.push_back(value)
-	parameterChanged.emit(parameter,value)
+	parameterChanged.emit(parameter,processParameter(value,findParam(parameter).type))
 
 func addInstanceParam(parameter:String,value:Variant,type:String)->void:
 	var index:int=parameterNames.find(parameter)
@@ -362,7 +375,7 @@ func addInstanceParam(parameter:String,value:Variant,type:String)->void:
 
 #region Compiler related methods
 func getParametersForCompiler(compiler:compilerService.compilerMapData,full:bool=false)->PackedByteArray:
-	var neededParameters=getParameterDefaults(true,true,true)
+	var neededParameters=getParameterDefaults(true,true,true,full)
 	var compiledParameters:PackedByteArray=[]
 	var nameIDs:PackedInt64Array=[]
 	var values:Array=[]
@@ -389,5 +402,18 @@ func getTagsForCompiler(compiler:compilerService.compilerMapData)->PackedByteArr
 		compiledTags.encode_u32(i*4,stringID)
 		i+=1
 	return compiledTags
+
+#endregion
+
+#region parameter special processing before providing their value
+
+func processParameter(param,type):
+	match type:
+		"File":#file
+			if not FileAccess.file_exists(param):return null
+			
+			return ResourceLoader.load(param)
+	return param
+
 
 #endregion

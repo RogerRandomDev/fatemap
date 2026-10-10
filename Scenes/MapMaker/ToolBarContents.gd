@@ -86,4 +86,11 @@ func loadContents()->void:
 		GUIService.getByName(&"CompilerParamViewControl").reference.get_child(0).popup()
 	)
 	
+	ToolMethodService.addToolMethod(&"updateEditorSetting",
+	func(value,editorSetting):
+		ParameterService.getParam(&"editorSettings").set(editorSetting,value)
+		signalService.emitSignal(&"editorSettingChanged")
+	)
+	
+	
 	

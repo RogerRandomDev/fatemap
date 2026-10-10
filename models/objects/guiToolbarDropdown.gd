@@ -24,7 +24,8 @@ func buildFromResource(resource:guiDropdownResource,currentPopup:PopupMenu=get_p
 					context.get("name"),
 					context.get("value",&"") if not context.get("value",&"")==null else &"",
 					context.get("param",null),
-					context.get("description",null)
+					context.get("description",null).split("\\r")[-1],
+					context.get("description",null).split("\\r")[0]
 				)
 				continue
 			"checkbox":
@@ -33,7 +34,8 @@ func buildFromResource(resource:guiDropdownResource,currentPopup:PopupMenu=get_p
 					context.get("name"),
 					context.get("value",&"") if not context.get("value",&"")==null else &"",
 					context.get("param",null),
-					context.get("description",null)
+					context.get("description",null).split("\\r")[-1],
+					context.get("description",null).split("\\r")[0]
 				)
 				continue
 			"separator":
@@ -43,7 +45,7 @@ func buildFromResource(resource:guiDropdownResource,currentPopup:PopupMenu=get_p
 				var newSubMenu=PopupMenu.new()
 				currentPopup.add_submenu_node_item(context.get("name"),newSubMenu)
 				currentPopup.set_item_tooltip(currentPopup.item_count-1,
-					context.get("description",null)
+					context.get("description",null).split("\r")[-1]
 				)
 				buildFromResource(context.get("value"),newSubMenu)
 				continue
@@ -51,25 +53,32 @@ func buildFromResource(resource:guiDropdownResource,currentPopup:PopupMenu=get_p
 
 
 
-func AddOption(popup:PopupMenu,option:StringName,callback:StringName=&"",specialValue:String="",description:String="")->bool:
+func AddOption(popup:PopupMenu,option:StringName,callback:StringName=&"",specialValue:String="",description:String="",split_desc:String="")->bool:
 	var index=popup.item_count
 	popup.add_item(option,index)
 	popup.set_item_metadata(index,[callback,specialValue])
+	#special input base data
+	if description!=split_desc:
+		var _special=split_desc.split(",")
+	
 	if description!="" and description!=null:
-		popup.set_item_tooltip(index,description)
+		popup.set_item_tooltip(index,description.strip_edges())
 	return true
 
-func AddCheckOption(popup:PopupMenu,option:StringName,callback:StringName=&"",specialValue:String="",description:String="")->bool:
+func AddCheckOption(popup:PopupMenu,option:StringName,callback:StringName=&"",specialValue:String="",description:String="",split_desc:String="")->bool:
 	var index=popup.item_count
 	popup.add_check_item(option,index)
 	popup.set_item_as_checkable(index,true)
-	#set to true by default if provided
-	popup.set_item_checked(index,description.ends_with("##true"))
-	description=description.trim_suffix("##true")
+	
+	#special input base data
+	if description!=split_desc:
+		var special=split_desc.split(",")
+		if special.has("#editorsetting_param"):
+			popup.set_item_checked(index,ParameterService.getParam(&"editorSettings").get(specialValue,false))
 	
 	popup.set_item_metadata(index,[callback,specialValue])
 	if description!="" and description!=null:
-		popup.set_item_tooltip(index,description)
+		popup.set_item_tooltip(index,description.strip_edges())
 	return true
 
 
@@ -84,7 +93,7 @@ static func callIndexedMenuMethod(index:int=0,popup:PopupMenu=null)->void:
 	var meta_method = popup.get_item_metadata(index)
 	var checkableItem = popup.is_item_checkable(index)
 	
-	var meta_param=str_to_var(meta_method[1]) if meta_method[1]!=""else null
+	var meta_param=meta_method[1] if meta_method[1]!="" else null
 	
 	if checkableItem:
 		var isChecked = !popup.is_item_checked(index)

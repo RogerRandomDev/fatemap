@@ -92,10 +92,12 @@ static func buildPickableAreaFromDisplay(instance:ObjectModel)->StaticBody3D:
 	
 	match instanceDisplay.get_class():
 		"Label3D":
-			var aabb=instanceDisplay.get_aabb()
 			body.shape=BoxShape3D.new()
 			body.shape.size=Vector3(0.25,0.25,0.25)
 			#body.position=-aabb.get_center()
+		"Sprite3D":
+			body.shape=BoxShape3D.new()
+			body.shape.size=Vector3(0.25,0.25,0.25)
 	
 	area.mouse_entered.connect(func():signalService.emitSignal(&"MouseEnteredObject",[instance]))
 	area.mouse_exited.connect(func():signalService.emitSignal(&"MouseExitedObject",[instance]))

@@ -54,7 +54,7 @@ class ObjectModelData extends RefCounted:
 				else:built.add_child(objectModel)
 			ObjectModel.objectTypes.DATA:
 				for param in len(objectData.parameterNames):
-					built.set(objectData.parameterNames[param],objectData.parameterValues[param])
+					built.set(objectData.parameterNames[param],objectData.processParameter(objectData.parameterValues[param],objectData.parameterTypes[param]))
 		
 		lastBuilt=built
 		return built

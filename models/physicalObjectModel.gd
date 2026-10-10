@@ -31,6 +31,7 @@ func _ready() -> void:
 	if objectData==null:return
 	objectType=objectTypes.MESH
 	objectData.owner=self
+	
 	objectDisplay=PhysicalObjectService.buildMesh(objectData,self)
 	PhysicalObjectService.buildPickableArea(objectData,self,objectDisplay)
 	

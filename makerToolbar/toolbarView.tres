@@ -39,12 +39,18 @@ metadata/_custom_type_script = "uid://56abiotdxm3f"
 
 [sub_resource type="Resource" id="Resource_ob8md"]
 script = ExtResource("1_ob8md")
-option_count = 1
+option_count = 2
 option_0/name = "Object Origin"
 option_0/type = "checkbox"
 option_0/description = "Provides an indicator to the origin of an object"
 option_0/value = &""
 option_0/param = ""
+option_1/name = "DataModel Icons"
+option_1/type = "checkbox"
+option_1/description = "#editorsetting_param\\r
+Icons for DataObjectModels"
+option_1/value = &"updateEditorSetting"
+option_1/param = "show_data_model_svg"
 metadata/_custom_type_script = "uid://56abiotdxm3f"
 
 [resource]

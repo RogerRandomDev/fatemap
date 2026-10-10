@@ -10,9 +10,10 @@ static func loadMapData(loadOnto:Node,data:PackedByteArray=[])->void:
 	
 	var versionEndMarker:int=data.decode_u32(2)
 	decompiler.loadFormat(data.slice(0,6+versionEndMarker))
+	var compileParameters=ParameterService.getParam(&"compileParameters")
+	for param in decompiler.formatParameters:
+		compileParameters.set(param,decompiler.formatParameters[param])
 	
-	ParameterService.setParam(&"compileParameters",decompiler.formatParameters)
-	print(ParameterService.getParam(&"compileParameters"))
 	checkFrom+=versionEndMarker+7
 	var stringCount=data.decode_u32(checkFrom)
 	checkFrom+=4
@@ -75,6 +76,7 @@ static func loadMapData(loadOnto:Node,data:PackedByteArray=[])->void:
 				obj=load("res://models/modelObjectModel.gd").new()
 				obj.objectType=ObjectModel.objectTypes.OBJECT
 				objData = ObjectDataResource.new()
+				objData.inheritedData=load("res://modelData/baseObject.tres")
 				obj.objectData=objData
 				#TODO: parse and actually load OBJECT contents
 				var objectSize:int=data.decode_u32(checkFrom)
@@ -106,7 +108,7 @@ static func loadMapData(loadOnto:Node,data:PackedByteArray=[])->void:
 		if paramData!=null:
 			if obj.objectType==ObjectModel.objectTypes.DATA:
 				if FileAccess.file_exists("res://modelData/generic/%s.tres"%paramData.get("class")[1]):
-					objData = load("res://modelData/generic/%s.tres"%paramData.get("class")[1]).duplicate()
+					objData.inheritedData = load("res://modelData/generic/%s.tres"%paramData.get("class")[1]).duplicate()
 				obj.objectData=objData
 				var classObj=loadClass(objData.getInstance("class"))
 				obj.add_child(classObj)

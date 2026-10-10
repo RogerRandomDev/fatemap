@@ -4,17 +4,22 @@
 [ext_resource type="Script" uid="uid://dmuurymqm5l" path="res://models/resources/objectDataResource.gd" id="1_ous33"]
 
 [resource]
+resource_local_to_scene = true
 script = ExtResource("1_ous33")
 inheritedData = ExtResource("1_de47s")
 inherited = null
-inheritedParameter0/name = null
-inheritedParameter0/value = null
-inheritedParameter1/name = null
-inheritedParameter1/value = null
-inheritedParameter2/name = null
-inheritedParameter2/value = null
-inheritedParameter3/name = null
-inheritedParameter3/value = null
+inheritedParameter_0/name = "class"
+inheritedParameter_0/value = ""
+inheritedParameter_0/source = ExtResource("1_de47s")
+inheritedParameter_1/name = "position"
+inheritedParameter_1/value = Vector3(0, 0, 0)
+inheritedParameter_1/source = ExtResource("1_de47s")
+inheritedParameter_2/name = "rotation_degrees"
+inheritedParameter_2/value = Vector3(0, 0, 0)
+inheritedParameter_2/source = ExtResource("1_de47s")
+inheritedParameter_3/name = "scale"
+inheritedParameter_3/value = Vector3(1, 1, 1)
+inheritedParameter_3/source = ExtResource("1_de47s")
 parameterCount = 3
 parameter_0/name = "concave"
 parameter_0/description = "Specifies if this collision object should be convex or concave."

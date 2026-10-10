@@ -1,0 +1,26 @@
+[gd_scene load_steps=2 format=3 uid="uid://bc45ojtp3iis7"]
+
+[sub_resource type="GDScript" id="GDScript_prho5"]
+script/source = "extends FileDialog
+
+
+func _ready() -> void:
+	canceled.connect(file_selected.emit.bind(\"\"))
+
+func selectFile(item:TreeItem)->String:
+	popup()
+	var context=item.get_meta(\"context\")
+	
+	var selected=await file_selected
+	return selected
+	
+"
+
+[node name="FileParameterPopup" type="FileDialog"]
+title = "Select file"
+initial_position = 4
+file_mode = 0
+hidden_files_toggle_enabled = false
+folder_creation_enabled = false
+layout_toggle_enabled = false
+script = SubResource("GDScript_prho5")

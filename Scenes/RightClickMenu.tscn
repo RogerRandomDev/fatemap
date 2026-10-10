@@ -1,17 +1,20 @@
 [gd_scene load_steps=2 format=3 uid="uid://hdi1dbiy6hdd"]
 
 [sub_resource type="GDScript" id="GDScript_yd8wa"]
-script/source = "extends PopupPanel
+script/source = "extends PopupMenu
 
-
+var lastPos:Vector2
 func _ready() -> void:
+	buildRightMenu()
+	
 	about_to_popup.connect(
 		func():
 			var m_pos:Vector2 = get_viewport().get_mouse_position()
 			await visibility_changed
 			position=m_pos
-			createByType(\"Label3D\")
+			lastPos=position
 	)
+	
 
 
 func createByType(type:String)->void:
@@ -25,16 +28,103 @@ func createByType(type:String)->void:
 			lbl.text=\"Placeholder\"
 			var placeOn:Node3D = get_tree().current_scene.mapViewport.get_node(\"PlacedObjects\")
 			placeOn.add_child(obj)
+			moveObjToCursor(obj)
+		\"Sprite3D\":
+			var obj=load(\"res://models/dataObjectModel.gd\").new()
+			obj.objectData=load(\"res://modelData/generic/Sprite3D.tres\").duplicate()
+			var lbl=Sprite3D.new()
+			obj.objectDisplay=lbl
+			obj.add_child(lbl)
+			var placeOn:Node3D = get_tree().current_scene.mapViewport.get_node(\"PlacedObjects\")
+			placeOn.add_child(obj)
+			moveObjToCursor(obj)
+
+func moveObjToCursor(obj)->void:
+	var viewport = (GUIService.getByName(&\"PrimaryViewport\").reference.get_child(0) as SubViewport)
+	var cursor=lastPos-GUIService.getByName(&\"PrimaryViewport\").reference.global_position
+	var camera=viewport.get_camera_3d()
+	var normal = camera.project_ray_normal(cursor)
+	var origin = camera.project_ray_origin(cursor)
+	
+	var query=PhysicsRayQueryParameters3D.new()
+	query.from=origin
+	query.to=origin+normal*8
+	var collision = viewport.world_3d.direct_space_state.intersect_ray(query)
+	if collision.is_empty():
+		obj.global_position=(origin+normal*8).snappedf(
+			ParameterService.getParam(&\"snapDistance\")
+		)
+	else:
+		obj.global_position=(collision.position+collision.normal*ParameterService.getParam(&\"snapDistance\")).snappedf(
+			ParameterService.getParam(&\"snapDistance\")
+		)
+	
+	
+
+
+
+#very much a placeholder currently
+func buildRightMenu()->void:
+	var base=self
+	var addTypes=PopupMenu.new()
+	addMenuCallback(addTypes)
+	base.add_submenu_node_item(\"Add Data Type\",addTypes)
+	base.set_item_tooltip(base.item_count-1,\"create a datamodel for a selected type\")
+	#construct a list of all types we can create from this and add them to the options
+	var possibleTypes=Array(DirAccess.get_files_at(\"res://modelData/generic\"))
+	possibleTypes=possibleTypes.filter(func(v):return v.ends_with(\".tres\"))
+	for type in possibleTypes:
+		AddOption(addTypes,type.trim_suffix(\".tres\"),
+			createByType,type.trim_suffix(\".tres\"),\"Create a %s\"%type.trim_suffix(\".tres\")
+			)
+	
+
+
+
+func AddOption(_popup:PopupMenu,option:StringName,callback:Callable,specialValue:String,description:String)->bool:
+	var index=_popup.item_count
+	_popup.add_item(option,index)
+	_popup.set_item_metadata(index,[callback,specialValue])
+	
+	if description!=\"\" and description!=null:
+		_popup.set_item_tooltip(index,description.strip_edges())
+	return true
+
+func AddCheckOption(_popup:PopupMenu,option:StringName,callback:Callable,specialValue:String,description:String)->bool:
+	var index=_popup.item_count
+	_popup.add_check_item(option,index)
+	_popup.set_item_as_checkable(index,true)
+	
+	
+	_popup.set_item_metadata(index,[callback,specialValue])
+	if description!=\"\" and description!=null:
+		_popup.set_item_tooltip(index,description.strip_edges())
+	return true
+
+
+## Allows the menu to bind inputs without bulking the code elsewhere
+static func addMenuCallback(menu:PopupMenu)->void:
+	
+	if menu.index_pressed.get_connections().any(func(connection):return connection.callable.get_method()==callIndexedMenuMethod.get_method()):
+		return
+	menu.index_pressed.connect(callIndexedMenuMethod.bind(menu))
+## Triggers a method stored in a popup item's metadata
+static func callIndexedMenuMethod(index:int=0,_popup:PopupMenu=null)->void:
+	var meta_method = _popup.get_item_metadata(index)
+	var checkableItem = _popup.is_item_checkable(index)
+	
+	var meta_param=meta_method[1] if meta_method[1]!=\"\" else null
+	
+	if checkableItem:
+		var isChecked = !_popup.is_item_checked(index)
+		_popup.set_item_checked(index,isChecked)
+		meta_method[0].call(isChecked,meta_param)
+	else:
+		meta_method[0].call(meta_param)
 "
 
-[node name="RightClickMenu" type="PopupPanel"]
+[node name="RightClickMenu" type="PopupMenu"]
 oversampling_override = 1.0
 visible = true
 wrap_controls = false
 script = SubResource("GDScript_yd8wa")
-
-[node name="CreateObject" type="MenuButton" parent="."]
-offset_left = 4.0
-offset_top = 4.0
-offset_right = 96.0
-offset_bottom = 96.0

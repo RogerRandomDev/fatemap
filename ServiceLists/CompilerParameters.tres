@@ -13,6 +13,7 @@ parameter_1/name = "compileParameters"
 parameter_1/description = "all compiler parameters"
 parameter_1/type = "Dictionary"
 parameter_1/value = {
+"precision:32_bit_integers": true,
 "precision:half_precision_collision": true,
 "precision:half_precision_vertex": true
 }

@@ -1,0 +1,41 @@
+[gd_resource type="Resource" script_class="ObjectDataResource" load_steps=3 format=3 uid="uid://ba8fks54u8fnp"]
+
+[ext_resource type="Script" uid="uid://dmuurymqm5l" path="res://models/resources/objectDataResource.gd" id="1_ukgw5"]
+[ext_resource type="Resource" uid="uid://cw24807ltrvdv" path="res://modelData/baseObject.tres" id="1_vcjh6"]
+
+[resource]
+resource_local_to_scene = true
+script = ExtResource("1_ukgw5")
+inheritedData = ExtResource("1_vcjh6")
+inherited = null
+inheritedParameter_0/name = "class"
+inheritedParameter_0/value = ""
+inheritedParameter_0/source = ExtResource("1_vcjh6")
+inheritedParameter_1/name = "position"
+inheritedParameter_1/value = Vector3(0, 0, 0)
+inheritedParameter_1/source = ExtResource("1_vcjh6")
+inheritedParameter_2/name = "rotation_degrees"
+inheritedParameter_2/value = Vector3(0, 0, 0)
+inheritedParameter_2/source = ExtResource("1_vcjh6")
+inheritedParameter_3/name = "scale"
+inheritedParameter_3/value = Vector3(1, 1, 1)
+inheritedParameter_3/source = ExtResource("1_vcjh6")
+parameterCount = 4
+parameter_0/name = "class"
+parameter_0/description = "class"
+parameter_0/type = "Text"
+parameter_0/value = "Sprite3D"
+parameter_1/name = "texture"
+parameter_1/description = "#type_texture\\r
+Texture file used by the Sprite3D"
+parameter_1/type = "File"
+parameter_1/value = ""
+parameter_2/name = "texture_filter"
+parameter_2/description = "#type_enum #enum_vals:Nearest,Linear,Nearest_mipmap,Linear_mipmap\\rFilter mode for texture"
+parameter_2/type = "Integer"
+parameter_2/value = 3
+parameter_3/name = "billboard"
+parameter_3/description = "#inherit_type_default #type_enum #enum_vals:Disabled,Enabled,Y-Billboard\\rBillboard mode for the Sprite3D"
+parameter_3/type = "Integer"
+parameter_3/value = null
+metadata/_custom_type_script = "uid://dmuurymqm5l"

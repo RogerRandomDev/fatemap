@@ -35,10 +35,21 @@ func clearObjectList()->void:
 
 func loadMaterialList()->void:
 	var meshOptionsList:Dictionary={}
-	for s in DirAccess.get_files_at("res://Imported/Models"):
+	var searchDirectory="%sImported/Models/"%ParameterService.getParam("editorSettings").get("project_directory","res://")
+	var doc = GLTFDocument.new()
+	for s in DirAccess.get_files_at(searchDirectory):
 		if not s.ends_with(".glb"):continue
-		var f=load("res://Imported/Models/"+s)
-		meshOptionsList["res://Imported/Models/"+s]=f
+		if ResourceLoader.exists(searchDirectory+s):
+			meshOptionsList[searchDirectory+s]=ResourceLoader.load(searchDirectory+s)
+			continue
+		#on load fail load GLB directly
+		var state = GLTFState.new()
+		var error = doc.append_from_file(searchDirectory+s,state)
+		if error == OK:
+			var packed=PackedScene.new()
+			packed.pack(doc.generate_scene(state))
+			packed.resource_path="res://Imported/Models/%s"%s
+			meshOptionsList[searchDirectory+s]=packed
 	
 	for mesh in meshOptionsList.keys():
 		var objectOption = objectGridOption.instantiate()

@@ -62,5 +62,9 @@ func updateSelectionLocation(mousePosition:Vector2,mergeMoves:bool=false)->bool:
 		func():signalService.emitSignal.call_deferred(&"meshSelectionChanged"),
 		func():signalService.emitSignal.call_deferred(&"meshSelectionChanged"),
 	)
+	UndoRedoService.addMethods(
+		func():editingObject.paramUpdated.emit(),
+		func():editingObject.paramUpdated.emit()
+	)
 	UndoRedoService.commitAction(true)
 	return not slideBy.is_zero_approx()

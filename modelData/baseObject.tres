@@ -3,10 +3,12 @@
 [ext_resource type="Script" uid="uid://dmuurymqm5l" path="res://models/resources/objectDataResource.gd" id="1_eov51"]
 
 [resource]
+resource_local_to_scene = true
 script = ExtResource("1_eov51")
 parameterCount = 4
 parameter_0/name = "class"
-parameter_0/description = "class name of default or custom class script in godot."
+parameter_0/description = "#keep_always\\r
+class name of default or custom class script in godot."
 parameter_0/type = "Text"
 parameter_0/value = ""
 parameter_1/name = "position"

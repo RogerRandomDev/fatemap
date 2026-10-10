@@ -93,6 +93,10 @@ func moveSelection(moveBy:Vector3,_local:bool=true)->void:
 			func():signalService.emitSignal.call_deferred(&"meshSelectionChanged"),
 			func():signalService.emitSignal.call_deferred(&"meshSelectionChanged"),
 		)
+		UndoRedoService.addMethods(
+			func():selectedObj.paramUpdated.emit(),
+			func():selectedObj.paramUpdated.emit()
+		)
 		UndoRedoService.commitAction(true)
 	signalService.emitSignal(&"meshSelectionChanged")
 

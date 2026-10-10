@@ -24,7 +24,7 @@ var objectDisplay:Node3D
 func getData()->ObjectDataResource:return objectData
 
 func getCompiledData(compiler:compilerService.compilerMapData,_full:bool=false)->Dictionary:return {
-	"Identifier":name,
+	"Identifier":name.split("@")[2],
 	"Transform":global_transform,
 	"Position":global_position,
 	"Rotation":global_rotation,
