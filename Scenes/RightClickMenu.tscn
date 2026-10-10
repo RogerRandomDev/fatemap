@@ -66,6 +66,7 @@ func moveObjToCursor(obj)->void:
 #very much a placeholder currently
 func buildRightMenu()->void:
 	var base=self
+	addMenuCallback(base)
 	var addTypes=PopupMenu.new()
 	addMenuCallback(addTypes)
 	base.add_submenu_node_item(\"Add Data Type\",addTypes)
@@ -77,6 +78,16 @@ func buildRightMenu()->void:
 		AddOption(addTypes,type.trim_suffix(\".tres\"),
 			createByType,type.trim_suffix(\".tres\"),\"Create a %s\"%type.trim_suffix(\".tres\")
 			)
+	
+	AddOption(base,\"Extrude Selected\",func(_v=null):
+		var meshes = meshCreateExtruded.createExtrudedFromSelected()
+		for m in meshes:
+			var viewport = (GUIService.getByName(&\"PrimaryViewport\").reference.get_child(0) as SubViewport)
+			viewport.get_node(\"PlacedObjects\").add_child(m)
+		,
+		\"\",\"extrued selected faces on editing mesh\"
+		)
+	
 	
 
 

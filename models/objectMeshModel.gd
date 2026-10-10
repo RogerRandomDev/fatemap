@@ -26,6 +26,10 @@ var scaler:float=1.0 #extra scaling. used by the loader for finalized maps
 var ownerInstance:MeshInstance3D
 
 func  initializeFaces()->void:
+	faces.clear()
+	edges.clear()
+	vertices.clear()
+	
 	var dt:MeshDataTool=MeshDataTool.new()
 	dt.create_from_surface(self,0)
 	for face in dt.get_face_count():
@@ -63,7 +67,8 @@ func rebuild(replaceCleanFaces:bool=true)->void:
 			currentVertexIndex=face.loadToSurfaceTool(st,currentVertexIndex,faceIndex,surfaceIndex)
 			faceIndex+=1
 		st.generate_normals()
-		
+		st.generate_tangents()
+
 		var MDT=MeshDataTool.new()
 		MDT.create_from_surface(st.commit(),0)
 		surfacePool.push_back(MDT)
@@ -219,6 +224,16 @@ func getCleanEdgesTouchingCleanFace(cleanFace:cleanedFace)->Array[cleanedEdge]:
 		edgesTouching.push_back(edge)
 	return edgesTouching
 
+func getCleanEdgesForFace(cleanFace:cleanedFace)->Array[cleanedEdge]:
+	var edgesTouching:Array[cleanedEdge]=[]
+	for edge in cleanedEdges:
+		var edgePositions=edge.positionIDs
+		var connectedPoints:int=0
+		for posID in edgePositions:connectedPoints += cleanFace.positionIDs.count(posID)
+		if connectedPoints!=2:continue
+		edgesTouching.push_back(edge)
+	return edgesTouching
+
 func getCleanFaceForFace(face:meshFace)->cleanedFace:
 	return cleanedFaces[
 		cleanedFaces.find_custom(func(cleanFace):return cleanFace.faces.has(face))
@@ -238,6 +253,8 @@ func updateSelection(_vertices,_edges,_faces,ignoreChange:bool=false)->Dictionar
 		return {}
 	var changes = trackedSelection.getChanges(_vertices,_edges,_faces)
 	return changes
+
+
 
 func getCompilerData(compiler:compilerService.compilerMapData,full:bool=false)->Dictionary:
 	var uvPos=PackedByteArray()
@@ -556,9 +573,12 @@ class meshFace extends meshVertexObject:
 	
 	func updateMeshUVs()->void:
 		var mdt=_mesh.surfacePool[surfaceIndex]
-		for vertex in vertices:
-			mdt.set_vertex_uv(vertex.index,(vertex.uv*uvScale+uvOffset).rotated(uvRotation))
-			
+		vertexUVS.resize(len(vertices))
+		for id in len(vertices):
+			var vertex = vertices[id]
+			var calculated_uv=(vertex.uv*uvScale+uvOffset).rotated(uvRotation)
+			mdt.set_vertex_uv(vertex.index,calculated_uv)
+			vertexUVS[id]=calculated_uv
 	
 	func updateNormal()->void:
 		normal=_mesh.surfacePool[surfaceIndex].get_face_normal(faceIndex)
