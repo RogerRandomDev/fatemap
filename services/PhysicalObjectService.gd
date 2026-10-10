@@ -74,7 +74,7 @@ static func buildPickableArea(object:ObjectPhysicalDataResource,instance:Node3D,
 	if instance:instance.add_child(area)
 	area.name="PICKABLE_OBJECT"
 	area.add_child(body)
-	body.shape=mesh.create_trimesh_shape()
+	body.shape=mesh.create_convex_shape()
 	
 	area.mouse_entered.connect(func():signalService.emitSignal(&"MouseEnteredObject",[instance]))
 	area.mouse_exited.connect(func():signalService.emitSignal(&"MouseExitedObject",[instance]))
@@ -110,4 +110,4 @@ static func updatePickableArea(object:Node3D)->void:
 	var areaObject=object.get_node_or_null("PICKABLE_OBJECT")
 	if meshObject==null or areaObject==null:return
 	
-	areaObject.get_child(0).shape=meshObject.mesh.create_trimesh_shape()
+	areaObject.get_child(0).shape=meshObject.mesh.create_convex_shape()

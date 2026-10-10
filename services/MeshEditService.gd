@@ -18,7 +18,7 @@ static func initializeService()->void:pass
 
 static func setEditing(object:ObjectModel)->void:
 	signalService.emitSignal.call_deferred(&"UpdateEditingMesh")
-	if object==null:
+	if object==null or not object.is_inside_tree():
 		editing=null
 		return
 	editor=ParameterService.getParam(&"CurrentMeshEditMode").new()
@@ -212,6 +212,13 @@ class editingMesh extends Resource:
 		
 		
 		UndoRedoService.commitAction(true)
+	
+	func applyScale()->void:
+		for vertex in mesh.positionIDs:
+			mesh.positionIDs[vertex]*=dataObject.scale
+		dataObject.scale=Vector3.ONE
+		meshObject.get_parent().notification(Node3D.NOTIFICATION_TRANSFORM_CHANGED)
+		
 	
 	func centerMesh()->void:
 		var aabb=AABB(mesh.positionIDs.values()[0],Vector3.ZERO)

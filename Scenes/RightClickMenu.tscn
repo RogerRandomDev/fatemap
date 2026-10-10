@@ -14,7 +14,6 @@ func _ready() -> void:
 			position=m_pos
 			lastPos=position
 	)
-	
 
 
 func createByType(type:String)->void:
@@ -58,14 +57,61 @@ func moveObjToCursor(obj)->void:
 		obj.global_position=(collision.position+collision.normal*ParameterService.getParam(&\"snapDistance\")).snappedf(
 			ParameterService.getParam(&\"snapDistance\")
 		)
-	
-	
 
+func applyScaleOnSelected(_v=null)->void:
+	var selectedObj = ParameterService.getParam(&\"activeObject\")
+	if selectedObj==null:return
+	if selectedObj.objectType==ObjectModel.objectTypes.MESH:
+		if not MeshEditService.isEditing():return
+		MeshEditService.editing.applyScale()
+		MeshEditService.editing.mesh.rebuild()
+		PhysicalObjectService.updatePickableArea(MeshEditService.editor.editingObject)
+
+func booleanMesh(_v=null)->void:
+	var selectedObj = ParameterService.getParam(&\"activeObject\")
+	if selectedObj==null:return
+	if selectedObj.objectType==ObjectModel.objectTypes.MESH:
+		if not MeshEditService.isEditing():return
+		var secondBool=selectedObj.get_parent().get_child(1)
+		var returned = await MeshBoolean.execute(
+			secondBool,
+			selectedObj,
+			MeshBoolean.Operation.DIFFERENCE
+		)
+		UndoRedoService.startAction(&\"BooleanOperation\",UndoRedo.MERGE_DISABLE)
+		var root=selectedObj.get_parent()
+		for newObj in returned:
+			var obj=PhysicalObjectModel.new()
+			obj.objectData=ObjectPhysicalDataResource.new()
+			obj.objectData.mesh=newObj
+			obj.position=secondBool.global_position
+			UndoRedoService.addRef(obj)
+			UndoRedoService.addMethods(
+				func():root.add_child(obj),
+				func():root.remove_child(obj)
+			)
+			if newObj==returned[0]:
+				UndoRedoService.addDo(func():MeshEditService.setEditing(obj))
+			else:
+				UndoRedoService.addDo(func():MeshEditService.setEditing(null))
+		UndoRedoService.addMethods(
+			func():
+				root.remove_child(selectedObj)
+				root.remove_child(secondBool),
+			func():
+				root.add_child(selectedObj)
+				root.add_child(secondBool)
+		)
+		UndoRedoService.addUndo(func():MeshEditService.setEditing(selectedObj))
+		UndoRedoService.addUndoRef(selectedObj)
+		UndoRedoService.addUndoRef(secondBool)
+		UndoRedoService.commitAction(true)
 
 
 #very much a placeholder currently
 func buildRightMenu()->void:
 	var base=self
+	addMenuCallback(base)
 	var addTypes=PopupMenu.new()
 	addMenuCallback(addTypes)
 	base.add_submenu_node_item(\"Add Data Type\",addTypes)
@@ -78,6 +124,9 @@ func buildRightMenu()->void:
 			createByType,type.trim_suffix(\".tres\"),\"Create a %s\"%type.trim_suffix(\".tres\")
 			)
 	
+	AddOption(base,&\"Apply Scale\",applyScaleOnSelected,\"\",\"Apply the scale of the selected mesh object\")
+	AddOption(base,&\"Boolean Selection\",booleanMesh,\"\",\"Boolean\")
+
 
 
 

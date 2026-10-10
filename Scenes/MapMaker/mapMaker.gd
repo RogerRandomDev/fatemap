@@ -7,8 +7,9 @@ func _enter_tree() -> void:ServiceInitializer.initializeAllServices()
 
 func _ready() -> void:
 	loadGUILayout()
-	
-	MaterialService.loadAllFMT("res://Imported/Materials")
+	var materialSource = "%sImported/"%ProjectSettings.get_setting("fatemap/project_directory","res://")
+	MaterialService.materialSource=materialSource
+	MaterialService.loadAllFMT(materialSource.trim_suffix("/"))
 	PhysicalObjectInputController.initializeInputController()
 
 func loadGUILayout()->void:

@@ -6,6 +6,8 @@ static var materialHashes:Dictionary={}
 static var basicMaterial:Material=null
 static var basicMaterialParams:Dictionary={}
 
+static var materialSource:String="res://Imported"
+
 static func setDefaultMaterialBase(material:Material,params:Dictionary={})->void:
 	basicMaterial=material
 	basicMaterialParams=params
@@ -57,12 +59,13 @@ static func loadFMT(fmtPath:String)->materialModel:
 		values[lineRepresents] = lineValue
 	addMaterial(
 		values.get("name","NONE"),
-		load("res://Imported/"+values.get("material","Default/defaultMaterial.material")),
-		load("res://Imported/"+values.get("texture","Default/defaultTexture.png")),
+		load(materialSource+values.get("material","Materials/Default/defaultMaterial.material")),
+		ImageTexture.create_from_image(Image.load_from_file(materialSource+values.get("texture","Materials/Default/defaultTexture.png"))),
 		{},#values.get("parameters",{})
 		values.get("tags","").split(","),
 		fmtPath
 	)
+	
 	
 	return getMaterial(values.get("name","NONE"))
 
@@ -81,7 +84,7 @@ class materialModel extends Resource:
 	func _init(name:StringName=&"",params:Dictionary={},_path:String="",ignoreDefaultParams:bool=false):
 		materialName=name
 		path=_path
-		materialHash=hash(_path)
+		materialHash=hash(_path.split(MaterialService.materialSource)[-1])
 		if not ignoreDefaultParams:materialParameters=MaterialService.basicMaterialParams.duplicate(false)
 		for parameter in params:
 			materialParameters[parameter]=params[parameter]

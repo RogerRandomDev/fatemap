@@ -25,7 +25,7 @@ enabled=PackedStringArray("res://addons/Gizmo3DScript/plugin.cfg", "res://addons
 
 [fatemap]
 
-project_directory=""
+project_directory="/home/roger/Documents/fatemap-example-test/"
 
 [input]
 
