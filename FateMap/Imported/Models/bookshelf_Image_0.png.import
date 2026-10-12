@@ -2,17 +2,20 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://defammaohfko4"
-path.s3tc="res://.godot/imported/nodraw.png-e424ee335974d13d603bc6ca2f29883f.s3tc.ctex"
+uid="uid://yed83ofoepws"
+path.s3tc="res://.godot/imported/bookshelf_Image_0.png-1b313b15feed84910274fe8a9f555ad2.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
 }
+generator_parameters={
+"md5": "3e09fec73c74ab95d88c9a19dc639714"
+}
 
 [deps]
 
-source_file="res://Imported/Materials/Default/UTILITY/nodraw.png"
-dest_files=["res://.godot/imported/nodraw.png-e424ee335974d13d603bc6ca2f29883f.s3tc.ctex"]
+source_file="res://FateMap/Imported/Models/bookshelf_Image_0.png"
+dest_files=["res://.godot/imported/bookshelf_Image_0.png-1b313b15feed84910274fe8a9f555ad2.s3tc.ctex"]
 
 [params]
 

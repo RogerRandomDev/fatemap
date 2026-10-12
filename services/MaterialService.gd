@@ -6,7 +6,7 @@ static var materialHashes:Dictionary={}
 static var basicMaterial:Material=null
 static var basicMaterialParams:Dictionary={}
 
-static var materialSource:String="res://Imported"
+static var materialSource:String="res://FateMap/Imported"
 
 static func setDefaultMaterialBase(material:Material,params:Dictionary={})->void:
 	basicMaterial=material

@@ -81,7 +81,7 @@ func buildRightMenu()->void:
 	base.add_submenu_node_item(\"Add Data Type\",addTypes)
 	base.set_item_tooltip(base.item_count-1,\"create a datamodel for a selected type\")
 	#construct a list of all types we can create from this and add them to the options
-	var possibleTypes=Array(DirAccess.get_files_at(\"res://modelData/generic\"))
+	var possibleTypes=Array(DirAccess.get_files_at(\"res://FateMap/modelData/generic\"))
 	possibleTypes=possibleTypes.filter(func(v):return v.ends_with(\".tres\"))
 	for type in possibleTypes:
 		AddOption(addTypes,type.trim_suffix(\".tres\"),

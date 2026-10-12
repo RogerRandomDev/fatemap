@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="ObjectDataResource" load_steps=3 format=3 uid="uid://b43iem43i8ue7"]
 
-[ext_resource type="Resource" uid="uid://cw24807ltrvdv" path="res://modelData/baseObject.tres" id="1_117s7"]
+[ext_resource type="Resource" uid="uid://cw24807ltrvdv" path="res://FateMap/modelData/baseObject.tres" id="1_117s7"]
 [ext_resource type="Script" uid="uid://dmuurymqm5l" path="res://models/resources/objectDataResource.gd" id="1_r84oq"]
 
 [resource]

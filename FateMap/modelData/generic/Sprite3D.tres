@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="ObjectDataResource" load_steps=3 format=3 uid="uid://ba8fks54u8fnp"]
 
 [ext_resource type="Script" uid="uid://dmuurymqm5l" path="res://models/resources/objectDataResource.gd" id="1_ukgw5"]
-[ext_resource type="Resource" uid="uid://cw24807ltrvdv" path="res://modelData/baseObject.tres" id="1_vcjh6"]
+[ext_resource type="Resource" uid="uid://cw24807ltrvdv" path="res://FateMap/modelData/baseObject.tres" id="1_vcjh6"]
 
 [resource]
 resource_local_to_scene = true

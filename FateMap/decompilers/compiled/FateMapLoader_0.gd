@@ -26,7 +26,7 @@ func _ready() -> void:
 	reloadMap()
 
 func reloadMap()->void:
-	MaterialService.loadAllFMT("res://Imported/Materials")
+	MaterialService.loadAllFMT("res://FateMap/Imported/Materials")
 	for child in get_children():
 		child.queue_free()
 	if mapFile.is_empty():return
@@ -114,7 +114,7 @@ func loadObjects(loadOnto:Node,file:FileAccess)->void:
 				obj.objectType=ObjectModel.objectTypes.MESH
 				objData = ObjectPhysicalDataResource.new(objData)
 				
-				objData.inheritedData=load("res://modelData/meshObject.tres")
+				objData.inheritedData=load("res://FateMap/modelData/meshObject.tres")
 				
 				objData.mesh=objectMesh
 				obj.objectData=objData

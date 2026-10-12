@@ -64,7 +64,7 @@ static func loadMapData(loadOnto:Node,data:PackedByteArray=[])->void:
 				obj = PhysicalObjectModel.new()
 				obj.objectType=ObjectModel.objectTypes.MESH
 				objData = ObjectPhysicalDataResource.new()
-				objData.inheritedData=load("res://modelData/meshObject.tres")
+				objData.inheritedData=load("res://FateMap/modelData/meshObject.tres")
 				objData.mesh=objectMesh
 				
 				
@@ -77,7 +77,7 @@ static func loadMapData(loadOnto:Node,data:PackedByteArray=[])->void:
 				obj=load("res://models/modelObjectModel.gd").new()
 				obj.objectType=ObjectModel.objectTypes.OBJECT
 				objData = ObjectDataResource.new()
-				objData.inheritedData=load("res://modelData/baseObject.tres")
+				objData.inheritedData=load("res://FateMap/modelData/baseObject.tres")
 				obj.objectData=objData
 				#TODO: parse and actually load OBJECT contents
 				var objectSize:int=data.decode_u32(checkFrom)
@@ -108,8 +108,8 @@ static func loadMapData(loadOnto:Node,data:PackedByteArray=[])->void:
 		var paramData = compilerService.paramsDecode(data.slice(checkFrom+4,checkFrom+4+paramBlockSize),decompiler)
 		if paramData!=null:
 			if obj.objectType==ObjectModel.objectTypes.DATA:
-				if FileAccess.file_exists("res://modelData/generic/%s.tres"%paramData.get("class")[1]):
-					objData.inheritedData = load("res://modelData/generic/%s.tres"%paramData.get("class")[1]).duplicate()
+				if FileAccess.file_exists("res://FateMap/modelData/generic/%s.tres"%paramData.get("class")[1]):
+					objData.inheritedData = load("res://FateMap/modelData/generic/%s.tres"%paramData.get("class")[1]).duplicate()
 				obj.objectData=objData
 				var classObj=loadClass(objData.getInstance("class"))
 				obj.add_child(classObj)

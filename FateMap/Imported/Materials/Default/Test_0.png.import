@@ -2,8 +2,8 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://8huhfsxipngr"
-path.s3tc="res://.godot/imported/Tiles069_1K-PNG_Color.png-4954f3002116786fbf0c497c3e8aae09.s3tc.ctex"
+uid="uid://dmn78npfff2ac"
+path.s3tc="res://.godot/imported/Test_0.png-46ae482cc17bc1b37bd48e65d28fcf51.s3tc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc"],
 "vram_texture": true
@@ -11,8 +11,8 @@ metadata={
 
 [deps]
 
-source_file="res://Imported/Materials/Default/Tiles069_1K-PNG_Color.png"
-dest_files=["res://.godot/imported/Tiles069_1K-PNG_Color.png-4954f3002116786fbf0c497c3e8aae09.s3tc.ctex"]
+source_file="res://FateMap/Imported/Materials/Default/Test_0.png"
+dest_files=["res://.godot/imported/Test_0.png-46ae482cc17bc1b37bd48e65d28fcf51.s3tc.ctex"]
 
 [params]
 

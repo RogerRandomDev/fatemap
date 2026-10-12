@@ -59,7 +59,7 @@ func loadMaterialList()->void:
 	var surfaceMaterialList:Array[MaterialService.materialModel]=MaterialService.getMaterialList()
 	var subGroups:Dictionary={}
 	for surfaceMaterial in surfaceMaterialList:
-		var materialPath = surfaceMaterial.path.split("Imported/Materials/",false,1)[1]
+		var materialPath = surfaceMaterial.path.split("FateMap/Imported/Materials/",false,1)[1]
 		var materialGroup = materialPath.rsplit("/",false,1)[0]
 		#if no subgroup exists, create one
 		if not subGroups.has(materialGroup):

@@ -35,7 +35,7 @@ func clearObjectList()->void:
 
 func loadMaterialList()->void:
 	var meshOptionsList:Dictionary={}
-	var searchDirectory="%s/Imported/Models/"%ProjectSettings.get_setting("fatemap/project_directory","res://")
+	var searchDirectory="%s/FateMap/Imported/Models/"%ProjectSettings.get_setting("fatemap/project_directory","res://")
 	var doc = GLTFDocument.new()
 	for s in DirAccess.get_files_at(searchDirectory):
 		if not s.ends_with(".glb"):continue
@@ -45,7 +45,7 @@ func loadMaterialList()->void:
 		if error == OK:
 			var packed=PackedScene.new()
 			packed.pack(doc.generate_scene(state))
-			packed.resource_path="res://Imported/Models/%s"%s
+			packed.resource_path="res://FateMap/Imported/Models/%s"%s
 			meshOptionsList[searchDirectory+s]=packed
 	
 	for mesh in meshOptionsList.keys():
@@ -79,7 +79,7 @@ func optionEvent(event:InputEvent,option)->void:
 		holder.add_child(newObject)
 		holder.objectModelFile=option.myObject.resource_path
 		holder.objectData=ObjectDataResource.new()
-		holder.objectData.inheritedData=load("res://modelData/baseObject.tres")
+		holder.objectData.inheritedData=load("res://FateMap/modelData/baseObject.tres")
 		holder.paramUpdated.connect(
 			signalService.emitSignal.bind(&"meshSelectionChanged")
 		)
