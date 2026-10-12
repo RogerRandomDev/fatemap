@@ -133,6 +133,7 @@ func parameterEdited()->void:
 	updateValueShown(editedItem,newValue)
 	var undoRedoValueOld=editingResource.getUndoRedoParamValue(editedParam)
 	
+	
 	#actually sets the new data into the object
 	editingResource.setInstance(
 		editedParam,
@@ -140,6 +141,17 @@ func parameterEdited()->void:
 	)
 	if newValue==oldValue:return
 	var undoRedoValueNew=editingResource.getUndoRedoParamValue(editedParam)
+	
+	#every other selected object that has a parameter will also update,
+	#but needs to track its own undo value
+	var additionalResources:Dictionary={}
+	for object in MeshEditService.editing.dataObjects:
+		if object.objectData==editingResource:continue
+		if object.objectData.hasParam(editedParam):
+			additionalResources[object.objectData]=[object.objectData.findParam(editedParam).value,object.objectData.getUndoRedoParamValue(editedParam),null]
+			object.objectData.setInstance(editedParam,newValue)
+			additionalResources[object.objectData][2]=object.objectData.getUndoRedoParamValue(editedParam)
+	
 	#only if we are a new changed value
 	UndoRedoService.startAction(&"ObjectParamChanged")
 	UndoRedoService.addMethods(
@@ -148,10 +160,16 @@ func parameterEdited()->void:
 				editedParam,
 				undoRedoValueNew
 			)
+			for obj in additionalResources.keys():
+				obj.setUndoRedoParamValue(editedParam,additionalResources[obj][2])
+				obj.setInstance(editedParam,newValue)
+			
+			#every selected object that has a parameter gets it set
 			editingResource.setInstance(
 				editedParam,
 				newValue
 			)
+			
 			var checkOn=tree.get_root().get_child(0)
 			while checkOn!=null && checkOn.get_metadata(0)!=editedParam:
 				checkOn=checkOn.get_next()
@@ -163,6 +181,9 @@ func parameterEdited()->void:
 				editedParam,
 				undoRedoValueOld
 			)
+			for obj in additionalResources.keys():
+				obj.setUndoRedoParamValue(editedParam,additionalResources[obj][1])
+				obj.setInstance(editedParam,additionalResources[obj][0])
 			editingResource.setInstance(
 				editedParam,
 				oldValue

@@ -15,16 +15,26 @@ func _handle_keyboard_input(_event: InputEventKey) -> bool:
 		SelectService.deselect(activeObj)
 		_holder.remove_child(activeObj)
 		UndoRedoService.addUndoRef(activeObj)
-		UndoRedoService.addMethods(
+		UndoRedoService.addMethods.call_deferred(
 		(func():
 			_holder.remove_child(activeObj)
-			SelectService.deselect(activeObj)
 			),
 		(func():
 			_holder.add_child(activeObj)
-			SelectService.select(activeObj,false,true)
 			)
 		)
-	UndoRedoService.commitAction()
+	UndoRedoService.addMethods(
+		func():
+			ParameterService.setParam(&"activeObjects",end_objs)
+			MeshEditService.setEditing(end_objs)
+			signalService.emitSignal(&"meshSelectionChanged")
+			signalService.emitSignal(&"mapObjectSelected",[end_objs]),
+		func():
+			ParameterService.setParam(&"activeObjects",current_objs)
+			MeshEditService.setEditing(current_objs)
+			signalService.emitSignal(&"meshSelectionChanged")
+			signalService.emitSignal(&"mapObjectSelected",[current_objs])
+	)
+	UndoRedoService.commitAction.call_deferred()
 	
 	return true

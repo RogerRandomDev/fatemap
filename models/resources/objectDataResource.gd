@@ -146,6 +146,9 @@ func updateInheritedParameters(skip_notify:bool=false)->void:
 #endregion
 
 #region custom property manager
+func hasParam(param:StringName)->bool:
+	return parameterNames.has(param) or (false if inheritedData==null else inheritedData.hasParam(param))
+
 func findParam(param:StringName)->Variant:
 	var index:int=parameterNames.find(param)
 	if index!=-1:

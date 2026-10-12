@@ -209,7 +209,7 @@ func selectPointToChange(atPos:Vector2)->bool:
 	MeshEditService.editor.updateSelected(newPoint)
 	updateSelected()
 	return true
-	
+
 func deselectPoint()->void:
 	MeshEditService.editing.clearSelections()
 	for pointIndex in selectedPoints:
