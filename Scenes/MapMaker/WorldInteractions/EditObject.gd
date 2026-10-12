@@ -43,30 +43,27 @@ func _handle_mouse_drag(event: InputEventMouseMotion) -> bool:
 	return false
 
 func _handle_mouse_click(event: InputEventMouseButton) -> bool:
-	if MeshEditService.isEditing() and InputService.pressed(&"MouseLeft"):
+	if MeshEditService.isEditing() and InputService.pressed(&"MouseLeft",true):
 		signalService.emitSignal(&"meshSelectionChanged")
 	if not InputService.pressed(&"MouseLeft"):hasDragged=false
 	#clear focus from outside the area if you click in here
 	if  event is InputEventMouseButton:get_tree().root.gui_release_focus()
 	
-	if MeshEditService.isEditing() and InputService.pressed(&"MouseLeft"):
-		get_viewport().set_input_as_handled()
+	if MeshEditService.isEditing() and InputService.pressed(&"MouseLeft",true):
 		dragSafe=true
 		var target=MeshEditService.editor.getPointFromMouse(holder.get_local_mouse_position())
 		MeshEditService.editor.editingOrigin=target
 		MeshEditService.editor.updatePlane()
-		
 		return true
 			
 	return false
 
 func _handle_outside_click_deselect(_event: InputEventMouseButton) -> bool:
 	if InputService.pressed(&"SelectMultiple"):return false
-	if InputService.pressed(&"MouseLeft"):
+	if InputService.released(&"MouseLeft",true) and not holder.eventData.hasMoved(4):
 		if PhysicalObjectInputController.hoveredObjects.size() == 0 and ParameterService.getParam(&"activeObjects").size()!=0:
 			PhysicalObjectInputController.deselect()
 			return true
-	if MeshEditService.isEditing():return true
 	return false
 
 func _get_snapped_direction(forward: Vector3) -> Vector3:
@@ -106,15 +103,12 @@ func updateMeshSelection()->void:
 	var activeObjects=ParameterService.getParam(&"activeObjects")
 	if activeObjects.size()==0:return
 	for activeObject in activeObjects:
-		if not activeObject.has_meta("reposition"):return
+		if not activeObject.has_meta("reposition"):continue
 		activeObject.remove_meta("reposition")
-		if activeObject.objectType != ObjectModel.objectTypes.OBJECT:return
+		if activeObject.objectType != ObjectModel.objectTypes.OBJECT:continue
 		if InputService.pressed(&"MouseLeft"):
 			dragSafe=true
-			var target=Vector3.ZERO
-			#var target=MeshEditService.editor.getPointFromMouse(holder.get_local_mouse_position())
-			MeshEditService.editor.editingOrigin=target
-			MeshEditService.editor.updatePlane()
+			#var target=Vector3.ZERO
 			var targetPoint = holder.getMousePoint().snappedf(
 				ParameterService.getParam(&"snapDistance")
 			)
@@ -125,3 +119,6 @@ func updateMeshSelection()->void:
 					ParameterService.getParam(&"snapDistance")
 				)
 			activeObject.global_position=targetPoint
+			var target=MeshEditService.editor.getPointFromMouse(holder.get_local_mouse_position())
+			MeshEditService.editor.editingOrigin=target
+			MeshEditService.editor.updatePlane()

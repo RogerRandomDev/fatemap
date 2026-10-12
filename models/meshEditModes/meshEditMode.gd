@@ -27,16 +27,19 @@ func _init(oldObject:meshEditMode=null)->void:
 func get_quat_ref()->Quaternion:
 	var quat_ref:Quaternion=Quaternion.IDENTITY
 	if referenceFace:quat_ref=referenceFace._mesh.ownerInstance.global_basis.get_rotation_quaternion()
+	else:quat_ref=editingObjects[0].global_basis.get_rotation_quaternion()
 	return quat_ref
 
 func get_basis_ref()->Basis:
 	var basis_ref:Basis=Basis.IDENTITY
 	if referenceFace:basis_ref=referenceFace._mesh.ownerInstance.global_basis
+	else:basis_ref=editingObjects[0].global_basis
 	return basis_ref
 
 func get_position_ref()->Vector3:
 	var position_ref:Vector3=Vector3.ZERO
 	if referenceFace:position_ref=referenceFace._mesh.ownerInstance.global_position
+	else:position_ref=editingObjects[0].global_position
 	return position_ref
 
 

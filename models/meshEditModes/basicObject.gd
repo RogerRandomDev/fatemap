@@ -42,10 +42,12 @@ func getPointFromMouse(mousePosition:Vector2)->Vector3:
 		var distance_to=intersection.distance_squared_to(localOrigin)
 		if closest[1]>distance_to:
 			closest[0]=intersection+trans.origin;closest[1]=distance_to
+			closest[2]=boundTransforms[i].origin
 	if closest[0] ==null:return Vector3.INF
 	return closest[0]-closest[2]
 
 func updateSelectionLocation(mousePosition:Vector2,mergeMoves:bool=false)->bool:
+	updatePlane()
 	var targetSlideLocation=getTargetFromMouse(mousePosition)
 	if not targetSlideLocation.is_finite():return false
 	#snap the slide location and push it back onto the ray afterwards
@@ -61,14 +63,14 @@ func updateSelectionLocation(mousePosition:Vector2,mergeMoves:bool=false)->bool:
 	for editingObject in editingObjects:
 		UndoRedoService.addDoProperty(editingObject,"global_position",editingObject.global_position+slideBy)
 		UndoRedoService.addUndoProperty(editingObject,"global_position",editingObject.global_position)
-	UndoRedoService.addMethods(
-		func():signalService.emitSignal.call_deferred(&"meshSelectionChanged"),
-		func():signalService.emitSignal.call_deferred(&"meshSelectionChanged"),
-	)
 	for editingObject in editingObjects:
 		UndoRedoService.addMethods(
 			func():editingObject.paramUpdated.emit(),
 			func():editingObject.paramUpdated.emit()
 		)
+	UndoRedoService.addMethods(
+		func():signalService.emitSignal(&"meshSelectionChanged"),
+		func():signalService.emitSignal(&"meshSelectionChanged"),
+	)
 	UndoRedoService.commitAction(true)
 	return not slideBy.is_zero_approx()

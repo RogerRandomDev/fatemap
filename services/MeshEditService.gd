@@ -133,17 +133,17 @@ class editingMesh extends Resource:
 		if meshPart is objectMeshModel.cleanedFace:for face in meshPart.faces:deselectFace(face)
 	
 	func selectVertex(vertex:objectMeshModel.meshVertex,toggleSelected:bool=false)->void:
-		if not meshes.any(func(mesh):return mesh.vertices.has(vertex)):return
+		if not meshes.any(func(mesh):return mesh!=null and mesh.vertices.has(vertex)):return
 		if not selectedVertices.has(vertex):selectedVertices.push_back(vertex)
 		else:if toggleSelected:deselectVertex(vertex)
 	func selectEdge(edge:objectMeshModel.meshEdge,toggleSelected:bool=false)->void:
-		if not meshes.any(func(mesh):return mesh.edges.has(edge)):return
+		if not meshes.any(func(mesh):return mesh!=null and mesh.edges.has(edge)):return
 		if not selectedEdges.has(edge):
 			selectedEdges.push_back(edge)
 			for vertex in edge.vertices:selectVertex(vertex,false)
 		else:if toggleSelected:deselectEdge(edge)
 	func selectFace(face:objectMeshModel.meshFace,toggleSelected:bool=false)->void:
-		if not meshes.any(func(mesh):return mesh.faces.has(face)):return
+		if not meshes.any(func(mesh):return mesh!=null and mesh.faces.has(face)):return
 		if not selectedFaces.has(face):
 			selectedFaces.push_back(face)
 			for edge in face.edges:selectEdge(edge,false)

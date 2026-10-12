@@ -10,6 +10,10 @@ func _ready() -> void:
 	await get_tree().process_frame
 	camera = get_viewport().get_camera_3d()
 
+func checkContained()->bool:
+	return get_viewport_rect().has_point(get_local_mouse_position())
+
+
 func _input(event: InputEvent) -> void:
 	
 	eventData.update(event)

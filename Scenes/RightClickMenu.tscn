@@ -3,6 +3,9 @@
 [sub_resource type="GDScript" id="GDScript_yd8wa"]
 script/source = "extends PopupMenu
 
+
+var registeredScripts:Dictionary={}
+
 var lastPos:Vector2
 func _ready() -> void:
 	buildRightMenu()
@@ -59,23 +62,14 @@ func moveObjToCursor(obj)->void:
 			ParameterService.getParam(&\"snapDistance\")
 		)
 	
-	
-
-func applyScaleOnSelected(_v=null)->void:
-	var selectedObjs = ParameterService.getParam(&\"activeObject\")
-	if selectedObjs==null or selectedObjs.size()==0:return
-	for selectedObj in selectedObjs:
-		if selectedObj.objectType==ObjectModel.objectTypes.MESH:
-			if not MeshEditService.isEditing():return
-			MeshEditService.editing.applyScale()
-			MeshEditService.editing.mesh.rebuild()
-			PhysicalObjectService.updatePickableArea(MeshEditService.editor.editingObject)
 
 
 #very much a placeholder currently
 func buildRightMenu()->void:
 	var base=self
 	addMenuCallback(base)
+	
+	#type submenu
 	var addTypes=PopupMenu.new()
 	addMenuCallback(addTypes)
 	base.add_submenu_node_item(\"Add Data Type\",addTypes)
@@ -88,19 +82,46 @@ func buildRightMenu()->void:
 			createByType,type.trim_suffix(\".tres\"),\"Create a %s\"%type.trim_suffix(\".tres\")
 			)
 	
-	AddOption(base,&\"Apply Scale\",applyScaleOnSelected,\"\",\"Apply the scale of the selected mesh object\")
 	
-	AddOption(base,\"Extrude Selected\",func(_v=null):
-		var meshes = meshCreateExtruded.createExtrudedFromSelected()
-		for m in meshes:
-			var viewport = (GUIService.getByName(&\"PrimaryViewport\").reference.get_child(0) as SubViewport)
-			viewport.get_node(\"PlacedObjects\").add_child(m)
-		,
-		\"\",\"extrued selected faces on editing mesh\"
-		)
+	var submenuHolder = load(\"res://makerMenus/resources/rightClickFaceSubMenuHolder.tres\")
 	
-	
-	
+	buildFromResource(submenuHolder,self)
+
+func buildFromResource(resource:dropDownPopupResource,currentPopup:PopupMenu)->void:
+	addMenuCallback(currentPopup)
+	currentPopup.hide_on_checkable_item_selection=false
+	for index in len(resource.optionNames):
+		var context=resource.getItemContext(index)
+		match(context.get(\"type\")):
+			\"default\":
+				AddOption(
+					currentPopup,
+					context.get(\"name\"),
+					getCallable(context.get(&\"script\"),context.get(\"value\",&\"\") if not context.get(\"value\",&\"\")==null else &\"\"),
+					context.get(\"param\",null),
+					context.get(\"description\",null).split(\"\\\\r\")[-1]
+				)
+				continue
+			\"checkbox\":
+				AddCheckOption(
+					currentPopup,
+					context.get(\"name\"),
+					context.get(\"value\",&\"\") if not context.get(\"value\",&\"\")==null else &\"\",
+					context.get(\"param\",null),
+					context.get(\"description\",null).split(\"\\\\r\")[-1]
+				)
+				continue
+			\"separator\":
+				currentPopup.add_separator(context.get(\"name\"))
+				continue
+			\"submenu\":
+				var newSubMenu=PopupMenu.new()
+				currentPopup.add_submenu_node_item(context.get(\"name\"),newSubMenu)
+				currentPopup.set_item_tooltip(currentPopup.item_count-1,
+					context.get(\"description\",null).split(\"\\r\")[-1]
+				)
+				buildFromResource(context.get(\"value\"),newSubMenu)
+				continue
 
 
 
@@ -141,9 +162,24 @@ static func callIndexedMenuMethod(index:int=0,_popup:PopupMenu=null)->void:
 	if checkableItem:
 		var isChecked = !_popup.is_item_checked(index)
 		_popup.set_item_checked(index,isChecked)
-		meta_method[0].call(isChecked,meta_param)
+		if meta_method[0]!=null:
+			meta_method[0].call(isChecked,meta_param)
 	else:
-		meta_method[0].call(meta_param)
+		if meta_method[0]!=null:
+			meta_method[0].call(meta_param)
+
+
+func getCallable(script:String,method):
+	if script==null:return null
+	var scriptObject:RefCounted=null
+	if registeredScripts.has(script):
+		scriptObject=registeredScripts[script]
+	else:
+		scriptObject=load(script).new()
+		registeredScripts[script]=scriptObject
+	if scriptObject.has_method(method):
+		return Callable(scriptObject,method)
+	return null
 "
 
 [node name="RightClickMenu" type="PopupMenu"]

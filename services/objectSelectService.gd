@@ -2,7 +2,7 @@ extends RefCounted
 class_name SelectService
 
 
-static func select(obj,replace_all:bool=false,keep_all:bool=false,dont_emit:bool=false)->void:
+static func select(obj,replace_all:bool=false,keep_all:bool=false,dont_emit:bool=false)->Array:
 	var currentSelection=ParameterService.getParam(&"activeObjects")
 	if obj==null or obj is Array and obj.size()==0:
 		if not InputService.pressed(&"SelectMultiple") and !keep_all:
@@ -34,7 +34,8 @@ static func select(obj,replace_all:bool=false,keep_all:bool=false,dont_emit:bool
 	MeshEditService.setEditing(currentSelection)
 	if !dont_emit:
 		signalService.emitSignal(&"meshSelectionChanged")
-		signalService.emitSignal.call_deferred(&"mapObjectSelected",[currentSelection])
+		signalService.emitSignal(&"mapObjectSelected",[currentSelection])
+	return currentSelection
 
 static func deselect(obj,ignore_input:bool=false,dont_emit:bool=false)->void:
 	var currentSelection=ParameterService.getParam(&"activeObjects")

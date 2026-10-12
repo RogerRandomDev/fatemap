@@ -83,9 +83,27 @@ func optionEvent(event:InputEvent,option)->void:
 		holder.paramUpdated.connect(
 			signalService.emitSignal.bind(&"meshSelectionChanged")
 		)
-		placeOn.add_child(holder)
 		holder.set_meta("reposition","")
-		#SelectService.select(holder,true)
+		var before=ParameterService.getParam(&"activeObjects").duplicate()
+		var after=[holder]
+		UndoRedoService.startAction(&"AddModel")
+		UndoRedoService.addDoRef(holder)
+		UndoRedoService.addMethods(
+			func():
+				placeOn.add_child(holder)
+				ParameterService.setParam(&"activeObjects",after)
+				MeshEditService.setEditing(after)
+				signalService.emitSignal(&"meshSelectionChanged")
+				signalService.emitSignal(&"mapObjectSelected",[after]),
+			func():
+				placeOn.remove_child(holder)
+				ParameterService.setParam(&"activeObjects",before)
+				MeshEditService.setEditing(before)
+				signalService.emitSignal(&"meshSelectionChanged")
+				signalService.emitSignal(&"mapObjectSelected",[before])
+		)
+		UndoRedoService.commitAction(true)
+		
 		var f:Callable
 		f=func(_event:InputEvent):
 			GUIService.getByName("PrimaryViewport").reference.get_child(0).get_child(0)._input(_event)

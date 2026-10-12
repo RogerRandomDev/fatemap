@@ -128,16 +128,6 @@ script = ExtResource("8_ysyqw")
 [node name="EditSelectModels" type="Node" parent="MapView/EditInteractions"]
 script = ExtResource("8_bgu1o")
 
-[node name="EditPoints" type="Node" parent="MapView/EditInteractions"]
-script = ExtResource("7_ni25v")
-metadata/_custom_type_script = "uid://bwfu3qiinbjdw"
-
-[node name="MultiMeshInstance3D" type="MultiMeshInstance3D" parent="MapView/EditInteractions/EditPoints"]
-sorting_use_aabb_center = false
-cast_shadow = 0
-ignore_occlusion_culling = true
-multimesh = SubResource("MultiMesh_qtfr5")
-
 [node name="EditCreateMesh" type="Node" parent="MapView/EditInteractions"]
 script = ExtResource("9_qtfr5")
 metadata/_custom_type_script = "uid://bgtxjyyro3vut"
@@ -147,6 +137,16 @@ metadata/_custom_type_script = "uid://bgtxjyyro3vut"
 [node name="EditObject" type="Node" parent="MapView/EditInteractions"]
 script = ExtResource("14_ajyq3")
 metadata/_custom_type_script = "uid://d276is10q1qdh"
+
+[node name="EditPoints" type="Node" parent="MapView/EditInteractions"]
+script = ExtResource("7_ni25v")
+metadata/_custom_type_script = "uid://bwfu3qiinbjdw"
+
+[node name="MultiMeshInstance3D" type="MultiMeshInstance3D" parent="MapView/EditInteractions/EditPoints"]
+sorting_use_aabb_center = false
+cast_shadow = 0
+ignore_occlusion_culling = true
+multimesh = SubResource("MultiMesh_qtfr5")
 
 [node name="FaceHighlighter" type="Node" parent="MapView"]
 script = ExtResource("6_04lqo")

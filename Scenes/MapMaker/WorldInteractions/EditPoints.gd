@@ -130,7 +130,6 @@ func _handle_mouse_click(event: InputEventMouseButton) -> bool:
 		if not InputService.pressed(&"SelectMultiple"):
 			MeshEditService.editing.clearSelections()
 		if selectPointToChange(holder.get_local_mouse_position()):
-			get_viewport().set_input_as_handled()
 			signalService.emitSignal(&"meshSelectionChanged")
 			dragSafe=true
 			hasSelected=true
@@ -150,7 +149,7 @@ func _handle_mouse_click(event: InputEventMouseButton) -> bool:
 func _handle_outside_click_deselect(_event: InputEventMouseButton) -> bool:
 	if InputService.pressed(&"SelectMultiple"):return false
 	if InputService.pressed(&"CreateMesh"):return false
-	if InputService.pressed(&"MouseLeft"):
+	if InputService.released(&"MouseLeft",true) and not holder.eventData.hasMoved(4):
 		if PhysicalObjectInputController.hoveredObjects.size() == 0 and ParameterService.getParam(&"activeObjects").size()!=0:
 			PhysicalObjectInputController.deselect()
 			return true
@@ -194,7 +193,7 @@ func moveSelection(moveBy:Vector3,local:bool=true)->void:
 		for dataObject in MeshEditService.editing.dataObjects:
 			PhysicalObjectService.updatePickableArea(dataObject)
 	signalService.emitSignal(&"meshSelectionChanged")
-	
+
 
 func selectPointToChange(atPos:Vector2)->bool:
 	if renderPoints.size()==0:return false

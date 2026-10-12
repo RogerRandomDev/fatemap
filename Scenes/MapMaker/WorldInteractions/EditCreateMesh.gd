@@ -45,6 +45,7 @@ func _handle_mouse_click(_event: InputEventMouseButton) -> bool:
 			if highlight.visible:finalizeMesh()
 			editOrigin=Vector3.INF
 			editEnd=Vector3.INF
+		if not highlight.visible:return false
 	return true
 
 func _handle_mouse_drag(_event: InputEventMouseMotion) -> bool:

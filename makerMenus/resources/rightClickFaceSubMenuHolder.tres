@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="dropDownPopupResource" load_steps=4 format=3 uid="uid://dnttvoeqmefmh"]
+
+[ext_resource type="Resource" uid="uid://dtpx0bogj46no" path="res://makerMenus/resources/rightClickObjectSubMenu.tres" id="1_5toa2"]
+[ext_resource type="Resource" uid="uid://dmm53ba5mjbu4" path="res://makerMenus/resources/rightClickFaceSubMenu.tres" id="1_i17iq"]
+[ext_resource type="Script" uid="uid://drds6tggj4lf8" path="res://models/resources/dropDownPopupResource.gd" id="1_q7jnr"]
+
+[resource]
+script = ExtResource("1_q7jnr")
+option_count = 2
+option_0/name = "Object"
+option_0/type = "submenu"
+option_0/description = ""
+option_0/value = ExtResource("1_5toa2")
+option_1/name = "Faces"
+option_1/type = "submenu"
+option_1/description = ""
+option_1/value = ExtResource("1_i17iq")
+metadata/_custom_type_script = "uid://drds6tggj4lf8"

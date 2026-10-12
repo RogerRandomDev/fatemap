@@ -4,6 +4,7 @@ class_name meshCreateExtruded
 
 
 static func createExtrudedFromSelected(extrudeLength:float=0.25)->Array[PhysicalObjectModel]:
+	if not MeshEditService.isEditing():return []
 	var extrudedObjects:Array[PhysicalObjectModel]=[]
 	var selectedCleanFaces:Dictionary={}
 	for face in MeshEditService.editing.selectedFaces:

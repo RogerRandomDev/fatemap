@@ -13,7 +13,7 @@ func _handle_mouse_click(_event: InputEventMouseButton) -> bool:
 		var oldObjs=ParameterService.getParam(&"activeObjects").duplicate(true)
 		SelectService.select(clickedModel)
 		var currentObjs=ParameterService.getParam(&"activeObjects").duplicate(true)
-		if currentObjs==oldObjs:return true#skip if we changed nothing
+		if currentObjs==oldObjs:return false#skip if we changed nothing
 		UndoRedoService.startAction(&"SelectObject")
 		UndoRedoService.addDo(func():
 			ParameterService.setParam(&"activeObjects",currentObjs)
