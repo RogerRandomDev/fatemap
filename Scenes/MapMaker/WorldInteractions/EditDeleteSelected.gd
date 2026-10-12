@@ -4,27 +4,27 @@ extends EditInteractionBase
 
 func _handle_keyboard_input(_event: InputEventKey) -> bool:
 	if not InputService.pressed(&"Delete",true):return false
-	var activeObj=ParameterService.getParam(&"activeObject")
-	if activeObj==null:return false
-	var _holder = activeObj.get_parent()
+	var activeObjs=ParameterService.getParam(&"activeObjects")
+	if activeObjs.size()==0:return false
 	UndoRedoService.startAction(&"DeleteObject")
-	UndoRedoService.addUndoRef(activeObj)
-	UndoRedoService.addMethods(
-	(func():
+	var current_objs=ParameterService.getParam(&"activeObjects").duplicate()
+	var end_objs=ParameterService.getParam(&"activeObjects").duplicate()
+	for activeObj in current_objs:
+		var _holder = activeObj.get_parent()
+		end_objs.erase(activeObj)
+		SelectService.deselect(activeObj)
 		_holder.remove_child(activeObj)
-		ParameterService.setParam(&"activeObject",null)
-		MeshEditService.setEditing(null)
-		signalService.emitSignal(&"meshSelectionChanged")
-		signalService.emitSignal(&"mapObjectSelected",[])
-		),
-	(func():
-		_holder.add_child(activeObj)
-		signalService.emitSignal(&"mapObjectSelected",[activeObj])
-		ParameterService.setParam(&"activeObject",activeObj)
-		MeshEditService.setEditing(activeObj)
-		signalService.emitSignal(&"meshSelectionChanged")
+		UndoRedoService.addUndoRef(activeObj)
+		UndoRedoService.addMethods(
+		(func():
+			_holder.remove_child(activeObj)
+			SelectService.deselect(activeObj)
+			),
+		(func():
+			_holder.add_child(activeObj)
+			SelectService.select(activeObj,false,true)
+			)
 		)
-	)
-	UndoRedoService.commitAction(true)
+	UndoRedoService.commitAction()
 	
 	return true

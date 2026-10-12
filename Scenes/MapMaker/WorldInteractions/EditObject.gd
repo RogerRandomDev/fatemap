@@ -12,7 +12,7 @@ func getScreenSpace(pointAt:Vector3)->Vector2:
 
 
 func _check_valid(_event:InputEvent)->bool:
-	return MeshEditService.isEditing() and MeshEditService.editing.dataObject.objectType!=ObjectModel.objectTypes.MESH
+	return MeshEditService.isEditing() and MeshEditService.editing.dataObjects.all(func(obj):return obj.objectType!=ObjectModel.objectTypes.MESH)
 
 func _handle_keyboard_input(event: InputEventKey) -> bool:
 	
@@ -63,7 +63,7 @@ func _handle_mouse_click(event: InputEventMouseButton) -> bool:
 func _handle_outside_click_deselect(_event: InputEventMouseButton) -> bool:
 	if InputService.pressed(&"SelectMultiple"):return false
 	if InputService.pressed(&"MouseLeft"):
-		if PhysicalObjectInputController.hoveredObjects.size() == 0 and ParameterService.getParam(&"activeObject")!=null:
+		if PhysicalObjectInputController.hoveredObjects.size() == 0 and ParameterService.getParam(&"activeObjects").size()!=0:
 			PhysicalObjectInputController.deselect()
 			return true
 	if MeshEditService.isEditing():return true
@@ -81,45 +81,47 @@ func _get_snapped_direction(forward: Vector3) -> Vector3:
 	return _snapped
 
 func moveSelection(moveBy:Vector3,_local:bool=true)->void:
-	var selectedObj = ParameterService.getParam(&"activeObject")
-	if selectedObj==null:return
+	var selectedObjs = ParameterService.getParam(&"activeObjects")
+	if selectedObjs.size()==0:return
 	moveBy*=ParameterService.getParam(&"snapDistance")
 	#if its a normal object just offset its position
 	if MeshEditService.isEditing():
 		UndoRedoService.startAction("MoveObject",UndoRedo.MERGE_ALL if hasDragged else UndoRedo.MERGE_DISABLE)
-		UndoRedoService.addDoProperty(selectedObj,"global_position",selectedObj.global_position+moveBy)
-		UndoRedoService.addUndoProperty(selectedObj,"global_position",selectedObj.global_position)
+		for selectedObj in selectedObjs:
+			UndoRedoService.addDoProperty(selectedObj,"global_position",selectedObj.global_position+moveBy)
+			UndoRedoService.addUndoProperty(selectedObj,"global_position",selectedObj.global_position)
 		UndoRedoService.addMethods(
 			func():signalService.emitSignal.call_deferred(&"meshSelectionChanged"),
 			func():signalService.emitSignal.call_deferred(&"meshSelectionChanged"),
 		)
-		UndoRedoService.addMethods(
-			func():selectedObj.paramUpdated.emit(),
-			func():selectedObj.paramUpdated.emit()
-		)
+		for selectedObj in selectedObjs:
+			UndoRedoService.addMethods(
+				func():selectedObj.paramUpdated.emit(),
+				func():selectedObj.paramUpdated.emit()
+			)
 		UndoRedoService.commitAction(true)
 	signalService.emitSignal(&"meshSelectionChanged")
 
 func updateMeshSelection()->void:
-	var activeObject=ParameterService.getParam(&"activeObject")
-	if not activeObject:return
-	if not activeObject is ObjectModel:return
-	if not activeObject.has_meta("reposition"):return
-	activeObject.remove_meta("reposition")
-	if activeObject.objectType != ObjectModel.objectTypes.OBJECT:return
-	if InputService.pressed(&"MouseLeft"):
-		dragSafe=true
-		var target=Vector3.ZERO
-		#var target=MeshEditService.editor.getPointFromMouse(holder.get_local_mouse_position())
-		MeshEditService.editor.editingOrigin=target
-		MeshEditService.editor.updatePlane()
-		var targetPoint = holder.getMousePoint().snappedf(
-			ParameterService.getParam(&"snapDistance")
-		)
-		if not targetPoint.is_finite() or (targetPoint-MeshEditService.editor.camera.global_position).length_squared()>1024:
-			var projectedOrigin:Vector3=MeshEditService.editor.camera.project_ray_origin(holder.get_local_mouse_position())
-			var projectedNormal:Vector3=MeshEditService.editor.camera.project_ray_normal(holder.get_local_mouse_position())
-			targetPoint=(projectedOrigin+projectedNormal*16).snappedf(
+	var activeObjects=ParameterService.getParam(&"activeObjects")
+	if activeObjects.size()==0:return
+	for activeObject in activeObjects:
+		if not activeObject.has_meta("reposition"):return
+		activeObject.remove_meta("reposition")
+		if activeObject.objectType != ObjectModel.objectTypes.OBJECT:return
+		if InputService.pressed(&"MouseLeft"):
+			dragSafe=true
+			var target=Vector3.ZERO
+			#var target=MeshEditService.editor.getPointFromMouse(holder.get_local_mouse_position())
+			MeshEditService.editor.editingOrigin=target
+			MeshEditService.editor.updatePlane()
+			var targetPoint = holder.getMousePoint().snappedf(
 				ParameterService.getParam(&"snapDistance")
 			)
-		activeObject.global_position=targetPoint
+			if not targetPoint.is_finite() or (targetPoint-MeshEditService.editor.camera.global_position).length_squared()>1024:
+				var projectedOrigin:Vector3=MeshEditService.editor.camera.project_ray_origin(holder.get_local_mouse_position())
+				var projectedNormal:Vector3=MeshEditService.editor.camera.project_ray_normal(holder.get_local_mouse_position())
+				targetPoint=(projectedOrigin+projectedNormal*16).snappedf(
+					ParameterService.getParam(&"snapDistance")
+				)
+			activeObject.global_position=targetPoint

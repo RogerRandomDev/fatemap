@@ -25,6 +25,7 @@ static func buildMesh(object:ObjectPhysicalDataResource,instance:Node3D=null,_ma
 		
 		meshInstance.mesh=arrayMesh
 		mesh=arrayMesh
+		object.mesh=mesh
 	else:
 		meshInstance.mesh=mesh
 		

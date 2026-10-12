@@ -5,7 +5,8 @@ static func loadMapData(loadOnto:Node,data:PackedByteArray=[])->void:
 	
 	for child in loadOnto.get_children():
 		child.free()
-	MeshEditService.setEditing(null)
+	SelectService.select(null,true,false,true)
+	MeshEditService.setEditing([])
 	var checkFrom:int=0
 	
 	var versionEndMarker:int=data.decode_u32(2)

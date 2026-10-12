@@ -2,9 +2,9 @@ extends RefCounted
 class_name PhysicalObjectInputController
 
 
-static var activeObject:
-	get:return ParameterService.getParam(&"activeObject")
-	set(value):ParameterService.setParam(&"activeObject",value)
+static var activeObjects:
+	get:return ParameterService.getParam(&"activeObjects")
+	set(value):ParameterService.setParam(&"activeObjects",value)
 static var activeObjectList:
 	get:return ParameterService.getParam(&"activeObjectList")
 	set(value):ParameterService.setParam(&"activeObjectList",value)
@@ -25,21 +25,21 @@ static func onMouseExitObject(object:Node3D)->void:
 	hoveredObjects.erase(object)
 
 static func deselect()->void:
-	if activeObject==null:return
-	var currentActive=activeObject
+	if activeObjects.size()==0:return
+	var currentActive=activeObjects
 	UndoRedoService.startAction(&"DeselectObject")
 	UndoRedoService.addMethods(
 		(func():
-			ParameterService.setParam(&"activeObject",null)
-			MeshEditService.setEditing(null)
+			ParameterService.setParam(&"activeObjects",[])
+			MeshEditService.setEditing([])
 			signalService.emitSignal(&"meshSelectionChanged")
 			signalService.emitSignal(&"mapObjectSelected",[])
 			),
 		(func():
-			ParameterService.setParam(&"activeObject",currentActive)
+			ParameterService.setParam(&"activeObjects",currentActive)
 			MeshEditService.setEditing(currentActive)
 			signalService.emitSignal(&"meshSelectionChanged")
-			signalService.emitSignal(&"mapObjectSelected",[currentActive])
+			signalService.emitSignal(&"mapObjectSelected",[] if currentActive.size() == 0 else [currentActive.get(0)])
 			)
 	)
 	UndoRedoService.commitAction(true)

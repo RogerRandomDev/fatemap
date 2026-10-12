@@ -8,9 +8,10 @@
 [resource]
 script = ExtResource("1_6hccd")
 parameterCount = 7
-parameter_0/name = "activeObject"
+parameter_0/name = "activeObjects"
 parameter_0/description = "current active object for editing"
-parameter_0/type = "Object"
+parameter_0/type = "Array"
+parameter_0/value = []
 parameter_1/name = "activeObjectList"
 parameter_1/description = "a list of all currently active objects"
 parameter_1/type = "Array"

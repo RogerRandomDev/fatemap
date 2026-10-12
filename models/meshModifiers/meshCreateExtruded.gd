@@ -12,7 +12,7 @@ static func createExtrudedFromSelected(extrudeLength:float=0.25)->Array[Physical
 		var newExtruded=PhysicalObjectModel.new()
 		newExtruded.objectData=ObjectPhysicalDataResource.new(face._mesh.ownerInstance.get_parent().objectData.inheritedData)
 		var extrudedMesh=objectMeshModel.new()
-		extrudedMesh.globalTransform=MeshEditService.editing.mesh.globalTransform
+		extrudedMesh.globalTransform=face._mesh.ownerInstance.global_transform
 		newExtruded.objectData.mesh=extrudedMesh
 		var offset=face.normal*extrudeLength
 		var face_material=face.faces[0].surfaceMaterial
@@ -40,7 +40,7 @@ static func createExtrudedFromSelected(extrudeLength:float=0.25)->Array[Physical
 				f_vertices_b.reverse()
 			objectMeshModel.meshFace.new(extrudedMesh,f_vertices_b,f_uvs,face_material)
 			objectMeshModel.meshFace.new(extrudedMesh,f_vertices_a,f_uvs,face_material)
-		newExtruded.transform=MeshEditService.editing.dataObject.global_transform
+		newExtruded.transform=face._mesh.ownerInstance.global_transform
 		extrudedMesh.rebuild()
 		extrudedMesh.initializeFaces()
 		for extruded_face in extrudedMesh.faces:

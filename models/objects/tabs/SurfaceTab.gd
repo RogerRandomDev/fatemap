@@ -47,7 +47,7 @@ func buildView()->void:
 	).reference
 	materialList.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	
-	loadContents(null)
+	loadContents([])
 
 
 
@@ -88,33 +88,36 @@ func updateGridLayout()->void:
 		materialOption.setIconSize(surfaceMaterialIconSize)
 
 
-func loadContents(contents:ObjectDataResource)->void:
-	recursiveToggleContents(self,contents!=null)
+func loadContents(contents:Array)->void:
+	recursiveToggleContents(self,contents.size()!=0)
 	faceInfoList.displaySelectedFaceInfo()
 	faceInfoList.updateWithSelectedObject()
-	if contents==null:return
+	if contents.size()==0:return
 
 func optionEvent(event:InputEvent,option)->void:
 	if not MeshEditService.isEditing() or not MeshEditService.editingType==ObjectModel.objectTypes.MESH:return
 	if not event is InputEventMouseButton:return
 	if event.button_index==MOUSE_BUTTON_LEFT and event.is_pressed():
-		
-		var originalMaterials = MeshEditService.editing.mesh.trackedSelection.getMaterials()
 		UndoRedoService.startAction(&"SetMaterialsOnFaces")
-		for mat in originalMaterials:
-			var onFaces=originalMaterials[mat]
-			for face in onFaces:
-				UndoRedoService.addMethods(
-					face.setSurfaceMaterial.bind(option.myMaterial),
-					face.setSurfaceMaterial.bind(mat)
-				)
-		var rebuild = MeshEditService.editing.mesh.rebuild
-		UndoRedoService.addMethods(
-			func():rebuild.call_deferred(),
-			func():rebuild.call_deferred()
-		)
+		var updatingMeshes:Dictionary={}
+		for face in MeshEditService.editing.selectedFaces:updatingMeshes[face._mesh]=null
+		var lookupMeshes=updatingMeshes.keys() if updatingMeshes.size()!=0 else MeshEditService.editing.meshes
+		for mesh in lookupMeshes:
+			var originalMaterials = mesh.trackedSelection.getMaterials()
+			for mat in originalMaterials:
+				var onFaces=originalMaterials[mat]
+				for face in onFaces:
+					UndoRedoService.addMethods(
+						face.setSurfaceMaterial.bind(option.myMaterial),
+						face.setSurfaceMaterial.bind(mat)
+					)
+			var rebuild = mesh.rebuild
+			UndoRedoService.addMethods(
+				func():rebuild.call_deferred(),
+				func():rebuild.call_deferred()
+			)
 		UndoRedoService.commitAction(true)
-		MeshEditService.editing.mesh.rebuild()
+		for mesh in MeshEditService.editing.meshes:mesh.rebuild()
 
 func recursiveToggleContents(from:Control,enable:bool=true)->void:
 	from.set("editable",enable)

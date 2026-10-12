@@ -1,8 +1,8 @@
 extends RefCounted
 class_name meshEditMode
 ##Base meshEditMode for handling different ways you can have a mesh being edited at a given time
-var editingObject:ObjectModel=null
-var editingMesh:objectMeshModel
+var editingObjects:Array=[] #objectmodel
+var editingMeshes:Array #objectmeshmodel
 var editingNormal:Vector3=Vector3.INF
 var editingOrigin:Vector3=Vector3.INF
 var editingPlane:Plane
@@ -14,8 +14,8 @@ var camera:Camera3D
 ##creates a new reference or, if providing another editMode, constructs itself using that editModes info to allow a seamless swap mid-edit
 func _init(oldObject:meshEditMode=null)->void:
 	if oldObject==null:return
-	editingObject=oldObject.editingObject
-	editingMesh=oldObject.editingMesh
+	editingObjects=oldObject.editingObjects
+	editingMeshes=oldObject.editingMeshes
 	editingNormal=oldObject.editingNormal
 	editingOrigin=oldObject.editingOrigin
 	editingPlane=oldObject.editingPlane
@@ -24,15 +24,31 @@ func _init(oldObject:meshEditMode=null)->void:
 	referenceEdge=oldObject.referenceEdge
 	referenceFace=oldObject.referenceFace
 
+func get_quat_ref()->Quaternion:
+	var quat_ref:Quaternion=Quaternion.IDENTITY
+	if referenceFace:quat_ref=referenceFace._mesh.ownerInstance.global_basis.get_rotation_quaternion()
+	return quat_ref
+
+func get_basis_ref()->Basis:
+	var basis_ref:Basis=Basis.IDENTITY
+	if referenceFace:basis_ref=referenceFace._mesh.ownerInstance.global_basis
+	return basis_ref
+
+func get_position_ref()->Vector3:
+	var position_ref:Vector3=Vector3.ZERO
+	if referenceFace:position_ref=referenceFace._mesh.ownerInstance.global_position
+	return position_ref
+
+
 func localNormal()->Vector3:
-	return editingNormal*editingObject.global_basis.get_rotation_quaternion().inverse()
+	return editingNormal*get_quat_ref().inverse()
 func  localPos()->Vector3:
-	return editingOrigin*editingObject.global_basis.inverse()+editingObject.global_position
+	return editingOrigin*get_basis_ref().inverse()+get_position_ref()
 
 
 ## clears all data so that you dont retain info from previous selections
 func clearData(clearObject:bool=false)->void:
-	if clearObject:editingObject=null
+	if clearObject:editingObjects=[]
 	editingNormal=Vector3.INF
 	editingOrigin=Vector3.INF
 	editingPlane=Plane.PLANE_XY
@@ -41,14 +57,14 @@ func clearData(clearObject:bool=false)->void:
 	referenceFace=null
 
 ## updates current object for editing and clears all stored data from previous selections
-func updateEditingObject(object:ObjectModel)->void:
+func updateEditingObjects(objects:Array)->void:
 	clearData(true)
-	editingObject=object
-	if object.objectType==ObjectModel.objectTypes.MESH:
-		editingMesh=object.get_node_or_null("MESH_OBJECT").mesh
-	else:
-		editingNormal=Vector3.UP
-		editingOrigin=object.global_position
+	editingObjects=objects
+	for object in objects:
+		var n_mesh=object.get_node_or_null("MESH_OBJECT")
+		editingMeshes.push_back(null if n_mesh==null else n_mesh.mesh)
+	editingNormal=Vector3.UP
+	editingOrigin=Vector3.ZERO
 
 func updateSelected(cleanPoint:RefCounted)->void:
 	if cleanPoint is objectMeshModel.cleanedFace:
@@ -62,12 +78,12 @@ func updateSelected(cleanPoint:RefCounted)->void:
 ## updates the selected face we will use for the edit direction and location info
 func updateSelectedCleanFace(cleanFace:objectMeshModel.cleanedFace)->void:
 	editingNormal=cleanFace.getNormal()
-	editingOrigin=cleanFace.getCenter()*editingObject.global_basis.inverse()
+	editingOrigin=cleanFace.getCenter()*get_basis_ref().inverse()
 	referenceFace=cleanFace
 	updatePlane()
 func updateSelectedCleanEdge(cleanEdge:objectMeshModel.cleanedEdge)->void:
 	editingNormal=cleanEdge.getNormal()
-	editingOrigin=cleanEdge.getCenter()*editingObject.global_basis.inverse()
+	editingOrigin=cleanEdge.getCenter()*get_basis_ref().inverse()
 	referenceEdge=cleanEdge
 	updatePlane()
 

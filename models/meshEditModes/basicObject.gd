@@ -24,12 +24,14 @@ func getPointFromMouse(mousePosition:Vector2)->Vector3:
 	var projectedNormal:Vector3=camera.project_ray_normal(mousePosition)
 	var bounds:Array[AABB] = []
 	var boundTransforms:Array[Transform3D] = []
-	for node in editingObject.get_node("PICKABLE_OBJECT").get_children():
-		if node is CollisionShape3D:
-			var aabb=AABB(-node.shape.size*0.5,node.shape.size)
-			bounds.append(aabb)
-			boundTransforms.append(node.global_transform)
-	var closest=[null,67108864]
+	for editingObject in editingObjects:
+		if editingObject.get_node_or_null("PICKABLE_OBJECT")==null:continue
+		for node in editingObject.get_node("PICKABLE_OBJECT").get_children():
+			if node is CollisionShape3D:
+				var aabb=AABB(-node.shape.size*0.5,node.shape.size)
+				bounds.append(aabb)
+				boundTransforms.append(node.global_transform)
+	var closest=[null,67108864,Vector3.ZERO]
 	for i in len(bounds):
 		var bound = bounds[i]
 		var trans :Transform3D= boundTransforms[i]
@@ -41,7 +43,7 @@ func getPointFromMouse(mousePosition:Vector2)->Vector3:
 		if closest[1]>distance_to:
 			closest[0]=intersection+trans.origin;closest[1]=distance_to
 	if closest[0] ==null:return Vector3.INF
-	return closest[0]-editingObject.global_position
+	return closest[0]-closest[2]
 
 func updateSelectionLocation(mousePosition:Vector2,mergeMoves:bool=false)->bool:
 	var targetSlideLocation=getTargetFromMouse(mousePosition)
@@ -49,22 +51,24 @@ func updateSelectionLocation(mousePosition:Vector2,mergeMoves:bool=false)->bool:
 	#snap the slide location and push it back onto the ray afterwards
 	#targetSlideLocation=getPointAlongRay(targetSlideLocation.snappedf(ParameterService.getParam(&"snapDistance")))
 	
-	var currentEditLocation=editingOrigin*editingObject.global_transform.basis.get_rotation_quaternion().inverse()+editingObject.global_position
+	var currentEditLocation=editingOrigin*get_quat_ref().inverse()+get_position_ref()
 	
 	var slideBy=(targetSlideLocation-currentEditLocation)
 	slideBy=slideBy.snappedf(ParameterService.getParam(&"snapDistance"))
 	if slideBy.is_zero_approx():return false
 	#slideBy*=editingObject.global_transform.basis.get_rotation_quaternion()
 	UndoRedoService.startAction("MoveObject",UndoRedo.MERGE_ALL if mergeMoves else UndoRedo.MERGE_DISABLE)
-	UndoRedoService.addDoProperty(editingObject,"global_position",editingObject.global_position+slideBy)
-	UndoRedoService.addUndoProperty(editingObject,"global_position",editingObject.global_position)
+	for editingObject in editingObjects:
+		UndoRedoService.addDoProperty(editingObject,"global_position",editingObject.global_position+slideBy)
+		UndoRedoService.addUndoProperty(editingObject,"global_position",editingObject.global_position)
 	UndoRedoService.addMethods(
 		func():signalService.emitSignal.call_deferred(&"meshSelectionChanged"),
 		func():signalService.emitSignal.call_deferred(&"meshSelectionChanged"),
 	)
-	UndoRedoService.addMethods(
-		func():editingObject.paramUpdated.emit(),
-		func():editingObject.paramUpdated.emit()
-	)
+	for editingObject in editingObjects:
+		UndoRedoService.addMethods(
+			func():editingObject.paramUpdated.emit(),
+			func():editingObject.paramUpdated.emit()
+		)
 	UndoRedoService.commitAction(true)
 	return not slideBy.is_zero_approx()

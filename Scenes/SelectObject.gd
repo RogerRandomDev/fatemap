@@ -4,26 +4,29 @@ extends EditInteractionBase
 func _handle_mouse_click(_event: InputEventMouseButton) -> bool:
 	if InputService.released(&"MouseLeft",true) and not holder.eventData.hasMoved(4):
 		var clickedModel=holder.getClickedModel()
-		var activeObj=ParameterService.getParam(&"activeObject")
-		if activeObj==clickedModel:return false
-		if MeshEditService.isEditing() and MeshEditService.editing.selectedVertices.size()>0:return false
-		if InputService.pressed(&"SelectMultiple"):return false
+		#cant deselect it if its a mesh and a point on it is selected
+		if (
+			MeshEditService.isEditing() and clickedModel!=null and
+			clickedModel.objectType==ObjectModel.objectTypes.MESH and 
+			MeshEditService.editing.selectedVertices.any(func(v):return v._mesh==clickedModel.objectData.mesh)):
+				return false
+		var oldObjs=ParameterService.getParam(&"activeObjects").duplicate(true)
+		SelectService.select(clickedModel)
+		var currentObjs=ParameterService.getParam(&"activeObjects").duplicate(true)
+		if currentObjs==oldObjs:return true#skip if we changed nothing
 		UndoRedoService.startAction(&"SelectObject")
-		UndoRedoService.addMethods(
-			(func():
-				ParameterService.setParam(&"activeObject",clickedModel)
-				MeshEditService.setEditing(clickedModel)
-				signalService.emitSignal(&"meshSelectionChanged")
-				signalService.emitSignal(&"mapObjectSelected",[clickedModel] if clickedModel != null else [])
-				),
-			(func():
-				ParameterService.setParam(&"activeObject",activeObj)
-				MeshEditService.setEditing(activeObj)
-				signalService.emitSignal(&"meshSelectionChanged")
-				signalService.emitSignal(&"mapObjectSelected",[activeObj] if activeObj != null else [])
-				)
-		)
-		UndoRedoService.commitAction(true)
-		
+		UndoRedoService.addDo(func():
+			ParameterService.setParam(&"activeObjects",currentObjs)
+			MeshEditService.setEditing(currentObjs)
+			signalService.emitSignal(&"meshSelectionChanged")
+			signalService.emitSignal(&"mapObjectSelected",[currentObjs])
+			)
+		UndoRedoService.addUndo(func():
+			ParameterService.setParam(&"activeObjects",oldObjs)
+			MeshEditService.setEditing(oldObjs)
+			signalService.emitSignal(&"meshSelectionChanged")
+			signalService.emitSignal(&"mapObjectSelected",[oldObjs])
+			)
+		UndoRedoService.commitAction(false)
 		return true
 	return false

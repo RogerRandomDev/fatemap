@@ -25,7 +25,7 @@ func buildView()->void:
 		)
 	).reference
 	
-	loadContents(null)
+	loadContents([])
 
 
 
@@ -64,8 +64,8 @@ func updateGridLayout()->void:
 		objectOption.setIconSize(objectIconSize)
 
 
-func loadContents(contents:ObjectDataResource)->void:
-	recursiveToggleContents(self,contents!=null)
+func loadContents(contents:Array=[])->void:
+	recursiveToggleContents(self,contents.size()!=0)
 	if contents==null:return
 
 func optionEvent(event:InputEvent,option)->void:
@@ -85,9 +85,7 @@ func optionEvent(event:InputEvent,option)->void:
 		)
 		placeOn.add_child(holder)
 		holder.set_meta("reposition","")
-		ParameterService.setParam(&"activeObject",holder)
-		MeshEditService.setEditing(holder)
-		signalService.emitSignal.call_deferred(&"meshSelectionChanged")
+		#SelectService.select(holder,true)
 		var f:Callable
 		f=func(_event:InputEvent):
 			GUIService.getByName("PrimaryViewport").reference.get_child(0).get_child(0)._input(_event)

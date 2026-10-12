@@ -52,12 +52,12 @@ func setupTabCreationBar()->void:
 		nameLine.placeholder_text="Tag Name"
 		)
 
-func loadContents(contents:ObjectDataResource)->void:
-	editingResource=contents
+func loadContents(contents:Array=[])->void:
+	editingResource=null if contents.size()==0 else contents.get(0)
 	tree.clear()
 	var treeRoot:TreeItem=tree.create_item()
-	if contents==null:return
-	var tagList = contents.getTagDefaults(true)
+	if editingResource==null:return
+	var tagList = editingResource.getTagDefaults(true)
 	for tag in tagList:
 		var tagItem:TreeItem=treeRoot.create_child()
 		tagItem.set_text(0,tag)

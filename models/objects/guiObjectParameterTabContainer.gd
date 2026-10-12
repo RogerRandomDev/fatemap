@@ -45,11 +45,12 @@ func removeTabs(tabs:PackedStringArray=[])->void:
 	await get_tree().process_frame
 	return
 
-func selectedObjectChanged(newSelectedObject:ObjectModel=null)->void:
-	var objectData = null
-	if newSelectedObject:objectData=newSelectedObject.getData()
+func selectedObjectChanged(newSelectedObjects:Array=[])->void:
+	var objectDatas :Array = []
+	for newSelectedObject in newSelectedObjects:
+		objectDatas.push_back(newSelectedObject.getData())
 	
 	for tab in get_children():
 		if not tab.has_method(&"loadContents"):continue
-		tab.loadContents(objectData)
+		tab.loadContents(objectDatas)
 	

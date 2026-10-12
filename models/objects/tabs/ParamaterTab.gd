@@ -68,16 +68,16 @@ func setupParamCreationBar()->void:
 	)
 
 func reloadContents()->void:
-	loadContents.call_deferred(editingResource)
+	loadContents.call_deferred([editingResource])
 
-func loadContents(contents:ObjectDataResource)->void:
+func loadContents(contents:Array=[])->void:
 	if editingResource!=null and editingResource.owner!=null:
 		editingResource.owner.paramUpdated.get_connections().map(func(f):if f.callable==reloadContents:editingResource.owner.paramUpdated.disconnect(f.callable))
-	editingResource=contents
+	editingResource=null if contents.size()==0 else contents.get(0)
 	tree.clear()
-	if contents==null:return
+	if editingResource==null:return
 	editingResource.owner.paramUpdated.connect(reloadContents)
-	var parameterValues = contents.getParameterDefaults(true,true,true)
+	var parameterValues = editingResource.getParameterDefaults(true,true,true)
 	var rootItem=tree.create_item()
 	for index in len(parameterValues):
 		var value=parameterValues[index]

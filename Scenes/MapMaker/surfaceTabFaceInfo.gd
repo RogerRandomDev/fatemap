@@ -16,10 +16,11 @@ func _ready() -> void:
 		&"ScaleX",
 		func(value):
 		var updateFaces=MeshEditService.editing.selectedFaces
-		if updateFaces.size()==0:updateFaces=MeshEditService.editing.mesh.faces
+		if updateFaces.size()==0:MeshEditService.editing.meshes.map(func(m):if m!=null:updateFaces.append_array(m.faces))
 		for face in updateFaces:
 			face.uvScale.x=value
-		MeshEditService.editing.mesh.rebuild()
+		for mesh in MeshEditService.editing.meshes:
+			if mesh!=null:mesh.rebuild()
 	)
 	uvScaleX.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	var uvScaleY:SpinBox=createSpinBox(
@@ -29,10 +30,11 @@ func _ready() -> void:
 		&"ScaleY",
 		func(value):
 		var updateFaces=MeshEditService.editing.selectedFaces
-		if updateFaces.size()==0:updateFaces=MeshEditService.editing.mesh.faces
+		if updateFaces.size()==0:MeshEditService.editing.meshes.map(func(m):if m!=null:updateFaces.append_array(m.faces))
 		for face in updateFaces:
 			face.uvScale.y=value
-		MeshEditService.editing.mesh.rebuild()
+		for mesh in MeshEditService.editing.meshes:
+			if mesh!=null:mesh.rebuild()
 	)
 	uvScaleY.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	var uvOffsetX:SpinBox=createSpinBox(
@@ -42,10 +44,11 @@ func _ready() -> void:
 		&"OffsetX",
 		func(value):
 		var updateFaces=MeshEditService.editing.selectedFaces
-		if updateFaces.size()==0:updateFaces=MeshEditService.editing.mesh.faces
+		if updateFaces.size()==0:MeshEditService.editing.meshes.map(func(m):if m!=null:updateFaces.append_array(m.faces))
 		for face in updateFaces:
 			face.uvOffset.x=value
-		MeshEditService.editing.mesh.rebuild()
+		for mesh in MeshEditService.editing.meshes:
+			if mesh!=null:mesh.rebuild()
 	)
 	uvOffsetX.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	var uvOffsetY:SpinBox=createSpinBox(
@@ -55,10 +58,11 @@ func _ready() -> void:
 		&"OffsetY",
 		func(value):
 		var updateFaces=MeshEditService.editing.selectedFaces
-		if updateFaces.size()==0:updateFaces=MeshEditService.editing.mesh.faces
+		if updateFaces.size()==0:MeshEditService.editing.meshes.map(func(m):if m!=null:updateFaces.append_array(m.faces))
 		for face in updateFaces:
 			face.uvOffset.y=value
-		MeshEditService.editing.mesh.rebuild()
+		for mesh in MeshEditService.editing.meshes:
+			if mesh!=null:mesh.rebuild()
 	)
 	uvOffsetY.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	var uvRotation:SpinBox=createSpinBox(
@@ -68,10 +72,11 @@ func _ready() -> void:
 		&"Rotation",
 		func(value):
 		var updateFaces=MeshEditService.editing.selectedFaces
-		if updateFaces.size()==0:updateFaces=MeshEditService.editing.mesh.faces
+		if updateFaces.size()==0:MeshEditService.editing.meshes.map(func(m):if m!=null:updateFaces.append_array(m.faces))
 		for face in updateFaces:
 			face.uvRotation=value/180 * PI
-		MeshEditService.editing.mesh.rebuild()
+		for mesh in MeshEditService.editing.meshes:
+			if mesh!=null:mesh.rebuild()
 	)
 	uvRotation.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	
@@ -89,10 +94,15 @@ func _ready() -> void:
 	signalService.bindToSignal(&"meshSelectionChanged",updateWithSelectedObject)
 
 func updateWithSelectedObject()->void:
-	if not MeshEditService.isEditing() or MeshEditService.editing.mesh==null:return
-	var firstFace=MeshEditService.editing.mesh.faces[0]
+	if not MeshEditService.isEditing() or MeshEditService.editing.meshes.all(func(m):return m==null):return
+	var firstFace
+	for mesh in MeshEditService.editing.meshes:
+		if mesh!=null:
+			firstFace=mesh.faces[0]
+			break
 	if MeshEditService.editing.selectedFaces.size()!=0:
 		firstFace=MeshEditService.editing.selectedFaces[0]
+	if firstFace==null:return
 	infoSet.get_node("ScaleX").set_value_no_signal(firstFace.uvScale.x)
 	infoSet.get_node("ScaleY").set_value_no_signal(firstFace.uvScale.y)
 	infoSet.get_node("OffsetX").set_value_no_signal(firstFace.uvOffset.x)
@@ -106,17 +116,15 @@ func displaySelectedFaceInfo()->void:
 	var counters:Array=[0,0,0]
 	var selected:Array=[0,0,0]
 	if MeshEditService.isEditing():
-		if MeshEditService.editing.mesh==null:return
-		counters = [
-			MeshEditService.editing.mesh.faces.size(),
-			MeshEditService.editing.mesh.edges.size(),
-			MeshEditService.editing.mesh.vertices.size()
-		]
-		selected = [
-			MeshEditService.editing.selectedFaces.size(),
-			MeshEditService.editing.selectedEdges.size(),
-			MeshEditService.editing.selectedVertices.size()
-		]
+		for mesh in MeshEditService.editing.meshes:
+			if mesh==null:continue
+			counters[0]+=mesh.faces.size()
+			counters[1]+=mesh.edges.size()
+			counters[2]+=mesh.vertices.size()
+		selected[0]+=MeshEditService.editing.selectedFaces.size()
+		selected[1]+=MeshEditService.editing.selectedEdges.size()
+		selected[2]+=MeshEditService.editing.selectedVertices.size()
+	
 	createLabel(objectInfo,"Faces:\n%s\n%s"%[str(counters[0]),str(selected[0])])
 	createLabel(objectInfo,"Edges:\n%s\n%s"%[str(counters[1]),str(selected[1])])
 	createLabel(objectInfo,"Vertices:\n%s\n%s"%[str(counters[2]),str(selected[2])])
