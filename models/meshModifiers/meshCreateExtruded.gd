@@ -46,9 +46,5 @@ static func createExtrudedFromSelected(extrudeLength:float=0.25)->Array[Physical
 		extrudedMesh.initializeFaces()
 		for extruded_face in extrudedMesh.faces:
 			extruded_face.setSurfaceMaterial(face_material)
-		
-		
 		extrudedObjects.push_back(newExtruded)
-	
-	
 	return extrudedObjects

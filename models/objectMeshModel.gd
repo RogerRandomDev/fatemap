@@ -14,7 +14,7 @@ var cleanedFaces:Array[cleanedFace]=[]
 var cleanedEdges:Array[cleanedEdge]=[]
 var cleanedVertices:Array[cleanedVertex]=[]
 
-var trackedSelection:SelectionInfo=SelectionInfo.new([],[],[],self)
+var trackedSelection:SelectionInfo=SelectionInfo.new([],[],[],[],self)
 
 const projectionAxis:PackedVector3Array=[
 	
@@ -29,7 +29,7 @@ func  initializeFaces()->void:
 	faces.clear()
 	edges.clear()
 	vertices.clear()
-	
+	faceMaterialMap.clear()
 	var dt:MeshDataTool=MeshDataTool.new()
 	dt.create_from_surface(self,0)
 	for face in dt.get_face_count():
@@ -247,11 +247,11 @@ func cleanZeroSurfaceFaces()->void:
 			face.remove()
 
 ## updates the current selection indexing
-func updateSelection(_vertices,_edges,_faces,ignoreChange:bool=false)->Dictionary:
+func updateSelection(_vertices,_edges,_faces,_cleanFaces,ignoreChange:bool=false)->Dictionary:
 	if ignoreChange:
-		trackedSelection.update(_vertices,_edges,_faces)
+		trackedSelection.update(_vertices,_edges,_faces,_cleanFaces)
 		return {}
-	var changes = trackedSelection.getChanges(_vertices,_edges,_faces)
+	var changes = trackedSelection.getChanges(_vertices,_edges,_faces,_cleanFaces)
 	return changes
 
 
@@ -314,7 +314,6 @@ func convertSurfacesToBinaryCompiled(compiler:compilerService.compilerMapData=nu
 	var binarySurfaceData:PackedByteArray=[]
 	binarySurfaceData.resize(face_bytes+faceMaterialMap.size()*6)
 	var offset:int=0
-	print(vertex_pos_size)
 	var sub_offset = 4 + vertex_pos_size
 	for mat in faceMaterialMap.keys():
 		if mat.materialTags.has("ignore_render"):continue
@@ -583,6 +582,13 @@ class meshFace extends meshVertexObject:
 	func getFaceNormal()->Vector3:
 		return normal
 	
+	## not the fastest thing to do but usable for its purposes
+	func getArea()->float:
+		var ab = vertices[1].position-vertices[0].position
+		var ac = vertices[2].position-vertices[0].position
+		var cross = ab.cross(ac)
+		return cross.length()
+	
 	func translateBy(offset:Vector3,specifiedIndex:PackedFloat32Array=[],blockChangeForOperation:bool=false)->void:
 		#var uniqueVertices:Array[meshVertex]=[]
 		for vertex in vertices:
@@ -685,6 +691,11 @@ class cleanedFace extends cleanedVertexObject:
 		positionIDs=uniquePositions.keys()
 		normalID=fromFaces[0].normalID
 		
+	func getArea()->float:
+		var area:float=0.0
+		for face in faces:
+			area+=face.getArea()
+		return area
 	
 	##not the best implementation but it makes sure
 	##you actually enclose the ray you are trying to click
@@ -699,38 +710,44 @@ class cleanedFace extends cleanedVertexObject:
 
 ##used  for tracking selected faces/edges/vertices
 class SelectionInfo extends RefCounted:
+	var cleanFaces:Array
 	var faces:Array
 	var edges:Array
 	var vertices:Array
 	var mesh
 	
-	func _init(_vertices,_edges,_faces,_mesh)->void:
+	func _init(_vertices,_edges,_faces,_cleanFaces,_mesh)->void:
 		faces=_faces
 		edges=_edges
 		vertices=_vertices
+		cleanFaces=_cleanFaces
 		mesh=_mesh
 	
-	func update(_vertices,_edges,_faces)->void:
+	func update(_vertices,_edges,_faces,_cleanFaces)->void:
 		faces=_faces
 		edges=_edges
 		vertices=_vertices
+		cleanFaces=_cleanFaces
 	## returns a dictionary containing "added" and "removed" with
 	## the changed faces/edges/vertices
-	func getChanges(_vertices,_edges,_faces) -> Dictionary:
+	func getChanges(_vertices,_edges,_faces,_cleanFaces) -> Dictionary:
 		var changes:Dictionary={
-			&"added":[[],[],[]],
-			&"removed":[[],[],[]]
+			&"added":[[],[],[],[]],
+			&"removed":[[],[],[],[]]
 			}
 		# we build lists of what vertices we care about right now
 		var fullVertexList={}
 		var fullEdgeList={}
 		var fullFaceList={}
+		var fullCleanFaceList={}
 		_vertices.map(func(f):fullVertexList[f]=null)
 		vertices.map(func(f):fullVertexList[f]=null)
 		_edges.map(func(f):fullEdgeList[f]=null)
 		edges.map(func(f):fullEdgeList[f]=null)
 		_faces.map(func(f):fullFaceList[f]=null)
 		faces.map(func(f):fullFaceList[f]=null)
+		_cleanFaces.map(func(f):fullCleanFaceList[f]=null)
+		cleanFaces.map(func(f):fullCleanFaceList[f]=null)
 		#we now check if it is in both or has changed
 		for vert in fullVertexList.keys():
 			var inSet=[_vertices.has(vert),vertices.has(vert)]
@@ -747,9 +764,15 @@ class SelectionInfo extends RefCounted:
 			if inSet[0]&&inSet[1]:continue
 			if(inSet[0]):changes[&"added"][2].push_back(face)
 			if(inSet[1]):changes[&"removed"][2].push_back(face)
+		for cleanFace in fullCleanFaceList.keys():
+			var inSet=[_cleanFaces.has(cleanFace),cleanFaces.has(cleanFace)]
+			if inSet[0]&&inSet[1]:continue
+			if(inSet[0]):changes[&"added"][3].push_back(cleanFace)
+			if(inSet[1]):changes[&"removed"][3].push_back(cleanFace)
 		vertices=_vertices
 		edges=_edges
 		faces=_faces
+		cleanFaces=_cleanFaces
 		
 		return changes
 	

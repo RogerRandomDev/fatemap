@@ -10,12 +10,6 @@ func _ready() -> void:
 	add_child(mapFileDialog)
 
 func loadContents()->void:
-	#var FileItem := GUIToolbarService.AddToolbarItem(
-		#ToolbarMenuButton.new(&"File",load("res://toolbarView.tres")),
-		#&"FileToolButton",
-		#[&"File"],
-	#).reference as ToolbarMenuButton
-	#ToolMethodService.addToolMethod(&"TestScript",func():print("yeah it runs"))
 	
 	var _ViewItem := GUIToolbarService.AddToolbarItem(
 		ToolbarMenuButton.new(&"View",load("res://makerToolbar/toolbarView.tres")),

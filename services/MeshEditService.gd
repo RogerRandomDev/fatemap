@@ -74,6 +74,7 @@ class editingMesh extends Resource:
 	
 	#surface special info
 	#part selections
+	var selectedCleanFaces:Array[objectMeshModel.cleanedFace]=[]
 	var selectedFaces:Array[objectMeshModel.meshFace]=[]
 	var selectedEdges:Array[objectMeshModel.meshEdge]=[]
 	var selectedVertices:Array[objectMeshModel.meshVertex]=[]
@@ -91,6 +92,7 @@ class editingMesh extends Resource:
 	
 	func copyOver(old:editingMesh):
 		if old==null:return
+		selectedCleanFaces=old.selectedCleanFaces.filter(func(f):return meshes.has(f.faces[0]._mesh))
 		selectedFaces=old.selectedFaces.filter(func(f):return meshes.has(f._mesh))
 		selectedEdges=old.selectedEdges.filter(func(f):return meshes.has(f._mesh))
 		selectedVertices=old.selectedVertices.filter(func(f):return meshes.has(f._mesh))
@@ -109,6 +111,7 @@ class editingMesh extends Resource:
 	
 	##clears selected arrays
 	func clearSelections(_ignoreChange:bool=true)->void:
+		selectedCleanFaces=[]
 		selectedFaces=[]
 		selectedEdges=[]
 		selectedVertices=[]
@@ -125,12 +128,16 @@ class editingMesh extends Resource:
 		if not selectedFaces.has(face):return
 		selectedFaces.erase(face)
 		for edge in face.edges:deselectEdge(edge)
+	func deselectCleanFace(cleanFace:objectMeshModel.cleanedFace)->void:
+		if not selectedCleanFaces.has(cleanFace):return
+		selectedCleanFaces.erase(cleanFace)
+		for face in cleanFace.faces:deselectFace(face)
 	
 	func deselect(meshPart)->void:
 		if meshPart is objectMeshModel.meshVertex:deselectVertex(meshPart)
 		if meshPart is objectMeshModel.meshEdge:deselectEdge(meshPart)
 		if meshPart is objectMeshModel.meshFace:deselectFace(meshPart)
-		if meshPart is objectMeshModel.cleanedFace:for face in meshPart.faces:deselectFace(face)
+		if meshPart is objectMeshModel.cleanedFace:deselectCleanFace(meshPart)
 	
 	func selectVertex(vertex:objectMeshModel.meshVertex,toggleSelected:bool=false)->void:
 		if not meshes.any(func(mesh):return mesh!=null and mesh.vertices.has(vertex)):return
@@ -148,12 +155,18 @@ class editingMesh extends Resource:
 			selectedFaces.push_back(face)
 			for edge in face.edges:selectEdge(edge,false)
 		else:if toggleSelected:deselectFace(face)
+	func selectCleanFace(cleanFace:objectMeshModel.cleanedFace,toggleSelected:bool=false)->void:
+		if not meshes.any(func(mesh):return mesh!=null and mesh.cleanedFaces.has(cleanFace)):return
+		if not selectedCleanFaces.has(cleanFace):
+			selectedCleanFaces.push_back(cleanFace)
+			for face in cleanFace.faces:selectFace(face,false)
+		else:if toggleSelected:deselectCleanFace(cleanFace)
 		
 	func select(meshPart,toggleSelected:bool=false)->void:
 		if meshPart is objectMeshModel.meshVertex:selectVertex(meshPart,toggleSelected)
 		if meshPart is objectMeshModel.meshEdge:selectEdge(meshPart,toggleSelected)
 		if meshPart is objectMeshModel.meshFace:selectFace(meshPart,toggleSelected)
-		if meshPart is objectMeshModel.cleanedFace:for face in meshPart.faces:selectFace(face,toggleSelected)
+		if meshPart is objectMeshModel.cleanedFace:selectCleanFace(meshPart,toggleSelected)
 		if meshPart is objectMeshModel.cleanedEdge:for edge in meshPart.edges:selectEdge(edge,toggleSelected)
 		if meshPart is objectMeshModel.cleanedVertex:for vertex in meshPart.vertices:selectVertex(vertex,toggleSelected)
 	
@@ -161,7 +174,7 @@ class editingMesh extends Resource:
 		if meshPart is objectMeshModel.meshVertex:return selectedVertices.has(meshPart)
 		if meshPart is objectMeshModel.meshEdge:return selectedEdges.has(meshPart)
 		if meshPart is objectMeshModel.meshFace:return selectedFaces.has(meshPart)
-		if meshPart is objectMeshModel.cleanedFace:return meshPart.faces.all(func(f):return selectedFaces.has(f))
+		if meshPart is objectMeshModel.cleanedFace:return selectedCleanFaces.has(meshPart)
 		if meshPart is objectMeshModel.cleanedEdge:return meshPart.edges.all(func(e):return selectedEdges.has(e))
 		if meshPart is objectMeshModel.cleanedVertex:return meshPart.vertices.all(func(v):return selectedVertices.has(v))
 		return false
@@ -169,8 +182,8 @@ class editingMesh extends Resource:
 	func updateSelectionTracked(ignore:bool=false)->void:
 		if meshObjects.size()==0:return
 		var changes:Dictionary={
-			&"added":[[],[],[]],
-			&"removed":[[],[],[]]
+			&"added":[[],[],[],[]],
+			&"removed":[[],[],[],[]]
 		}
 		#get all uupdated selections for each mesh in the selection
 		for mesh in meshes:
@@ -178,11 +191,12 @@ class editingMesh extends Resource:
 			var meshChanges = mesh.updateSelection(
 				selectedVertices.filter(func(v):return v._mesh==mesh),
 				selectedEdges.filter(func(v):return v._mesh==mesh),
-				selectedFaces.filter(func(v):return v._mesh==mesh)
+				selectedFaces.filter(func(v):return v._mesh==mesh),
+				selectedCleanFaces.filter(func(v):return v.faces[0]._mesh==mesh),
 				)
-			var addSet=meshChanges.get(&"added",[[],[],[]])
-			var removeSet=meshChanges.get(&"removed",[[],[],[]])
-			for i in 3:
+			var addSet=meshChanges.get(&"added",[[],[],[],[]])
+			var removeSet=meshChanges.get(&"removed",[[],[],[],[]])
+			for i in 4:
 				changes.get(&"added")[i].append_array(addSet[i])
 				changes.get(&"removed")[i].append_array(removeSet[i])
 			
@@ -195,15 +209,15 @@ class editingMesh extends Resource:
 		UndoRedoService.startAction(&"SelectMeshParts")
 		UndoRedoService.addDo(func():
 			var newEdit=MeshEditService.getEditing()
-			for i in 3:for selectable in changes[&"added"][i]:newEdit.select(selectable,false)
-			for i in 3:for selectable in changes[&"removed"][i]:newEdit.deselect(selectable)
+			for i in 4:for selectable in changes[&"added"][i]:newEdit.select(selectable,false)
+			for i in 4:for selectable in changes[&"removed"][i]:newEdit.deselect(selectable)
 			newEdit.updateSelectionTracked(true)
 			signalService.emitSignal(&"meshSelectionChanged")
 			)
 		UndoRedoService.addUndo(func():
 			var newEdit=MeshEditService.getEditing()
-			for i in 3:for selectable in changes[&"added"][i]:newEdit.deselect(selectable)
-			for i in 3:for selectable in changes[&"removed"][i]:newEdit.select(selectable,false)
+			for i in 4:for selectable in changes[&"added"][i]:newEdit.deselect(selectable)
+			for i in 4:for selectable in changes[&"removed"][i]:newEdit.select(selectable,false)
 			newEdit.updateSelectionTracked(true)
 			signalService.emitSignal(&"meshSelectionChanged")
 		)

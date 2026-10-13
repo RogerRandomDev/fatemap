@@ -2,11 +2,13 @@ extends RefCounted
 
 
 func applyScaleOnSelected(_v=null)->void:
-	var selectedObjs = ParameterService.getParam(&"activeObject")
+	var selectedObjs = ParameterService.getParam(&"activeObjects")
 	if selectedObjs==null or selectedObjs.size()==0:return
+	if not MeshEditService.isEditing():return
+	MeshEditService.editing.applyScale()
 	for selectedObj in selectedObjs:
 		if selectedObj.objectType==ObjectModel.objectTypes.MESH:
-			if not MeshEditService.isEditing():return
-			MeshEditService.editing.applyScale()
-			MeshEditService.editing.mesh.rebuild()
-			PhysicalObjectService.updatePickableArea(MeshEditService.editor.editingObject)
+			selectedObj.objectData.mesh.rebuild()
+			PhysicalObjectService.updatePickableArea(selectedObj)
+			
+			
