@@ -157,6 +157,15 @@ class editingMesh extends Resource:
 		if meshPart is objectMeshModel.cleanedEdge:for edge in meshPart.edges:selectEdge(edge,toggleSelected)
 		if meshPart is objectMeshModel.cleanedVertex:for vertex in meshPart.vertices:selectVertex(vertex,toggleSelected)
 	
+	func isSelected(meshPart)->bool:
+		if meshPart is objectMeshModel.meshVertex:return selectedVertices.has(meshPart)
+		if meshPart is objectMeshModel.meshEdge:return selectedEdges.has(meshPart)
+		if meshPart is objectMeshModel.meshFace:return selectedFaces.has(meshPart)
+		if meshPart is objectMeshModel.cleanedFace:return meshPart.faces.all(func(f):return selectedFaces.has(f))
+		if meshPart is objectMeshModel.cleanedEdge:return meshPart.edges.all(func(e):return selectedEdges.has(e))
+		if meshPart is objectMeshModel.cleanedVertex:return meshPart.vertices.all(func(v):return selectedVertices.has(v))
+		return false
+	
 	func updateSelectionTracked(ignore:bool=false)->void:
 		if meshObjects.size()==0:return
 		var changes:Dictionary={
@@ -223,6 +232,7 @@ class editingMesh extends Resource:
 		#UndoRedoService.startAction(&"TranslateMeshPoints",UndoRedo.MERGE_ENDS)
 		#breaks if i re-center the mesh elsewhere cause it changes where everything is relative
 		#if i do MERGE_ALL and just add/subtract the change instead it works fine.
+		
 		UndoRedoService.addMethods(
 			(func():
 				for mesh in editingMeshPositionIDs.keys():
@@ -237,14 +247,14 @@ class editingMesh extends Resource:
 		)
 		UndoRedoService.addMethods(
 			func():
-				for mesh in MeshEditService.editing.meshes:
+				for mesh in editingMeshPositionIDs.keys():
 					if mesh==null:continue
 					mesh.rebuild(false)
 					PhysicalObjectService.updatePickableArea(mesh.ownerInstance.get_parent())
 				signalService.emitSignal.call_deferred(&"meshSelectionChanged")
 				,
 			func():
-				for mesh in MeshEditService.editing.meshes:
+				for mesh in editingMeshPositionIDs.keys():
 					if mesh==null:continue
 					mesh.rebuild.call_deferred(false)
 					PhysicalObjectService.updatePickableArea.call_deferred(mesh.ownerInstance.get_parent())

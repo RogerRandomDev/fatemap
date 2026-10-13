@@ -115,6 +115,10 @@ func _handle_mouse_drag(event: InputEventMouseMotion) -> bool:
 	return false
 
 func _handle_mouse_click(event: InputEventMouseButton) -> bool:
+	#prevent deselecting a mesh imediately if we deselected a point
+	if newPointDeselected and InputService.released(&"MouseLeft",true):
+		newPointDeselected=false
+		return true
 	if not get_child(0).visible and MeshEditService.isEditing() and InputService.pressed(&"MouseLeft"):
 		MeshEditService.editing.clearSelections()
 		signalService.emitSignal(&"meshSelectionChanged")
@@ -194,6 +198,7 @@ func moveSelection(moveBy:Vector3,local:bool=true)->void:
 			PhysicalObjectService.updatePickableArea(dataObject)
 	signalService.emitSignal(&"meshSelectionChanged")
 
+var newPointDeselected = false
 
 func selectPointToChange(atPos:Vector2)->bool:
 	if renderPoints.size()==0:return false
@@ -204,6 +209,7 @@ func selectPointToChange(atPos:Vector2)->bool:
 	var newPoint=renderPoints.values()[pointIndex]
 	if sortedDistances[0]>pointSize*pointSize:return false
 	var _previousSelected=MeshEditService.editing.selectedVertices.size()
+	newPointDeselected=InputService.pressed(&"SelectMultiple") and MeshEditService.editing.isSelected(newPoint)
 	MeshEditService.editing.select(newPoint,InputService.pressed(&"SelectMultiple"))
 	MeshEditService.editor.updateSelected(newPoint)
 	updateSelected()
