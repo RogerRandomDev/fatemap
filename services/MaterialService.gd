@@ -59,8 +59,8 @@ static func loadFMT(fmtPath:String)->materialModel:
 		values[lineRepresents] = lineValue
 	addMaterial(
 		values.get("name","NONE"),
-		load(materialSource+values.get("material","Materials/Default/defaultMaterial.material")),
-		ImageTexture.create_from_image(Image.load_from_file(materialSource+values.get("texture","Materials/Default/defaultTexture.png"))),
+		externalLoader.loadExternalFile(materialSource+values.get("material","Materials/Default/defaultMaterial.material"),"Material"),
+		externalLoader.loadExternalFile(materialSource+values.get("texture","Materials/Default/defaultTexture.png")),
 		{},#values.get("parameters",{})
 		values.get("tags","").split(","),
 		fmtPath

@@ -20,27 +20,21 @@ func _ready() -> void:
 	
 
 
-func createByType(type:String)->void:
-	match type:
-		\"Label3D\":
-			var obj=load(\"res://models/dataObjectModel.gd\").new()
-			obj.objectData=load(\"res://modelData/generic/Label3D.tres\").duplicate()
-			var lbl=Label3D.new()
-			obj.objectDisplay=lbl
-			obj.add_child(lbl)
-			lbl.text=\"Placeholder\"
-			var placeOn:Node3D = get_tree().current_scene.mapViewport.get_node(\"PlacedObjects\")
-			placeOn.add_child(obj)
-			moveObjToCursor(obj)
-		\"Sprite3D\":
-			var obj=load(\"res://models/dataObjectModel.gd\").new()
-			obj.objectData=load(\"res://modelData/generic/Sprite3D.tres\").duplicate()
-			var lbl=Sprite3D.new()
-			obj.objectDisplay=lbl
-			obj.add_child(lbl)
-			var placeOn:Node3D = get_tree().current_scene.mapViewport.get_node(\"PlacedObjects\")
-			placeOn.add_child(obj)
-			moveObjToCursor(obj)
+func createByType(type:String,subPath:String=\"generic\")->void:
+	var built:Node
+	var id = ProjectSettings.get_global_class_list().find_custom(func(v):return v.class==type)
+	if id!=-1:built=load(ProjectSettings.get_global_class_list()[id].path).new()
+	if id==-1 and ClassDB.class_exists(type):built=ClassDB.instantiate(type)
+	elif id==-1:push_warning(\"invalid/unloaded class (%s)\"%type)
+	if not built:return
+	var obj=load(\"res://models/dataObjectModel.gd\").new()
+	var externalObjectData = ResourceLoader.load(ProjectSettings.get_setting(\"fatemap/project_directory\",\"res:/\")+\"/%s/%s.tres\"%[subPath,type],\"ObjectDataResource\")
+	obj.objectData=externalObjectData
+	obj.objectDisplay=built
+	obj.add_child(built)
+	var placeOn:Node3D = get_tree().current_scene.mapViewport.get_node(\"PlacedObjects\")
+	placeOn.add_child(obj)
+	moveObjToCursor(obj)
 
 func moveObjToCursor(obj)->void:
 	var viewport = (GUIService.getByName(&\"PrimaryViewport\").reference.get_child(0) as SubViewport)
@@ -75,17 +69,29 @@ func buildRightMenu()->void:
 	base.add_submenu_node_item(\"Add Data Type\",addTypes)
 	base.set_item_tooltip(base.item_count-1,\"create a datamodel for a selected type\")
 	#construct a list of all types we can create from this and add them to the options
-	var possibleTypes=Array(DirAccess.get_files_at(\"res://FateMap/modelData/generic\"))
-	possibleTypes=possibleTypes.filter(func(v):return v.ends_with(\".tres\"))
-	for type in possibleTypes:
-		AddOption(addTypes,type.trim_suffix(\".tres\"),
-			createByType,type.trim_suffix(\".tres\"),\"Create a %s\"%type.trim_suffix(\".tres\")
-			)
+	loadTypeMenu(addTypes,\"FateMap/modelData\")
 	
 	
 	var submenuHolder = load(\"res://makerMenus/resources/rightClickFaceSubMenuHolder.tres\")
 	
 	buildFromResource(submenuHolder,self)
+
+func loadTypeMenu(menu:PopupMenu,subPath:String=\"\")->void:
+	var subPaths=DirAccess.get_directories_at(ProjectSettings.get_setting(\"fatemap/project_directory\",\"res:/\")+\"/\"+subPath)
+	for innerPath in subPaths:
+		#skip _ folders
+		if innerPath.begins_with(\"_\"):continue
+		var newSubMenu=PopupMenu.new()
+		menu.add_submenu_node_item(innerPath,newSubMenu)
+		menu.set_item_tooltip(newSubMenu.item_count-1,\"create a datamodel for a selected type\")
+		addMenuCallback(newSubMenu)
+		loadTypeMenu(newSubMenu,subPath+\"/\"+innerPath)
+	var possibleTypes=Array(DirAccess.get_files_at(ProjectSettings.get_setting(\"fatemap/project_directory\",\"res:/\")+\"/\"+subPath))
+	possibleTypes=possibleTypes.filter(func(v):return v.ends_with(\".tres\"))
+	for type in possibleTypes:
+		AddOption(menu,type.trim_suffix(\".tres\"),
+			createByType.bind(subPath),type.trim_suffix(\".tres\"),\"Create a %s\"%type.trim_suffix(\".tres\")
+			)
 
 func buildFromResource(resource:dropDownPopupResource,currentPopup:PopupMenu)->void:
 	addMenuCallback(currentPopup)

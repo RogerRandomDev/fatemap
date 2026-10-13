@@ -12,7 +12,7 @@ var objectGridOption=load("res://models/objects/ObjectGridOption.tscn")
 func _ready() -> void:
 	buildView()
 	
-	loadMaterialList.call_deferred()
+	loadModelList.call_deferred()
 	updateGridLayout()
 
 func buildView()->void:
@@ -33,12 +33,14 @@ func clearObjectList()->void:
 	for child in objectList.get_children():
 		child.queue_free()
 
-func loadMaterialList()->void:
+func loadModelList()->void:
 	var meshOptionsList:Dictionary={}
 	var searchDirectory="%s/FateMap/Imported/Models/"%ProjectSettings.get_setting("fatemap/project_directory","res://")
 	var doc = GLTFDocument.new()
 	for s in DirAccess.get_files_at(searchDirectory):
-		if not s.ends_with(".glb"):continue
+		var fileType=externalLoader.getExternalFileType(s)
+		if fileType!="PackedScene":continue
+		externalLoader.loadExternalFile(searchDirectory+s)
 		#on load fail load GLB directly
 		var state = GLTFState.new()
 		var error = doc.append_from_file(searchDirectory+s,state)

@@ -10,7 +10,8 @@ void vertex() {
 }
 
 void fragment() {
-	ALPHA=0.25-float((length(vec2(VERTEX.x,VERTEX.z)/scale)/64.0)>0.9)*0.25;
+	ALPHA=1.0-float((length(vec2(VERTEX.x,VERTEX.z)/scale)/64.0)>0.9);
+	ALBEDO=vec3(0.25);
 }
 
 //void light() {
@@ -20,6 +21,6 @@ void fragment() {
 "
 
 [resource]
-render_priority = 0
+render_priority = -128
 shader = SubResource("Shader_6rikv")
 shader_parameter/scale = 1.0
