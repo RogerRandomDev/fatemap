@@ -273,37 +273,34 @@ func getCompilerData(compiler:compilerService.compilerMapData,full:bool=false)->
 		"UVPosition":uvPos
 	}
 
-const BYTES_PER_FACE = 76
+const BYTES_PER_FACE = 80
 func convertSurfacesToBinary(compiler:compilerService.compilerMapData=null)->PackedByteArray:
 	var binarySurfaceData:PackedByteArray=[]
+	var offset:int=0
+	var face_bytes:int=(faces.size()*BYTES_PER_FACE)+(
+		faceMaterialMap.size()*6
+	)
+	binarySurfaceData.resize(face_bytes)
 	for mat in faceMaterialMap.keys():
 		if faceMaterialMap[mat].size()==0:continue
-		if compiler.materialList.has(mat):continue
-		compiler.materialList.push_back(mat)
-	
-	
-	var face_bytes:int=(
-		faces.size()*BYTES_PER_FACE
-	)
-	binarySurfaceData.resize(
-		face_bytes
-	)
-	var offset:int=0
-	const sub_offset = 20
-	for face in faces:
-		var compiledSurfaceId=compiler.materialList.find(face.surfaceMaterial)
-		
-		binarySurfaceData.encode_u16(offset,compiledSurfaceId)
-		for i in 3:
-			compilerService.encodeVector3FloatToArray(face.vertices[i].position,binarySurfaceData,offset+2+sub_offset*i)
-			binarySurfaceData.encode_float(offset+14+sub_offset*i,face.vertices[i].uv.x)
-			binarySurfaceData.encode_float(offset+18+sub_offset*i,face.vertices[i].uv.y)
-		binarySurfaceData.encode_float(offset+56,face.uvRotation)
-		binarySurfaceData.encode_float(offset+60,face.uvOffset.x)
-		binarySurfaceData.encode_float(offset+64,face.uvOffset.y)
-		binarySurfaceData.encode_float(offset+68,face.uvScale.x)
-		binarySurfaceData.encode_float(offset+72,face.uvScale.y)
-		offset+=BYTES_PER_FACE
+		if not compiler.materialList.has(mat):
+			compiler.materialList.push_back(mat)
+		var materialFaces=faceMaterialMap[mat]
+		binarySurfaceData.encode_u32(offset,materialFaces.size())
+		binarySurfaceData.encode_u16(offset+4,compiler.materialList.find(mat))
+		offset+=6
+		const sub_offset = 20
+		for face in materialFaces:
+			for i in 3:
+				compilerService.encodeVector3FloatToArray(face.vertices[i].position,binarySurfaceData,offset+sub_offset*i)
+				binarySurfaceData.encode_float(offset+12+sub_offset*i,face.vertices[i].uv.x)
+				binarySurfaceData.encode_float(offset+16+sub_offset*i,face.vertices[i].uv.y)
+			binarySurfaceData.encode_float(offset+60,face.uvRotation)
+			binarySurfaceData.encode_float(offset+64,face.uvOffset.x)
+			binarySurfaceData.encode_float(offset+68,face.uvOffset.y)
+			binarySurfaceData.encode_float(offset+72,face.uvScale.x)
+			binarySurfaceData.encode_float(offset+76,face.uvScale.y)
+			offset+=BYTES_PER_FACE
 	binarySurfaceData.resize(offset)
 	return binarySurfaceData
 
@@ -312,36 +309,31 @@ func convertSurfacesToBinaryCompiled(compiler:compilerService.compilerMapData=nu
 	#size of a vector3 at the current precision of a vertex
 	var vertex_pos_size = (6 <<int(!use_half_precision))
 	#always there bytes + vertex bytes * 3
-	var byte_usage:int=14+vertex_pos_size*3
-	
-	
+	var byte_usage:int=12+vertex_pos_size*3
+	var face_bytes:int=(faces.size()*byte_usage)
 	var binarySurfaceData:PackedByteArray=[]
-	for mat in faceMaterialMap.keys():
-		if faceMaterialMap[mat].size()==0:continue
-		if compiler.materialList.has(mat):continue
-		compiler.materialList.push_back(mat)
-	
-	
-	var face_bytes:int=(
-		faces.size()*byte_usage
-	)
-	binarySurfaceData.resize(
-		face_bytes
-	)
+	binarySurfaceData.resize(face_bytes+faceMaterialMap.size()*6)
 	var offset:int=0
-	
+	print(vertex_pos_size)
 	var sub_offset = 4 + vertex_pos_size
-	for face in faces:
-		var compiledSurfaceId=compiler.materialList.find(face.surfaceMaterial)
-		if face.surfaceMaterial.materialTags.has("ignore_render"):continue
-		binarySurfaceData.encode_u16(offset,compiledSurfaceId)
-		for i in 3:
-			var active_vertex=face.vertices[i]
-			var vertex_actual_uv:Vector2=(active_vertex.uv*face.uvScale+face.uvOffset).rotated(face.uvRotation)
-			compilerService.encodeVector3FloatToArray(active_vertex.position,binarySurfaceData,offset+2+sub_offset*i,use_half_precision)
-			binarySurfaceData.encode_half(offset+2+vertex_pos_size+sub_offset*i,vertex_actual_uv.x)
-			binarySurfaceData.encode_half(offset+4+vertex_pos_size+sub_offset*i,vertex_actual_uv.y)
-		offset+=byte_usage
+	for mat in faceMaterialMap.keys():
+		if mat.materialTags.has("ignore_render"):continue
+		if faceMaterialMap[mat].size()==0:continue
+		if not compiler.materialList.has(mat):
+			compiler.materialList.push_back(mat)
+		var usedMaterial=compiler.materialList.find(mat)
+		var materialFaces=faceMaterialMap[mat]
+		binarySurfaceData.encode_u32(offset,materialFaces.size())
+		binarySurfaceData.encode_u16(offset+4,usedMaterial)
+		offset+=6
+		for face in materialFaces:
+			for i in 3:
+				var active_vertex=face.vertices[i]
+				var vertex_actual_uv:Vector2=(active_vertex.uv*face.uvScale+face.uvOffset).rotated(face.uvRotation)
+				compilerService.encodeVector3FloatToArray(active_vertex.position,binarySurfaceData,offset+sub_offset*i,use_half_precision)
+				binarySurfaceData.encode_half(offset+vertex_pos_size+sub_offset*i,vertex_actual_uv.x)
+				binarySurfaceData.encode_half(offset+2+vertex_pos_size+sub_offset*i,vertex_actual_uv.y)
+			offset+=byte_usage
 	binarySurfaceData.resize(offset)
 	return binarySurfaceData
 
@@ -367,34 +359,39 @@ func getCollisionFaces(_compiler:compilerService.compilerMapData=null)->PackedBy
 func loadCompiledSurfaces(matList:Array=[],binary:PackedByteArray=[],scaled:float=1.0)->void:
 	var checkFrom:int=0
 	scaler=1.0/scaled
+	var currentMaterial=matList[0]
 	while true:
-		var faceData = binary.slice(checkFrom,checkFrom+BYTES_PER_FACE)
-		checkFrom+=BYTES_PER_FACE
-		if(faceData.size()<BYTES_PER_FACE):break;
-		var surfaceUsed = matList[faceData.decode_u16(0)]
-		var faceVertexPositions:PackedVector3Array=[]
-		var faceVertexUVs:PackedVector2Array=[]
-		const sub_offset = 20
-		for i in 3:
-			faceVertexPositions.push_back(
-				compilerService.decodeVector3Float(2+sub_offset*i,faceData,false)*scaler
-				)
-			faceVertexUVs.push_back(Vector2(
-				faceData.decode_float(14+sub_offset*i),
-				faceData.decode_float(18+sub_offset*i)
-			))
-		var face = meshFace.new(
-			self,faceVertexPositions,faceVertexUVs,
-			surfaceUsed)
-		face.uvRotation = faceData.decode_float(56)
-		face.uvOffset=Vector2(
-			faceData.decode_float(60),
-			faceData.decode_float(64))
-		face.uvScale=Vector2(
-			faceData.decode_float(68),
-			faceData.decode_float(72))
-		faces.push_back(face)
-		
+		if checkFrom>=binary.size():break
+		var facesForMaterial:int=binary.decode_u32(checkFrom)
+		currentMaterial=matList[binary.decode_u16(checkFrom+4)]
+		checkFrom+=6
+		for f in facesForMaterial:
+			var faceData = binary.slice(checkFrom,checkFrom+BYTES_PER_FACE)
+			checkFrom+=BYTES_PER_FACE
+			if(faceData.size()<BYTES_PER_FACE):break;
+			var faceVertexPositions:PackedVector3Array=[]
+			var faceVertexUVs:PackedVector2Array=[]
+			const sub_offset = 20
+			for i in 3:
+				faceVertexPositions.push_back(
+					compilerService.decodeVector3Float(sub_offset*i,faceData,false)*scaler
+					)
+				faceVertexUVs.push_back(Vector2(
+					faceData.decode_float(12+sub_offset*i),
+					faceData.decode_float(16+sub_offset*i)
+				))
+			var face = meshFace.new(
+				self,faceVertexPositions,faceVertexUVs,
+				currentMaterial)
+			face.uvRotation = faceData.decode_float(60)
+			face.uvOffset=Vector2(
+				faceData.decode_float(64),
+				faceData.decode_float(68))
+			face.uvScale=Vector2(
+				faceData.decode_float(72),
+				faceData.decode_float(76))
+			faces.push_back(face)
+	
 	rebuild(true)
 
 

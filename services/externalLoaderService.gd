@@ -3,7 +3,8 @@ class_name externalLoader
 
 const extensionsForType:Dictionary={
 	"PackedScene":["glb","gltf","fbx"],
-	"Image":["png","jpg","jpeg","svg"]
+	"Image":["png","jpg","jpeg","svg"],
+	"Material":["material"]
 }
 
 static func getExternalFileType(filePath:String):
