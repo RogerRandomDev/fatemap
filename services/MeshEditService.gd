@@ -203,7 +203,7 @@ class editingMesh extends Resource:
 			
 		if ignore:return
 		#we changed
-		if changes.values().any(func(v):return v.any(func(e):return e.size()>0)):
+		if changes.values().any(func(v):return v.any(func(e):return e.size()>0 and not e[0] is objectMeshModel.cleanedVertexObject)):
 			loadSelectionUndoRedo(changes)
 	func loadSelectionUndoRedo(changes:Dictionary)->void:
 		UndoRedoService.startAction(&"SelectMeshParts")
@@ -238,59 +238,51 @@ class editingMesh extends Resource:
 	func translateSelection(translateBy:Vector3,local:bool=true,mergeMove:bool=false)->void:
 		if selectedVertices.size()==0 or translateBy.is_zero_approx():return
 		UndoRedoService.startAction(&"TranslateMeshPoints",UndoRedo.MERGE_ENDS if mergeMove else UndoRedo.MERGE_DISABLE)
-		#for meshObject in meshObjects:
-			#if meshObject==null:continue
-			#if local:translateBy*=meshObject.global_transform.basis.get_rotation_quaternion()
 		var selectedPositionIDs={}
 		var editingMeshPositionIDs={}
 		var editingMeshPositionIDsInitial={}
+		var meshOwnerInitialOrigins={}
+		var meshInternalInitialTransforms={}
+		var meshOwnerOrigins={}
+		var meshInternalTransforms={}
 		for vertex in selectedVertices:
 			selectedPositionIDs.get_or_add(vertex._mesh,{})[vertex.positionID]=null
 		for mesh in selectedPositionIDs.keys():
+			meshOwnerInitialOrigins[mesh]=mesh.ownerInstance.global_position
+			meshInternalInitialTransforms[mesh]=mesh.globalTransform
+			
 			editingMeshPositionIDsInitial[mesh]=mesh.positionIDs.duplicate()
 			for positionID in selectedPositionIDs[mesh].keys():
 				mesh.positionIDs[positionID]+=translateBy
-		
-		var meshCenterOffsets={}
-		var meshOwnerOrigins={}
-		var meshInternalTransforms={}
-		for mesh in selectedPositionIDs.keys():
+			var centerOffset=MeshEditService.editing.getMeshCenterOffset(mesh)
+			for positionID in mesh.positionIDs:
+				mesh.positionIDs[positionID]-=centerOffset
+			mesh.ownerInstance.get_parent().position+=centerOffset*mesh.ownerInstance.global_basis
+			mesh.globalTransform.origin+=centerOffset*mesh.ownerInstance.global_basis.inverse()
+			editingMeshPositionIDs[mesh]=mesh.positionIDs.duplicate()
 			meshOwnerOrigins[mesh]=mesh.ownerInstance.global_position
 			meshInternalTransforms[mesh]=mesh.globalTransform
-			meshCenterOffsets[mesh]=MeshEditService.editing.getMeshCenterOffset(mesh)
-		for mesh in selectedPositionIDs.keys():
-			for positionID in mesh.positionIDs.keys():
-				mesh.positionIDs[positionID]-=meshCenterOffsets[mesh]
-			editingMeshPositionIDs[mesh]=mesh.positionIDs.duplicate()
-		UndoRedoService.addMethods(
-			(func():
-				for mesh in editingMeshPositionIDs.keys():
-					mesh.positionIDs=editingMeshPositionIDs[mesh]
-					mesh.ownerInstance.get_parent().position=meshOwnerOrigins[mesh]+meshCenterOffsets[mesh]*mesh.ownerInstance.global_basis
-					mesh.globalTransform.origin=meshInternalTransforms[mesh].origin+(meshCenterOffsets[mesh]*mesh.ownerInstance.global_basis.inverse())
-				),
-			(func():
-				for mesh in editingMeshPositionIDsInitial.keys():
-					mesh.positionIDs=editingMeshPositionIDsInitial[mesh]
-					mesh.ownerInstance.get_parent().position=meshOwnerOrigins[mesh]
-					mesh.globalTransform.origin=meshInternalTransforms[mesh].origin
-				)
-		)
-		UndoRedoService.addMethods(
-			func():
-				for mesh in editingMeshPositionIDs.keys():
-					if mesh==null:continue
-					mesh.rebuild(false)
-					PhysicalObjectService.updatePickableArea(mesh.ownerInstance.get_parent())
+		if translateBy.is_zero_approx():return
+		UndoRedoService.addMethods((func():
+			for mesh in selectedPositionIDs.keys():
+				mesh.positionIDs=editingMeshPositionIDs[mesh].duplicate()
+				mesh.ownerInstance.get_parent().position=meshOwnerOrigins[mesh]
+				mesh.globalTransform.origin=meshInternalTransforms[mesh].origin
+				#rebuild and load
+				mesh.rebuild(false)
+				PhysicalObjectService.updatePickableArea(mesh.ownerInstance.get_parent())
 				signalService.emitSignal.call_deferred(&"meshSelectionChanged")
-				,
-			func():
-				for mesh in editingMeshPositionIDs.keys():
-					if mesh==null:continue
-					mesh.rebuild.call_deferred(false)
-					PhysicalObjectService.updatePickableArea.call_deferred(mesh.ownerInstance.get_parent())
+			),(
+		func():
+			for mesh in selectedPositionIDs.keys():
+				mesh.positionIDs=editingMeshPositionIDsInitial[mesh].duplicate()
+				mesh.ownerInstance.get_parent().position=meshOwnerInitialOrigins[mesh]
+				mesh.globalTransform.origin=meshInternalInitialTransforms[mesh].origin
+				#rebuild and load
+				mesh.rebuild(false)
+				PhysicalObjectService.updatePickableArea(mesh.ownerInstance.get_parent())
 				signalService.emitSignal.call_deferred(&"meshSelectionChanged")
-		)
+		))
 		UndoRedoService.commitAction(true)
 	
 	func applyScale()->void:
