@@ -35,7 +35,6 @@ func updateSelectionLocation(mousePosition:Vector2,mergeMoves:bool=false)->bool:
 	slideBy=slideBy.snappedf(ParameterService.getParam(&"snapDistance"))
 	
 	MeshEditService.editing.translateSelection(slideBy,true,mergeMoves)
-	MeshEditService.editing.centerMesh()
 	for mesh in editingMeshes:
 		if mesh==null:continue
 		mesh.rebuild()

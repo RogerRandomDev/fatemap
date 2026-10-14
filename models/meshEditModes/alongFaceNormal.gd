@@ -34,7 +34,7 @@ func updateSelectionLocation(mousePosition:Vector2,mergeMoves:bool=false)->bool:
 	slideBy=slideBy.normalized()*snappedf(slideBy.length(),ParameterService.getParam(&"snapDistance"))
 	#slideBy*=editingObject.global_transform.basis.get_rotation_quaternion()
 	MeshEditService.editing.translateSelection(slideBy,true,mergeMoves)
-	MeshEditService.editing.centerMesh()
+	#MeshEditService.editing.centerMesh()
 	for mesh in editingMeshes:
 		if mesh==null:continue
 		mesh.rebuild()

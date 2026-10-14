@@ -237,26 +237,43 @@ class editingMesh extends Resource:
 	
 	func translateSelection(translateBy:Vector3,local:bool=true,mergeMove:bool=false)->void:
 		if selectedVertices.size()==0 or translateBy.is_zero_approx():return
-		UndoRedoService.startAction(&"TranslateMeshPoints",UndoRedo.MERGE_ALL if mergeMove else UndoRedo.MERGE_DISABLE)
+		UndoRedoService.startAction(&"TranslateMeshPoints",UndoRedo.MERGE_ENDS if mergeMove else UndoRedo.MERGE_DISABLE)
 		#for meshObject in meshObjects:
 			#if meshObject==null:continue
 			#if local:translateBy*=meshObject.global_transform.basis.get_rotation_quaternion()
+		var selectedPositionIDs={}
 		var editingMeshPositionIDs={}
-		for vertex in selectedVertices:editingMeshPositionIDs.get_or_add(vertex._mesh,{})[vertex.positionID]=vertex.position
-		#UndoRedoService.startAction(&"TranslateMeshPoints",UndoRedo.MERGE_ENDS)
-		#breaks if i re-center the mesh elsewhere cause it changes where everything is relative
-		#if i do MERGE_ALL and just add/subtract the change instead it works fine.
+		var editingMeshPositionIDsInitial={}
+		for vertex in selectedVertices:
+			selectedPositionIDs.get_or_add(vertex._mesh,{})[vertex.positionID]=null
+		for mesh in selectedPositionIDs.keys():
+			editingMeshPositionIDsInitial[mesh]=mesh.positionIDs.duplicate()
+			for positionID in selectedPositionIDs[mesh].keys():
+				mesh.positionIDs[positionID]+=translateBy
 		
+		var meshCenterOffsets={}
+		var meshOwnerOrigins={}
+		var meshInternalTransforms={}
+		for mesh in selectedPositionIDs.keys():
+			meshOwnerOrigins[mesh]=mesh.ownerInstance.global_position
+			meshInternalTransforms[mesh]=mesh.globalTransform
+			meshCenterOffsets[mesh]=MeshEditService.editing.getMeshCenterOffset(mesh)
+		for mesh in selectedPositionIDs.keys():
+			for positionID in mesh.positionIDs.keys():
+				mesh.positionIDs[positionID]-=meshCenterOffsets[mesh]
+			editingMeshPositionIDs[mesh]=mesh.positionIDs.duplicate()
 		UndoRedoService.addMethods(
 			(func():
 				for mesh in editingMeshPositionIDs.keys():
-					for positionID in editingMeshPositionIDs[mesh].keys():
-						mesh.positionIDs[positionID]+=translateBy
+					mesh.positionIDs=editingMeshPositionIDs[mesh]
+					mesh.ownerInstance.get_parent().position=meshOwnerOrigins[mesh]+meshCenterOffsets[mesh]*mesh.ownerInstance.global_basis
+					mesh.globalTransform.origin=meshInternalTransforms[mesh].origin+(meshCenterOffsets[mesh]*mesh.ownerInstance.global_basis.inverse())
 				),
 			(func():
-				for mesh in editingMeshPositionIDs.keys():
-					for positionID in editingMeshPositionIDs[mesh].keys():
-						mesh.positionIDs[positionID]-=translateBy
+				for mesh in editingMeshPositionIDsInitial.keys():
+					mesh.positionIDs=editingMeshPositionIDsInitial[mesh]
+					mesh.ownerInstance.get_parent().position=meshOwnerOrigins[mesh]
+					mesh.globalTransform.origin=meshInternalTransforms[mesh].origin
 				)
 		)
 		UndoRedoService.addMethods(
@@ -284,21 +301,25 @@ class editingMesh extends Resource:
 				mesh.positionIDs[id]*=dataObject.scale
 			dataObject.scale=Vector3.ONE
 	
+	func getMeshCenterOffset(mesh:objectMeshModel)->Vector3:
+		var aabb=AABB(mesh.positionIDs.values()[0],Vector3.ZERO)
+		for vertex in mesh.positionIDs.values():
+			aabb.position=aabb.position.min(vertex)
+			aabb.size=aabb.size.max(vertex)
+		aabb.size-=aabb.position
+		return aabb.get_center()
+	
 	func centerMesh(specified:Array=[])->void:
 		if specified.size()==0:
 			specified=meshes
 		for mesh in specified:
 			if mesh==null:continue
 			var meshObject=mesh.ownerInstance
-			var aabb=AABB(mesh.positionIDs.values()[0],Vector3.ZERO)
-			for vertex in mesh.positionIDs.values():
-				aabb.position=aabb.position.min(vertex)
-				aabb.size=aabb.size.max(vertex)
-			aabb.size-=aabb.position
+			var center=getMeshCenterOffset(mesh)
 			for vertex in mesh.positionIDs:
-				mesh.positionIDs[vertex]-=aabb.get_center()
-			meshObject.get_parent().position+=aabb.get_center()*meshObject.global_basis
-			mesh.globalTransform.origin+=aabb.get_center()*meshObject.global_basis.inverse()
+				mesh.positionIDs[vertex]-=center
+			meshObject.get_parent().position+=center*meshObject.global_basis
+			mesh.globalTransform.origin+=center*meshObject.global_basis.inverse()
 			meshObject.get_parent().notification(Node3D.NOTIFICATION_TRANSFORM_CHANGED)
 	
 	func snapSelectedToGrid()->void:
