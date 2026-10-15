@@ -190,6 +190,5 @@ func getCallable(script:String,method):
 
 [node name="RightClickMenu" type="PopupMenu"]
 oversampling_override = 1.0
-visible = true
 wrap_controls = false
 script = SubResource("GDScript_yd8wa")

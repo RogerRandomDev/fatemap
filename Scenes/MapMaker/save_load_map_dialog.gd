@@ -1,12 +1,14 @@
 extends FileDialog
 
 signal targetChosen(target:String)
-
+var root_folder
 func _ready() -> void:
-	if not DirAccess.dir_exists_absolute("user://Maps/Editor"):
-		DirAccess.make_dir_recursive_absolute("user://Maps/Editor")
-	if not DirAccess.dir_exists_absolute("user://Maps/Compiled"):
-		DirAccess.make_dir_recursive_absolute("user://Maps/Compiled")
+	root_folder=ProjectSettings.get_setting("fatemap/project_directory")+"/FateMap/Maps/"
+	root_subfolder=root_folder
+	
+	if not DirAccess.dir_exists_absolute(root_folder+"Editing"):
+		DirAccess.make_dir_recursive_absolute(root_folder+"Editing")
+	
 	
 	file_selected.connect(targetChosen.emit)
 	canceled.connect(targetChosen.emit.bind(""))
@@ -21,11 +23,11 @@ func saveOrLoad(_mode:int=0,currentPath=null)->String:
 	match _mode:
 		0:
 			file_mode=FileDialog.FILE_MODE_SAVE_FILE
-			root_subfolder="user://Maps/Editor"
+			root_subfolder=root_folder+"Editing"
 			ok_button_text="Save"
 		1:
 			file_mode=FileDialog.FILE_MODE_OPEN_FILE
-			root_subfolder="user://Maps/Editor"
+			root_subfolder=root_folder+"Editing"
 			ok_button_text="Load"
 	var selected = await targetChosen
 	return selected
