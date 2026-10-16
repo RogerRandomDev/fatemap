@@ -11,7 +11,7 @@ func _ready() -> void:
 	
 	MaterialService.materialSource=ProjectSettings.get_setting("fatemap/project_directory","res:/")+"/FateMap/Imported/"
 	
-	MaterialService.loadAllFMT(MaterialService.materialSource+"Materials/Default")
+	MaterialService.loadAllFMT(MaterialService.materialSource+"Materials")
 	PhysicalObjectInputController.initializeInputController()
 	
 	await get_tree().process_frame
