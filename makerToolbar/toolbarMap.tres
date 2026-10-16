@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="guiDropdownResource" load_steps=2 format=3 uid="uid://dixvr1gtpk8hu"]
+[gd_resource type="Resource" script_class="guiDropdownResource" format=3 uid="uid://dixvr1gtpk8hu"]
 
 [ext_resource type="Script" uid="uid://56abiotdxm3f" path="res://models/resources/guiDropdownResource.gd" id="1_chr00"]
 
@@ -20,10 +20,10 @@ option_2/type = "default"
 option_2/description = "Loads a map save in an editable format"
 option_2/value = &"LoadMapCustom"
 option_2/param = ""
-option_3/name = "Test Full Compile"
+option_3/name = "Compile Map"
 option_3/type = "default"
 option_3/description = "testing compile for finalized maps if it works."
-option_3/value = &"TestingFullCompile"
+option_3/value = &"CompileMap"
 option_3/param = ""
 option_4/name = "Compile Settings"
 option_4/type = "default"

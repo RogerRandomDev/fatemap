@@ -60,7 +60,7 @@ func _ready() -> void:
 	
 	var target=get_parent().launchData.get("projectDirectory")
 	if target!=null:
-		filePathSelectPopup.dir_selected.emit(target)
+		filePathSelectPopup.dir_selected.emit.call_deferred(target)
 
 func setupFilePopup()->void:
 	filePathSelectPopup.access=FileDialog.ACCESS_FILESYSTEM
