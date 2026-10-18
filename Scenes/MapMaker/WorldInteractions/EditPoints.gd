@@ -29,6 +29,7 @@ func updateMeshSelection()->void:
 	renderPointVertices=[]
 	renderPointEdges=[]
 	renderPointFaces=[]
+	selectedPoints=[]
 	var activeObjs=ParameterService.getParam(&"activeObjects")
 	if activeObjs.size() == 0 or activeObjs.all(func(obj):return obj.objectType!=ObjectModel.objectTypes.MESH):
 		updateEditPointRender()
@@ -46,15 +47,14 @@ func updateMeshSelection()->void:
 					renderPoints[pointAt]=index
 					renderPointFaces.push_back(index.faces)
 			MeshEditService.MeshEditMode.EDGE:
-				var cleanEdges=mesh.getTrueCleanEdges()
-				renderPoints={}
+				var cleanEdges=mesh.cleanedEdges
 				for edge in cleanEdges:
 					var pointAt=edge.getCenter()+mesh.ownerInstance.global_transform.origin
 					renderPoints[pointAt]=edge
 					renderPointEdges.push_back(edge.edges)
+					
 			MeshEditService.MeshEditMode.VERTEX:
 				var cleanVertices=mesh.getCleanVertices()
-				renderPoints={}
 				for vertex in cleanVertices:
 					var pointAt=vertex.position+mesh.ownerInstance.global_transform.origin
 					renderPoints[pointAt]=vertex

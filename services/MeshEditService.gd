@@ -132,6 +132,14 @@ class editingMesh extends Resource:
 		if not selectedFaces.has(face):return
 		selectedFaces.erase(face)
 		for edge in face.edges:deselectEdge(edge)
+	func deselectCleanVertex(cleanVertex:objectMeshModel.cleanedVertex)->void:
+		if not selectedCleanVertices.has(cleanVertex):return
+		selectedCleanVertices.erase(cleanVertex)
+		for vertex in cleanVertex.vertices:deselectVertex(vertex)
+	func deselectCleanEdge(cleanEdge:objectMeshModel.cleanedEdge)->void:
+		if not selectedCleanEdges.has(cleanEdge):return
+		selectedCleanEdges.erase(cleanEdge)
+		for edge in cleanEdge.edges:deselectEdge(edge)
 	func deselectCleanFace(cleanFace:objectMeshModel.cleanedFace)->void:
 		if not selectedCleanFaces.has(cleanFace):return
 		selectedCleanFaces.erase(cleanFace)
@@ -141,6 +149,8 @@ class editingMesh extends Resource:
 		if meshPart is objectMeshModel.meshVertex:deselectVertex(meshPart)
 		if meshPart is objectMeshModel.meshEdge:deselectEdge(meshPart)
 		if meshPart is objectMeshModel.meshFace:deselectFace(meshPart)
+		if meshPart is objectMeshModel.cleanedVertex:deselectCleanVertex(meshPart)
+		if meshPart is objectMeshModel.cleanedEdge:deselectCleanEdge(meshPart)
 		if meshPart is objectMeshModel.cleanedFace:deselectCleanFace(meshPart)
 	
 	func selectVertex(vertex:objectMeshModel.meshVertex,toggleSelected:bool=false)->void:
@@ -159,10 +169,23 @@ class editingMesh extends Resource:
 			selectedFaces.push_back(face)
 			for edge in face.edges:selectEdge(edge,false)
 		else:if toggleSelected:deselectFace(face)
+	func selectCleanVertex(cleanVertex:objectMeshModel.cleanedVertex,toggleSelected:bool=false)->void:
+		if not meshes.any(func(mesh):return mesh!=null and mesh.cleanedVertices.has(cleanVertex)):return
+		if not selectedCleanVertices.has(cleanVertex):
+			selectedCleanVertices.push_back(cleanVertex)
+			for vertex in cleanVertex.vertices:selectVertex(vertex,false)
+		else:if toggleSelected:deselectCleanVertex(cleanVertex)
+	func selectCleanEdge(cleanEdge:objectMeshModel.cleanedEdge,toggleSelected:bool=false)->void:
+		if not meshes.any(func(mesh):return mesh!=null and mesh.cleanedEdges.has(cleanEdge)):return
+		if not selectedCleanEdges.has(cleanEdge):
+			selectedCleanEdges.push_back(cleanEdge)
+			for edge in cleanEdge.edges:selectEdge(edge,false)
+		else:if toggleSelected:deselectCleanEdge(cleanEdge)
 	func selectCleanFace(cleanFace:objectMeshModel.cleanedFace,toggleSelected:bool=false)->void:
 		if not meshes.any(func(mesh):return mesh!=null and mesh.cleanedFaces.has(cleanFace)):return
 		if not selectedCleanFaces.has(cleanFace):
 			selectedCleanFaces.push_back(cleanFace)
+			for edge in cleanFace.cleanEdges:selectCleanEdge(edge,false)
 			for face in cleanFace.faces:selectFace(face,false)
 		else:if toggleSelected:deselectCleanFace(cleanFace)
 		
@@ -170,17 +193,17 @@ class editingMesh extends Resource:
 		if meshPart is objectMeshModel.meshVertex:selectVertex(meshPart,toggleSelected)
 		if meshPart is objectMeshModel.meshEdge:selectEdge(meshPart,toggleSelected)
 		if meshPart is objectMeshModel.meshFace:selectFace(meshPart,toggleSelected)
+		if meshPart is objectMeshModel.cleanedVertex:selectCleanVertex(meshPart)
+		if meshPart is objectMeshModel.cleanedEdge:selectCleanEdge(meshPart)
 		if meshPart is objectMeshModel.cleanedFace:selectCleanFace(meshPart,toggleSelected)
-		if meshPart is objectMeshModel.cleanedEdge:for edge in meshPart.edges:selectEdge(edge,toggleSelected)
-		if meshPart is objectMeshModel.cleanedVertex:for vertex in meshPart.vertices:selectVertex(vertex,toggleSelected)
 	
 	func isSelected(meshPart)->bool:
 		if meshPart is objectMeshModel.meshVertex:return selectedVertices.has(meshPart)
 		if meshPart is objectMeshModel.meshEdge:return selectedEdges.has(meshPart)
 		if meshPart is objectMeshModel.meshFace:return selectedFaces.has(meshPart)
 		if meshPart is objectMeshModel.cleanedFace:return selectedCleanFaces.has(meshPart)
-		if meshPart is objectMeshModel.cleanedEdge:return meshPart.edges.all(func(e):return selectedEdges.has(e))
-		if meshPart is objectMeshModel.cleanedVertex:return meshPart.vertices.all(func(v):return selectedVertices.has(v))
+		if meshPart is objectMeshModel.cleanedEdge:return selectedCleanEdges.has(meshPart)
+		if meshPart is objectMeshModel.cleanedVertex:return selectedCleanVertices.has(meshPart)
 		return false
 	
 	func updateSelectionTracked(ignore:bool=false)->void:

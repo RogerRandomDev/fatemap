@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="dropDownPopupResource" format=3 uid="uid://dmkfjn725xxtc"]
+
+[ext_resource type="Script" uid="uid://drds6tggj4lf8" path="res://models/resources/dropDownPopupResource.gd" id="1_f4tai"]
+
+[resource]
+script = ExtResource("1_f4tai")
+option_count = 2
+option_0/name = "Center"
+option_0/type = "default"
+option_0/script = "uid://d0xsoalyitbyg"
+option_0/description = "Moves selected edges to the center point among them"
+option_0/value = &"joinAtMiddle"
+option_0/param = ""
+option_1/name = "Grid"
+option_1/type = "default"
+option_1/script = "uid://d0xsoalyitbyg"
+option_1/description = "Moves edges to be aligned onto the snapgrid, relative to their object"
+option_1/value = &"snapToSnapGrid"
+option_1/param = ""
+metadata/_custom_type_script = "uid://drds6tggj4lf8"

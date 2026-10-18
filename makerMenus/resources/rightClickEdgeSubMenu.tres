@@ -1,13 +1,18 @@
 [gd_resource type="Resource" script_class="dropDownPopupResource" format=3 uid="uid://0hudsqx3snqw"]
 
 [ext_resource type="Resource" uid="uid://db2sjxwyh3wqj" path="res://makerMenus/resources/edgeSelectMenuHolder.tres" id="1_htxfp"]
+[ext_resource type="Resource" uid="uid://dmkfjn725xxtc" path="res://makerMenus/resources/edgeAlignMenuHolder.tres" id="2_5vt0o"]
 [ext_resource type="Script" uid="uid://drds6tggj4lf8" path="res://models/resources/dropDownPopupResource.gd" id="2_cj71t"]
 
 [resource]
 script = ExtResource("2_cj71t")
-option_count = 1
+option_count = 2
 option_0/name = "Select"
 option_0/type = "submenu"
-option_0/description = "Select modes for faces"
+option_0/description = "Select modes for edges"
 option_0/value = ExtResource("1_htxfp")
+option_1/name = "Align"
+option_1/type = "submenu"
+option_1/description = ""
+option_1/value = ExtResource("2_5vt0o")
 metadata/_custom_type_script = "uid://drds6tggj4lf8"

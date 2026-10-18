@@ -394,6 +394,10 @@ func loadCompiledSurfaces(matList:Array=[],binary:PackedByteArray=[],scaled:floa
 	rebuild(true)
 
 
+func applyTransform(on:Vector3,inverse:bool=false)->Vector3:
+	if inverse:return on*ownerInstance.global_transform.inverse()
+	return on*ownerInstance.global_transform
+
 
 class meshVertex extends RefCounted:
 	var positionID:int
@@ -408,6 +412,7 @@ class meshVertex extends RefCounted:
 	var index:int=0
 	var surfaceIndex:int=0
 	var weldedVertices:Array[meshVertex]=[]
+	var cleaned:RefCounted
 	var edges:Array[meshEdge]=[]
 	
 	var _mesh:objectMeshModel
@@ -469,11 +474,11 @@ class meshVertex extends RefCounted:
 
 class meshVertexObject extends RefCounted:
 	var vertices:Array[meshVertex]=[]
+	var cleaned:RefCounted
 	@warning_ignore("unused_private_class_variable")
 	var _mesh:objectMeshModel
 
 class meshEdge extends meshVertexObject:
-	
 	func _init(owner:objectMeshModel,inputVertices:Array[meshVertex])->void:
 		_mesh=owner
 		vertices=inputVertices
@@ -659,12 +664,14 @@ class  cleanedVertex extends RefCounted:
 		for vertex in fromVertices:
 			potentialNormal+=vertex.normal
 			vertices.push_back(vertex)
+			vertex.cleaned=self
 		positionID=fromVertices[0].positionID
 		normal=potentialNormal.normalized()
 		
 
 class cleanedEdge extends cleanedVertexObject:
 	var edges:Array[meshEdge]=[]
+	var cleanedVertices:Array[cleanedVertex]=[]
 	
 	func _init(fromEdges:Array):
 		_mesh = fromEdges[0]._mesh
@@ -674,8 +681,13 @@ class cleanedEdge extends cleanedVertexObject:
 			edgeNormal+=(edge.vertices[0].normal+edge.vertices[1].normal).normalized()
 			edge.vertices.map(func(v):uniquePositions[v.positionID]=null)
 			edges.push_back(edge)
+			edge.cleaned=self
 		positionIDs=uniquePositions.keys()
 		normal=edgeNormal.normalized()
+		for edge in edges:
+			for vert in edge.vertices:
+				if not cleanedVertices.has(vert.cleaned):
+					cleanedVertices.push_back(vert.cleaned)
 	
 	func getQuaternion(firstPointID:int=-1)->Quaternion:
 		var originalPositions=Array(positionIDs)
@@ -699,18 +711,29 @@ class cleanedEdge extends cleanedVertexObject:
 		var pB:Vector3=positions[1]
 		return abs((pA-pB).length_squared())
 	
+	func moveCenter(moveTo:Vector3)->void:
+		var offset=moveTo-getCenter()
+		for id in positionIDs:
+			_mesh.positionIDs[id]+=offset
+		
+		
+	
 
 class cleanedFace extends cleanedVertexObject:
 	var faces:Array[meshFace]=[]
+	var cleanEdges:Array[cleanedEdge]=[]
 	
 	func _init(fromFaces:Array)->void:
 		_mesh=fromFaces[0]._mesh
+		
 		var uniquePositions:Dictionary={}
 		for face in fromFaces:
 			face.vertices.map(func(v):uniquePositions[v.positionID]=null)
 			faces.push_back(face)
+			face.cleaned=self
 		positionIDs=uniquePositions.keys()
 		normalID=fromFaces[0].normalID
+		cleanEdges=_mesh.getCleanEdgesForFace(self)
 		
 	func getArea()->float:
 		var area:float=0.0
