@@ -14,7 +14,7 @@ var cleanedFaces:Array[cleanedFace]=[]
 var cleanedEdges:Array[cleanedEdge]=[]
 var cleanedVertices:Array[cleanedVertex]=[]
 
-var trackedSelection:SelectionInfo=SelectionInfo.new([],[],[],[],self)
+var trackedSelection:SelectionInfo=SelectionInfo.new([],[],[],[],[],[],self)
 
 const projectionAxis:PackedVector3Array=[
 	
@@ -247,11 +247,11 @@ func cleanZeroSurfaceFaces()->void:
 			face.remove()
 
 ## updates the current selection indexing
-func updateSelection(_vertices,_edges,_faces,_cleanFaces,ignoreChange:bool=false)->Dictionary:
+func updateSelection(_vertices,_edges,_faces,_cleanVertices,_cleanEdges,_cleanFaces,ignoreChange:bool=false)->Dictionary:
 	if ignoreChange:
-		trackedSelection.update(_vertices,_edges,_faces,_cleanFaces)
+		trackedSelection.update(_vertices,_edges,_faces,_cleanVertices,_cleanEdges,_cleanFaces)
 		return {}
-	var changes = trackedSelection.getChanges(_vertices,_edges,_faces,_cleanFaces)
+	var changes = trackedSelection.getChanges(_vertices,_edges,_faces,_cleanVertices,_cleanEdges,_cleanFaces)
 	return changes
 
 
@@ -498,6 +498,16 @@ class meshEdge extends meshVertexObject:
 	## meaning it has zero length
 	func isZeroLength()->bool:return vertices[0].positionID==vertices[1].positionID
 	
+	func getLength()->float:
+		var pA:Vector3=vertices[0].position
+		var pB:Vector3=vertices[1].position
+		return abs((pA-pB).length())
+	
+	func getLengthSquared()->float:
+		var pA:Vector3=vertices[0].position
+		var pB:Vector3=vertices[1].position
+		return abs((pA-pB).length_squared())
+	
 	func getCenter()->Vector3:return (vertices[0].position+vertices[1].position)*0.5
 	
 	func remove()->void:
@@ -678,6 +688,17 @@ class cleanedEdge extends cleanedVertexObject:
 	
 	func getCenter()->Vector3:
 		return positions.reduce(func(a,b):return a+b) / positions.size()
+	
+	func getLength()->float:
+		var pA:Vector3=positions[0]
+		var pB:Vector3=positions[1]
+		return abs((pA-pB).length())
+	
+	func getLengthSquared()->float:
+		var pA:Vector3=positions[0]
+		var pB:Vector3=positions[1]
+		return abs((pA-pB).length_squared())
+	
 
 class cleanedFace extends cleanedVertexObject:
 	var faces:Array[meshFace]=[]
@@ -711,34 +732,42 @@ class cleanedFace extends cleanedVertexObject:
 ##used  for tracking selected faces/edges/vertices
 class SelectionInfo extends RefCounted:
 	var cleanFaces:Array
+	var cleanEdges:Array
+	var cleanVertices:Array
 	var faces:Array
 	var edges:Array
 	var vertices:Array
 	var mesh
 	
-	func _init(_vertices,_edges,_faces,_cleanFaces,_mesh)->void:
+	func _init(_vertices,_edges,_faces,_cleanVertices,_cleanEdges,_cleanFaces,_mesh)->void:
 		faces=_faces
 		edges=_edges
 		vertices=_vertices
 		cleanFaces=_cleanFaces
+		cleanEdges=_cleanEdges
+		cleanVertices=_cleanVertices
 		mesh=_mesh
 	
-	func update(_vertices,_edges,_faces,_cleanFaces)->void:
+	func update(_vertices,_edges,_faces,_cleanVertices,_cleanEdges,_cleanFaces)->void:
 		faces=_faces
 		edges=_edges
 		vertices=_vertices
 		cleanFaces=_cleanFaces
+		cleanEdges=_cleanEdges
+		cleanVertices=_cleanVertices
 	## returns a dictionary containing "added" and "removed" with
 	## the changed faces/edges/vertices
-	func getChanges(_vertices,_edges,_faces,_cleanFaces) -> Dictionary:
+	func getChanges(_vertices,_edges,_faces,_cleanVertices,_cleanEdges,_cleanFaces) -> Dictionary:
 		var changes:Dictionary={
-			&"added":[[],[],[],[]],
-			&"removed":[[],[],[],[]]
+			&"added":[[],[],[],[],[],[]],
+			&"removed":[[],[],[],[],[],[]]
 			}
 		# we build lists of what vertices we care about right now
 		var fullVertexList={}
 		var fullEdgeList={}
 		var fullFaceList={}
+		var fullCleanVertexList={}
+		var fullCleanEdgeList={}
 		var fullCleanFaceList={}
 		_vertices.map(func(f):fullVertexList[f]=null)
 		vertices.map(func(f):fullVertexList[f]=null)
@@ -746,6 +775,10 @@ class SelectionInfo extends RefCounted:
 		edges.map(func(f):fullEdgeList[f]=null)
 		_faces.map(func(f):fullFaceList[f]=null)
 		faces.map(func(f):fullFaceList[f]=null)
+		_cleanEdges.map(func(f):fullCleanEdgeList[f]=null)
+		cleanEdges.map(func(f):fullCleanEdgeList[f]=null)
+		_cleanVertices.map(func(f):fullCleanVertexList[f]=null)
+		cleanVertices.map(func(f):fullCleanVertexList[f]=null)
 		_cleanFaces.map(func(f):fullCleanFaceList[f]=null)
 		cleanFaces.map(func(f):fullCleanFaceList[f]=null)
 		#we now check if it is in both or has changed
@@ -764,14 +797,26 @@ class SelectionInfo extends RefCounted:
 			if inSet[0]&&inSet[1]:continue
 			if(inSet[0]):changes[&"added"][2].push_back(face)
 			if(inSet[1]):changes[&"removed"][2].push_back(face)
+		for cleanVertex in fullCleanVertexList.keys():
+			var inSet=[_cleanVertices.has(cleanVertex),cleanVertices.has(cleanVertex)]
+			if inSet[0]&&inSet[1]:continue
+			if(inSet[0]):changes[&"added"][3].push_back(cleanVertex)
+			if(inSet[1]):changes[&"removed"][3].push_back(cleanVertex)
+		for cleanEdge in fullCleanEdgeList.keys():
+			var inSet=[_cleanEdges.has(cleanEdge),cleanEdges.has(cleanEdge)]
+			if inSet[0]&&inSet[1]:continue
+			if(inSet[0]):changes[&"added"][4].push_back(cleanEdge)
+			if(inSet[1]):changes[&"removed"][4].push_back(cleanEdge)
 		for cleanFace in fullCleanFaceList.keys():
 			var inSet=[_cleanFaces.has(cleanFace),cleanFaces.has(cleanFace)]
 			if inSet[0]&&inSet[1]:continue
-			if(inSet[0]):changes[&"added"][3].push_back(cleanFace)
-			if(inSet[1]):changes[&"removed"][3].push_back(cleanFace)
+			if(inSet[0]):changes[&"added"][5].push_back(cleanFace)
+			if(inSet[1]):changes[&"removed"][5].push_back(cleanFace)
 		vertices=_vertices
 		edges=_edges
 		faces=_faces
+		cleanVertices=_cleanVertices
+		cleanEdges=_cleanEdges
 		cleanFaces=_cleanFaces
 		
 		return changes
