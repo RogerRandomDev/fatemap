@@ -1,4 +1,4 @@
-[gd_scene load_steps=32 format=4 uid="uid://gq185wjg7pqu"]
+[gd_scene format=4 uid="uid://gq185wjg7pqu"]
 
 [ext_resource type="Script" uid="uid://ctkdd8bryxxtr" path="res://Scenes/MapMaker/mapMaker.gd" id="1_cyx2k"]
 [ext_resource type="Theme" uid="uid://8cjq1xuuwswd" path="res://Scenes/MapMakerTheme.tres" id="1_ni7vo"]
@@ -71,7 +71,7 @@ mesh = SubResource("QuadMesh_mmgm2")
 script/source = "extends SubViewportContainer
 "
 
-[node name="MapMaker" type="VBoxContainer"]
+[node name="MapMaker" type="VBoxContainer" unique_id=1981733530]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -82,16 +82,16 @@ size_flags_vertical = 3
 theme = ExtResource("1_ni7vo")
 script = ExtResource("1_cyx2k")
 
-[node name="ToolBarContents" type="Node" parent="."]
+[node name="ToolBarContents" type="Node" parent="." unique_id=825769142]
 script = ExtResource("7_cn52i")
 
-[node name="RightInspector" type="Node" parent="."]
+[node name="RightInspector" type="Node" parent="." unique_id=226375705]
 script = ExtResource("9_nposp")
 
-[node name="MeshToolbar" type="Node" parent="."]
+[node name="MeshToolbar" type="Node" parent="." unique_id=896717389]
 script = ExtResource("11_6lnv8")
 
-[node name="ToolbarMeshSelections" type="Node" parent="."]
+[node name="ToolbarMeshSelections" type="Node" parent="." unique_id=760612021]
 script = ExtResource("6_ni25v")
 selectorItems = {
 "Box": SubResource("BoxMesh_ni25v"),
@@ -100,16 +100,16 @@ selectorItems = {
 "Sphere": SubResource("SphereMesh_54ncs")
 }
 
-[node name="ViewCompilerParams" type="Node" parent="."]
+[node name="ViewCompilerParams" type="Node" parent="." unique_id=445759655]
 script = ExtResource("8_gv50h")
 
-[node name="MapView" type="SubViewport" parent="."]
+[node name="MapView" type="SubViewport" parent="." unique_id=950029268]
 world_3d = SubResource("World3D_l3yla")
 handle_input_locally = false
 canvas_item_default_texture_filter = 0
 physics_object_picking = true
 
-[node name="EditInteractions" type="Control" parent="MapView"]
+[node name="EditInteractions" type="Control" parent="MapView" unique_id=155554213]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -119,54 +119,54 @@ grow_vertical = 2
 mouse_filter = 1
 script = ExtResource("14_qtfr5")
 
-[node name="RightClickMenu" type="Node" parent="MapView/EditInteractions"]
+[node name="RightClickMenu" type="Node" parent="MapView/EditInteractions" unique_id=1265567298]
 script = ExtResource("10_2xmiw")
 
-[node name="EditDeleteSelected" type="Node" parent="MapView/EditInteractions"]
+[node name="EditDeleteSelected" type="Node" parent="MapView/EditInteractions" unique_id=779096896]
 script = ExtResource("8_ysyqw")
 
-[node name="EditPoints" type="Node" parent="MapView/EditInteractions"]
+[node name="EditPoints" type="Node" parent="MapView/EditInteractions" unique_id=1555591172]
 script = ExtResource("7_ni25v")
 metadata/_custom_type_script = "uid://bwfu3qiinbjdw"
 
-[node name="MultiMeshInstance3D" type="MultiMeshInstance3D" parent="MapView/EditInteractions/EditPoints"]
+[node name="MultiMeshInstance3D" type="MultiMeshInstance3D" parent="MapView/EditInteractions/EditPoints" unique_id=1784192973]
 sorting_use_aabb_center = false
 cast_shadow = 0
 ignore_occlusion_culling = true
 multimesh = SubResource("MultiMesh_qtfr5")
 
-[node name="EditSelectModels" type="Node" parent="MapView/EditInteractions"]
+[node name="EditSelectModels" type="Node" parent="MapView/EditInteractions" unique_id=733694096]
 script = ExtResource("8_bgu1o")
 
-[node name="EditCreateMesh" type="Node" parent="MapView/EditInteractions"]
+[node name="EditCreateMesh" type="Node" parent="MapView/EditInteractions" unique_id=2062410442]
 script = ExtResource("9_qtfr5")
 metadata/_custom_type_script = "uid://bgtxjyyro3vut"
 
-[node name="newObjectHighlighter" type="Marker3D" parent="MapView/EditInteractions/EditCreateMesh"]
+[node name="newObjectHighlighter" type="Marker3D" parent="MapView/EditInteractions/EditCreateMesh" unique_id=909605687]
 
-[node name="EditObject" type="Node" parent="MapView/EditInteractions"]
+[node name="EditObject" type="Node" parent="MapView/EditInteractions" unique_id=1630100606]
 script = ExtResource("14_ajyq3")
 metadata/_custom_type_script = "uid://d276is10q1qdh"
 
-[node name="FaceHighlighter" type="Node" parent="MapView"]
+[node name="FaceHighlighter" type="Node" parent="MapView" unique_id=1956914695]
 script = ExtResource("6_04lqo")
 
-[node name="FlyCamera" type="CharacterBody3D" parent="MapView"]
+[node name="FlyCamera" type="CharacterBody3D" parent="MapView" unique_id=594911523]
 script = ExtResource("2_ut11n")
 activation_mode = 1
 keep_key_controls = false
 fly_speed = 10.0
 metadata/_custom_type_script = "uid://cte4jalives85"
 
-[node name="WorldGrid" type="Node" parent="MapView/FlyCamera"]
+[node name="WorldGrid" type="Node" parent="MapView/FlyCamera" unique_id=845596355]
 script = ExtResource("7_6lnv8")
 
-[node name="CameraSpeedControls" parent="MapView/FlyCamera" instance=ExtResource("3_8pyo2")]
+[node name="CameraSpeedControls" parent="MapView/FlyCamera" unique_id=399870239 instance=ExtResource("3_8pyo2")]
 
-[node name="CameraGizmo" type="Node" parent="MapView/FlyCamera"]
+[node name="CameraGizmo" type="Node" parent="MapView/FlyCamera" unique_id=1425145773]
 script = ExtResource("5_01tu6")
 
-[node name="Control" type="SubViewportContainer" parent="MapView/FlyCamera/CameraGizmo"]
+[node name="Control" type="SubViewportContainer" parent="MapView/FlyCamera/CameraGizmo" unique_id=589912923]
 custom_minimum_size = Vector2(96, 96)
 anchors_preset = 1
 anchor_left = 1.0
@@ -177,17 +177,17 @@ grow_horizontal = 0
 stretch = true
 script = SubResource("GDScript_mmgm2")
 
-[node name="SubViewport" type="SubViewport" parent="MapView/FlyCamera/CameraGizmo/Control"]
+[node name="SubViewport" type="SubViewport" parent="MapView/FlyCamera/CameraGizmo/Control" unique_id=1507843064]
 own_world_3d = true
 transparent_bg = true
 handle_input_locally = false
 size = Vector2i(96, 96)
 render_target_update_mode = 4
 
-[node name="Camera3D" type="Camera3D" parent="MapView/FlyCamera/CameraGizmo/Control/SubViewport"]
+[node name="Camera3D" type="Camera3D" parent="MapView/FlyCamera/CameraGizmo/Control/SubViewport" unique_id=425072905]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 2)
 projection = 1
 current = true
 size = 2.0
 
-[node name="PlacedObjects" type="Node3D" parent="MapView"]
+[node name="PlacedObjects" type="Node3D" parent="MapView" unique_id=1413201735]

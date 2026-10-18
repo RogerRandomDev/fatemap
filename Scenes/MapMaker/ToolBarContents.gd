@@ -66,11 +66,18 @@ func loadContents()->void:
 		UndoRedoService.clearAllActions()
 		)
 	
-	ToolMethodService.addToolMethod(&"TestingFullCompile",
+	ToolMethodService.addToolMethod(&"CompileMap",
 	func(_v=null):
+		var filePath=ParameterService.getParam("loadedMapFile")
+		if filePath==null or filePath.is_empty():return
+		var subsections=filePath.split("/")
+		var editingID=subsections.find("Editing")
+		if editingID==-1:return
+		subsections[editingID]="Compiled"
+		var compilePath="/".join(subsections).trim_suffix(".fmpe")+".fatemap"
 		var worldChecked = get_tree().current_scene.mapViewport
 		mapData = compilerService.fullCompile(worldChecked)
-		var f=FileAccess.open_compressed("user://test.fatemap",FileAccess.WRITE,FileAccess.COMPRESSION_GZIP)
+		var f=FileAccess.open_compressed(compilePath,FileAccess.WRITE,FileAccess.COMPRESSION_GZIP)
 		f.store_buffer(mapData)
 		f.close()
 		)

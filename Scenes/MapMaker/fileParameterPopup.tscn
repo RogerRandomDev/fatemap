@@ -21,7 +21,7 @@ func selectFile(item:TreeItem)->String:
 "
 
 [node name="FileParameterPopup" type="FileDialog"]
-title = "Select file"
+title = "Open a File"
 initial_position = 4
 file_mode = 0
 access = 2

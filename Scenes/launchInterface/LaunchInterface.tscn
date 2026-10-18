@@ -1,0 +1,52 @@
+[gd_scene format=3 uid="uid://clpcaar01dxwt"]
+
+[ext_resource type="Script" uid="uid://chcqv8mtvte5j" path="res://Scenes/launchInterface/project_folder_select.gd" id="1_c3ai2"]
+[ext_resource type="Script" uid="uid://037muotxigrb" path="res://Scenes/launchInterface/project_map_option_list.gd" id="2_xy4dg"]
+
+[sub_resource type="GDScript" id="GDScript_aglai"]
+script/source = "extends VBoxContainer
+
+var launchData:Dictionary={}
+
+func _ready() -> void:
+	if FileAccess.file_exists(\"user://Launch.dat\"):
+		var f=FileAccess.open(\"user://Launch.dat\",FileAccess.READ)
+		launchData = f.get_var(true)
+		f.close()
+	
+	signalService.addSignal(&\"changedProjectDirectory\")
+	
+	var base:VBoxContainer=GUIService.insertElement(
+		GUIService.createElement(
+			self,
+			&\"LaunchInterfaceBase\",
+			[&\"LaunchInterface\"],null
+		)
+	).reference
+	base.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	base.size_flags_vertical=Control.SIZE_EXPAND_FILL
+
+func storeLaunch()->void:
+	var f=FileAccess.open(\"user://Launch.dat\",FileAccess.WRITE)
+	f.store_var(launchData,true)
+	f.close()
+
+func _exit_tree() -> void:
+	storeLaunch()
+"
+
+[node name="LaunchInterface" type="VBoxContainer" unique_id=1256709085]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+script = SubResource("GDScript_aglai")
+
+[node name="ProjectFolderSelect" type="Node" parent="." unique_id=1074145044]
+script = ExtResource("1_c3ai2")
+
+[node name="ProjectMapOptionList" type="Node" parent="." unique_id=1024437478]
+script = ExtResource("2_xy4dg")

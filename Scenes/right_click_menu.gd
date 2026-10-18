@@ -4,6 +4,7 @@ var menu=load("res://Scenes/RightClickMenu.tscn").instantiate()
 
 func _ready() -> void:
 	add_child(menu)
+	
 
 func _handle_keyboard_input(_event: InputEventKey) -> bool:
 	return false

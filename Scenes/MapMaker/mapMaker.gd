@@ -6,12 +6,31 @@ extends VBoxContainer
 func _enter_tree() -> void:ServiceInitializer.initializeAllServices()
 
 func _ready() -> void:
+	# we have a map we already selected so load it in
 	loadGUILayout()
 	
 	MaterialService.materialSource=ProjectSettings.get_setting("fatemap/project_directory","res:/")+"/FateMap/Imported/"
 	
 	MaterialService.loadAllFMT(MaterialService.materialSource+"Materials/Default")
 	PhysicalObjectInputController.initializeInputController()
+	
+	await get_tree().process_frame
+	var selectedFile = ParameterService.getParam("loadedMapFile")
+	if selectedFile!=null:
+		var worldChecked = get_tree().current_scene.mapViewport
+		var filePath :String= selectedFile
+		if filePath.is_empty():return
+		var f=FileAccess.open_compressed(filePath,FileAccess.READ,FileAccess.COMPRESSION_ZSTD)
+		ParameterService.setParam("loadedMapFile",filePath)
+		var loader = EditorLoaderVersion.getLoader(f.get_buffer(2).decode_u16(0))
+		if loader==null:
+			push_error("No available loader for version in file.")
+			f.close()
+			return
+		f.seek(0)
+		loader.loadMapData(worldChecked.get_node("PlacedObjects"),f.get_buffer(f.get_length()))
+		f.close()
+		UndoRedoService.clearAllActions()
 
 func loadGUILayout()->void:
 	loadToolBar()

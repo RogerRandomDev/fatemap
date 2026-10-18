@@ -206,7 +206,6 @@ func updateMenuWidth(menu:PopupMenu)->void:
 
 [node name="RightClickMenu" type="PopupMenu" unique_id=63513928]
 oversampling_override = 1.0
-visible = true
 wrap_controls = false
 allow_search = false
 shrink_width = false
