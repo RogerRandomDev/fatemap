@@ -14,7 +14,7 @@ func _ready() -> void:
 	tooltipBox.size_flags_horizontal=Control.SIZE_SHRINK_BEGIN
 	tooltipBox.size_flags_vertical=Control.SIZE_EXPAND|Control.SIZE_SHRINK_END
 	
-	signalService.bindToSignal(&"meshSelectionChanged",func():
+	SelectService.selectionUpdated.connect(func():
 		var obj = ParameterService.getParam(&"activeObjects")
 		tooltipBox.visible=obj.size()!=0)
 	
@@ -27,7 +27,7 @@ func _ready() -> void:
 		)
 	).reference as Label
 	
-	signalService.bindToSignal(&"meshSelectionChanged",func():
+	SelectService.selectionUpdated.connect(func():
 		var obj = ParameterService.getParam(&"activeObjects")
 		if obj.size()==0:
 			tooltipBounds.text=""

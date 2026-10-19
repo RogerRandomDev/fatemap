@@ -1,8 +1,10 @@
-extends RefCounted
-class_name SelectService
+extends Node
+
+signal selectionUpdated()
+signal objectsSelected(selection)
 
 
-static func select(obj,replace_all:bool=false,keep_all:bool=false,dont_emit:bool=false)->Array:
+func select(obj,replace_all:bool=false,keep_all:bool=false,dont_emit:bool=false)->Array:
 	var currentSelection=ParameterService.getParam(&"activeObjects")
 	if obj==null or obj is Array and obj.size()==0:
 		if not InputService.pressed(&"SelectMultiple") and !keep_all:
@@ -33,11 +35,11 @@ static func select(obj,replace_all:bool=false,keep_all:bool=false,dont_emit:bool
 	ParameterService.setParam(&"activeObjects",currentSelection)
 	MeshEditService.setEditing(currentSelection)
 	if !dont_emit:
-		signalService.emitSignal(&"meshSelectionChanged")
-		signalService.emitSignal(&"mapObjectSelected",[currentSelection])
+		selectionUpdated.emit()
+		objectsSelected.emit(currentSelection)
 	return currentSelection
 
-static func deselect(obj,ignore_input:bool=false,dont_emit:bool=false)->void:
+func deselect(obj,ignore_input:bool=false,dont_emit:bool=false)->void:
 	var currentSelection=ParameterService.getParam(&"activeObjects")
 	if obj!=null:
 		currentSelection.erase(obj)
@@ -47,5 +49,5 @@ static func deselect(obj,ignore_input:bool=false,dont_emit:bool=false)->void:
 	ParameterService.setParam(&"activeObjects",currentSelection)
 	MeshEditService.setEditing(currentSelection)
 	if !dont_emit:
-		signalService.emitSignal(&"meshSelectionChanged")
-		signalService.emitSignal(&"mapObjectSelected",[currentSelection])
+		selectionUpdated.emit()
+		objectsSelected.emit(currentSelection)

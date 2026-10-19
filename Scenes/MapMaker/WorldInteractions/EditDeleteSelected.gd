@@ -1,6 +1,8 @@
 extends EditInteractionBase
 
 
+func _check_valid(_event:InputEvent)->bool:
+	return MeshEditService.interactionMode!=MeshEditService.InteractionModes.MAX
 
 func _handle_keyboard_input(_event: InputEventKey) -> bool:
 	if not InputService.pressed(&"Delete",true):return false
@@ -27,13 +29,13 @@ func _handle_keyboard_input(_event: InputEventKey) -> bool:
 		func():
 			ParameterService.setParam(&"activeObjects",end_objs)
 			MeshEditService.setEditing(end_objs)
-			signalService.emitSignal(&"meshSelectionChanged")
-			signalService.emitSignal(&"mapObjectSelected",[end_objs]),
+			SelectService.selectionUpdated.emit()
+			SelectService.objectsSelected.emit(end_objs),
 		func():
 			ParameterService.setParam(&"activeObjects",current_objs)
 			MeshEditService.setEditing(current_objs)
-			signalService.emitSignal(&"meshSelectionChanged")
-			signalService.emitSignal(&"mapObjectSelected",[current_objs])
+			SelectService.selectionUpdated.emit()
+			SelectService.objectsSelected.emit(current_objs)
 	)
 	UndoRedoService.commitAction.call_deferred()
 	

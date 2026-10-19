@@ -15,14 +15,15 @@ func checkContained()->bool:
 
 
 func _input(event: InputEvent) -> void:
-	
+	var handled:bool=false
 	eventData.update(event)
 	for child in get_children():
 		if not child._check_valid(event):continue
-		if event is InputEventKey and child._handle_keyboard_input(event): return
-		if event is InputEventMouseButton and child._handle_mouse_click(event): return
-		if event is InputEventMouseMotion and child._handle_mouse_drag(event): return
-		if event is InputEventMouseButton and child._handle_outside_click_deselect(event): return
+		if handled and not child._ignore_handled(event):continue
+		if event is InputEventKey:handled = handled or child._handle_keyboard_input(event)
+		if event is InputEventMouseButton:handled = handled or child._handle_mouse_click(event)
+		if event is InputEventMouseMotion:handled = handled or child._handle_mouse_drag(event)
+		if event is InputEventMouseButton:handled = handled or child._handle_outside_click_deselect(event)
 
 func _gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:

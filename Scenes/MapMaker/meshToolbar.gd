@@ -18,7 +18,6 @@ func buildToolbar()->void:
 		)
 	).reference as HBoxContainer
 	#hide the toolbar if no object is selected
-	#signalService.bindToSignal(&"mapObjectSelected",func(obj):toolBar.visible=obj!=null)
 	toolBar.set_anchors_preset(Control.PRESET_TOP_WIDE)
 	toolBar.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	#toolBar.visible=false

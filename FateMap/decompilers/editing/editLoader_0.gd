@@ -102,7 +102,7 @@ static func loadMapData(loadOnto:Node,data:PackedByteArray=[])->void:
 		#set object transform we already calculated
 		obj.global_transform=decodedTransform
 		obj.paramUpdated.connect(
-			signalService.emitSignal.bind(&"meshSelectionChanged")
+			SelectService.selectionUpdated.emit
 		)
 		
 		#have to get the encoded parameters out as well

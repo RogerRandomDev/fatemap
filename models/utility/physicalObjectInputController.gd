@@ -14,9 +14,8 @@ static var hoveredObjects:
 
 
 static func initializeInputController()->void:
-	
-	signalService.bindToSignal(&"MouseEnteredObject",onMouseEnterObject)
-	signalService.bindToSignal(&"MouseExitedObject",onMouseExitObject)
+	PhysicalObjectService.mouseEnteredObject.connect(onMouseEnterObject)
+	PhysicalObjectService.mouseExitedObject.connect(onMouseExitObject)
 	
 
 static func onMouseEnterObject(object:Node3D)->void:
@@ -32,14 +31,14 @@ static func deselect()->void:
 		(func():
 			ParameterService.setParam(&"activeObjects",[])
 			MeshEditService.setEditing([])
-			signalService.emitSignal(&"meshSelectionChanged")
-			signalService.emitSignal(&"mapObjectSelected",[])
+			SelectService.selectionUpdated.emit()
+			SelectService.objectsSelected.emit([])
 			),
 		(func():
 			ParameterService.setParam(&"activeObjects",currentActive)
 			MeshEditService.setEditing(currentActive)
-			signalService.emitSignal(&"meshSelectionChanged")
-			signalService.emitSignal(&"mapObjectSelected",[] if currentActive.size() == 0 else [currentActive.get(0)])
+			SelectService.selectionUpdated.emit()
+			SelectService.objectsSelected.emit([] if currentActive.size() == 0 else [currentActive.get(0)])
 			)
 	)
 	UndoRedoService.commitAction(true)

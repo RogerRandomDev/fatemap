@@ -6,6 +6,9 @@ class_name EditInteractionBase
 func _check_valid(_event:InputEvent)->bool:
 	return true
 
+func _ignore_handled(_event:InputEvent)->bool:
+	return false
+
 func _handle_keyboard_input(_event: InputEventKey) -> bool:
 	return false
 

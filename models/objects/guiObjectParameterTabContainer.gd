@@ -4,7 +4,7 @@ class_name guiObjectParameterTabContainer
 
 
 func _ready() -> void:
-	signalService.bindToSignal(&"mapObjectSelected",selectedObjectChanged)
+	SelectService.objectsSelected.connect(selectedObjectChanged)
 	addTab(
 		&"Models",
 		ObjectModelTab.new(),

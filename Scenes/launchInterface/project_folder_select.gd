@@ -1,5 +1,7 @@
 extends Node
 
+signal projectFolderChanged(path:String)
+
 var filePathSelectPopup:FileDialog=FileDialog.new()
 
 func _ready() -> void:
@@ -55,7 +57,7 @@ func _ready() -> void:
 			filePathLabel.text=dir
 			ProjectSettings.set_setting("fatemap/project_directory",dir)
 			get_parent().launchData.set("projectDirectory",dir)
-			signalService.emitSignal(&"changedProjectDirectory")
+			projectFolderChanged.emit()
 	)
 	var target=get_parent().launchData.get("projectDirectory")
 	if target!=null:

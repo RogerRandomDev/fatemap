@@ -6,4 +6,4 @@ func setDebugViewMode(mode):
 
 func updateEditorSettings(value,editorSetting):
 	ParameterService.getParam(&"editorSettings").set(editorSetting,value)
-	signalService.emitSignal(&"editorSettingChanged")
+	ParameterService.editorSettingChanged.emit()

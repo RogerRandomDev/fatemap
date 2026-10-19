@@ -10,7 +10,7 @@ func selectSimiliarNormal(_v=null):
 			if compareAgainst.any(func(compareNormal):return edge.normal.is_equal_approx(compareNormal)):
 				MeshEditService.editing.select(edge)
 	MeshEditService.editing.updateSelectionTracked()
-	signalService.emitSignal(&"meshSelectionChanged")
+	SelectService.selectionUpdated.emit()
 
 func selectSimiliarLength(_v=null):
 	if not MeshEditService.isEditing():return
@@ -22,7 +22,7 @@ func selectSimiliarLength(_v=null):
 			if compareAgainst.any(func(compareLength):return abs(edgeLength-compareLength)<0.01):
 				MeshEditService.editing.select(edge)
 	MeshEditService.editing.updateSelectionTracked()
-	signalService.emitSignal(&"meshSelectionChanged")
+	SelectService.selectionUpdated.emit()
 
 func selectSimiliarLengthAndNormal(_v=null):
 	if not MeshEditService.isEditing():return
@@ -38,4 +38,4 @@ func selectSimiliarLengthAndNormal(_v=null):
 				):MeshEditService.editing.select(edge)
 	
 	MeshEditService.editing.updateSelectionTracked()
-	signalService.emitSignal(&"meshSelectionChanged")
+	SelectService.selectionUpdated.emit()

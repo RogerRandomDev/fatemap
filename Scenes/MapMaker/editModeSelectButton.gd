@@ -24,14 +24,14 @@ func _ready() -> void:
 	for option in options:
 		var newItem = add_item(option)
 		set_item_tooltip(newItem,option)
-		signalService.bindToSignal(&"EditModeChanged",
-		(func(onValue,editModeLink,val):
-			if val!=onValue:return
-			MeshEditService.changeEditor(editModeLink)
-			ParameterService.setParam(&"CurrentMeshEditMode",editModeLink)
-		).bind(defaults[newItem],newItem),
-		["MeshEditMode",option]
-		)
+		
+		MeshEditService.editModeChanged.connect(
+			(func(onValue,editModeLink,val):
+				if val!=onValue:return
+				MeshEditService.changeEditor(editModeLink)
+				ParameterService.setParam(&"CurrentMeshEditMode",editModeLink)
+		).bind(defaults[newItem],newItem))
+		
 	item_selected.connect(_option_selected)
 	select(2)
 
@@ -41,4 +41,4 @@ func _option_selected(optionIndex:int)->void:
 	var _optionName = options.keys()[optionIndex]
 	
 	
-	signalService.emitSignal(&"meshSelectionChanged")
+	SelectService.selectionUpdated.emit()

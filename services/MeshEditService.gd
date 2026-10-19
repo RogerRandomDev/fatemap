@@ -1,23 +1,32 @@
-extends RefCounted
-class_name MeshEditService
+extends Node
 
 
-static var editing:editingMesh
-static var editMode:MeshEditMode=MeshEditMode.FACE:
+signal updateEditing()
+signal editModeChanged(mode)
+
+var editing:editingMesh
+var editMode:MeshEditMode=MeshEditMode.FACE:
 	set(v):
 		editMode=v
-		signalService.emitSignal(&"EditModeChanged",[v])
-static var editingType:ObjectModel.objectTypes:
+		editModeChanged.emit(v)
+var editingType:ObjectModel.objectTypes:
 	get:return ObjectModel.objectTypes.MAX if editor.editingObjects.size()==0 else editor.editingObjects[0].objectType
 
-static var editor:meshEditMode
+var interactionMode:InteractionModes=InteractionModes.MAX
+
+var editor:meshEditMode
+
+enum InteractionModes{
+	DEFAULT,
+	MAX
+}
 
 
 
-static func initializeService()->void:pass
+func initializeService()->void:pass
 
-static func setEditing(objects:Array=[])->void:
-	signalService.emitSignal.call_deferred(&"UpdateEditingMesh")
+func setEditing(objects:Array=[])->void:
+	updateEditing.emit.call_deferred()
 	if objects.size()==0:
 		editing=null
 		return
@@ -51,14 +60,14 @@ static func setEditing(objects:Array=[])->void:
 				editMesh.preloadCleanFaces()
 	editing.copyOver(oldEditing)
 
-static func getEditing():
+func getEditing():
 	return editing
 
-static func isEditing()->bool:return editing!=null
+func isEditing()->bool:return editing!=null
 
-static func getEditMode()->MeshEditMode:return editMode
+func getEditMode()->MeshEditMode:return editMode
 
-static func changeEditor(newEditor)->void:
+func changeEditor(newEditor)->void:
 	editor = newEditor.new(editor)
 
 enum MeshEditMode{
@@ -259,14 +268,14 @@ class editingMesh extends Resource:
 			for i in 6:for selectable in changes[&"added"][i]:newEdit.select(selectable,false)
 			for i in 6:for selectable in changes[&"removed"][i]:newEdit.deselect(selectable)
 			newEdit.updateSelectionTracked(true)
-			signalService.emitSignal(&"meshSelectionChanged")
+			SelectService.selectionUpdated.emit()
 			)
 		UndoRedoService.addUndo(func():
 			var newEdit=MeshEditService.getEditing()
 			for i in 6:for selectable in changes[&"added"][i]:newEdit.deselect(selectable)
 			for i in 6:for selectable in changes[&"removed"][i]:newEdit.select(selectable,false)
 			newEdit.updateSelectionTracked(true)
-			signalService.emitSignal(&"meshSelectionChanged")
+			SelectService.selectionUpdated.emit()
 		)
 		UndoRedoService.commitAction()
 	
@@ -318,7 +327,7 @@ class editingMesh extends Resource:
 				#rebuild and load
 				mesh.rebuild(false)
 				PhysicalObjectService.updatePickableArea(mesh.ownerInstance.get_parent())
-				signalService.emitSignal.call_deferred(&"meshSelectionChanged")
+				SelectService.selectionUpdated.emit.call_deferred()
 			),(
 		func():
 			for mesh in selectedPositionIDs.keys():
@@ -328,7 +337,7 @@ class editingMesh extends Resource:
 				#rebuild and load
 				mesh.rebuild(false)
 				PhysicalObjectService.updatePickableArea(mesh.ownerInstance.get_parent())
-				signalService.emitSignal.call_deferred(&"meshSelectionChanged")
+				SelectService.selectionUpdated.emit.call_deferred()
 		))
 		UndoRedoService.commitAction(true)
 	

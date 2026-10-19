@@ -90,8 +90,8 @@ func _ready() -> void:
 	add_child(selectionInfo)
 	displaySelectedFaceInfo()
 	
-	signalService.bindToSignal(&"meshSelectionChanged",displaySelectedFaceInfo)
-	signalService.bindToSignal(&"meshSelectionChanged",updateWithSelectedObject)
+	SelectService.selectionUpdated.connect(displaySelectedFaceInfo)
+	SelectService.selectionUpdated.connect(updateWithSelectedObject)
 
 func updateWithSelectedObject()->void:
 	if not MeshEditService.isEditing() or MeshEditService.editing.meshes.all(func(m):return m==null):return

@@ -14,7 +14,7 @@ func _ready()->void:
 	highlight.add_child(highlightOutline)
 	highlight.material_override=load("res://debugMaterial.tres")
 	highlightOutline.mesh=ArrayMesh.new()
-	signalService.bindToSignal.call_deferred(&"mapObjectSelected",disableCreation)
+	SelectService.objectsSelected.connect(disableCreation)
 
 func disableCreation(_arr)->void:
 	await get_tree().process_frame
@@ -132,7 +132,7 @@ func finalizeMesh()->void:
 		dt.set_vertex(vertex,pos*highlight.scale)
 	var obj=PhysicalObjectModel.new()
 	obj.paramUpdated.connect(
-		signalService.emitSignal.bind(&"meshSelectionChanged")
+		SelectService.selectionUpdated.emit
 	)
 	
 	var data = ObjectPhysicalDataResource.new()

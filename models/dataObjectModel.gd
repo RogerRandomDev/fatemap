@@ -39,6 +39,6 @@ func createViewIcon()->void:
 	iconSprite.render_priority=127
 	iconSprite.billboard=BaseMaterial3D.BILLBOARD_ENABLED
 	
-	signalService.bindToSignal(&"editorSettingChanged",func():
+	ParameterService.editorSettingChanged.connect(func():
 		iconSprite.visible=ParameterService.getParam(&"editorSettings").get("show_data_model_svg",true)
 		)

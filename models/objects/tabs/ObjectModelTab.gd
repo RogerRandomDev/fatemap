@@ -83,7 +83,7 @@ func optionEvent(event:InputEvent,option)->void:
 		holder.objectData=ObjectDataResource.new()
 		holder.objectData.inheritedData=load("res://FateMap/modelData/baseObject.tres")
 		holder.paramUpdated.connect(
-			signalService.emitSignal.bind(&"meshSelectionChanged")
+			SelectService.selectionUpdated.emit
 		)
 		holder.set_meta("reposition","")
 		var before=ParameterService.getParam(&"activeObjects").duplicate()
@@ -95,14 +95,14 @@ func optionEvent(event:InputEvent,option)->void:
 				placeOn.add_child(holder)
 				ParameterService.setParam(&"activeObjects",after)
 				MeshEditService.setEditing(after)
-				signalService.emitSignal(&"meshSelectionChanged")
-				signalService.emitSignal(&"mapObjectSelected",[after]),
+				SelectService.selectionUpdated.emit()
+				SelectService.objectsSelected.emit(after),
 			func():
 				placeOn.remove_child(holder)
 				ParameterService.setParam(&"activeObjects",before)
 				MeshEditService.setEditing(before)
-				signalService.emitSignal(&"meshSelectionChanged")
-				signalService.emitSignal(&"mapObjectSelected",[before])
+				SelectService.selectionUpdated.emit()
+				SelectService.objectsSelected.emit(before)
 		)
 		UndoRedoService.commitAction(true)
 		

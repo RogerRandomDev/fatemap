@@ -69,8 +69,8 @@ func updateSelectionLocation(mousePosition:Vector2,mergeMoves:bool=false)->bool:
 			func():editingObject.paramUpdated.emit()
 		)
 	UndoRedoService.addMethods(
-		func():signalService.emitSignal(&"meshSelectionChanged"),
-		func():signalService.emitSignal(&"meshSelectionChanged"),
+		func():SelectService.selectionUpdated.emit(),
+		func():SelectService.selectionUpdated.emit(),
 	)
 	UndoRedoService.commitAction(true)
 	return not slideBy.is_zero_approx()

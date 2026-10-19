@@ -5,7 +5,7 @@ var dragSafe:bool=false
 var hasDragged:bool=false
 
 func _ready() -> void:
-	signalService.bindToSignal(&"meshSelectionChanged",updateMeshSelection)
+	SelectService.selectionUpdated.connect(updateMeshSelection)
 
 func getScreenSpace(pointAt:Vector3)->Vector2:
 	return holder.camera.unproject_position(pointAt)
@@ -38,13 +38,13 @@ func _handle_mouse_drag(event: InputEventMouseMotion) -> bool:
 	if event is InputEventMouseMotion and MeshEditService.isEditing() and InputService.pressed(&"MouseLeft"):
 		if not MeshEditService.editor.editingOrigin.is_finite():return false
 		hasDragged = MeshEditService.editor.updateSelectionLocation(holder.get_local_mouse_position(),hasDragged) || hasDragged
-		signalService.emitSignal(&"meshSelectionChanged")
+		SelectService.selectionUpdated.emit()
 		return true
 	return false
 
 func _handle_mouse_click(event: InputEventMouseButton) -> bool:
 	if MeshEditService.isEditing() and InputService.pressed(&"MouseLeft",true):
-		signalService.emitSignal(&"meshSelectionChanged")
+		SelectService.selectionUpdated.emit()
 	if not InputService.pressed(&"MouseLeft"):hasDragged=false
 	#clear focus from outside the area if you click in here
 	if  event is InputEventMouseButton:get_tree().root.gui_release_focus()
@@ -88,8 +88,8 @@ func moveSelection(moveBy:Vector3,_local:bool=true)->void:
 			UndoRedoService.addDoProperty(selectedObj,"global_position",selectedObj.global_position+moveBy)
 			UndoRedoService.addUndoProperty(selectedObj,"global_position",selectedObj.global_position)
 		UndoRedoService.addMethods(
-			func():signalService.emitSignal.call_deferred(&"meshSelectionChanged"),
-			func():signalService.emitSignal.call_deferred(&"meshSelectionChanged"),
+			func():SelectService.selectionUpdated.emit.call_deferred(),
+			func():SelectService.selectionUpdated.emit.call_deferred(),
 		)
 		for selectedObj in selectedObjs:
 			UndoRedoService.addMethods(
@@ -97,7 +97,7 @@ func moveSelection(moveBy:Vector3,_local:bool=true)->void:
 				func():selectedObj.paramUpdated.emit()
 			)
 		UndoRedoService.commitAction(true)
-	signalService.emitSignal(&"meshSelectionChanged")
+	SelectService.selectionUpdated.emit()
 
 func updateMeshSelection()->void:
 	var activeObjects=ParameterService.getParam(&"activeObjects")

@@ -127,9 +127,9 @@ class materialModel extends Resource:
 	func updateMaterial()->void:
 		if materialMat is StandardMaterial3D:
 			materialMat.albedo_texture=materialTexture
-			var possibleParameters:Array=materialMat.get_property_list().map(func(param):return param.name)
+			#var possibleParameters:Array=materialMat.get_property_list().map(func(param):return param.name)
 			for param in materialParameters:
-				if not possibleParameters.has(param):continue
+				#if not possibleParameters.has(param):continue
 				materialMat.set(param,materialParameters[param])
 		if materialMat is ShaderMaterial:
 			var shaderParameterList=(

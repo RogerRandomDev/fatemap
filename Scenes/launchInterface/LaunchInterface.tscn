@@ -14,8 +14,6 @@ func _ready() -> void:
 		launchData = f.get_var(true)
 		f.close()
 	
-	signalService.addSignal(&\"changedProjectDirectory\")
-	
 	var base:VBoxContainer=GUIService.insertElement(
 		GUIService.createElement(
 			self,

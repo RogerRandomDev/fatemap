@@ -1,11 +1,10 @@
-@tool
-extends RefCounted
-class_name PhysicalObjectService
+extends Node
+
+signal mouseEnteredObject(object)
+signal mouseExitedObject(object)
 
 
-
-
-static func buildMesh(object:ObjectPhysicalDataResource,instance:Node3D=null,_makeSelectable:bool=true)->MeshInstance3D:
+func buildMesh(object:ObjectPhysicalDataResource,instance:Node3D=null,_makeSelectable:bool=true)->MeshInstance3D:
 	var mesh=object.mesh
 	var meshInstance=MeshInstance3D.new()
 	if not (object.mesh is objectMeshModel):
@@ -36,7 +35,7 @@ static func buildMesh(object:ObjectPhysicalDataResource,instance:Node3D=null,_ma
 	
 	return meshInstance
 
-static func buildPickableAreaForModel(model:ObjectModel,object:Node3D)->StaticBody3D:
+func buildPickableAreaForModel(model:ObjectModel,object:Node3D)->StaticBody3D:
 	var bounds:Array[AABB] = []
 	for node in object.get_children():
 		if node is MeshInstance3D:
@@ -61,12 +60,11 @@ static func buildPickableAreaForModel(model:ObjectModel,object:Node3D)->StaticBo
 	
 	
 	
-	area.mouse_entered.connect(func():signalService.emitSignal(&"MouseEnteredObject",[object]))
-	area.mouse_exited.connect(func():signalService.emitSignal(&"MouseExitedObject",[object]))
-	#area.input_event.connect(PhysicalObjectInputController.objectInputEvent.bind(instance))
+	area.mouse_entered.connect(func():mouseEnteredObject.emit(object))
+	area.mouse_exited.connect(func():mouseExitedObject.emit(object))
 	return area
 
-static func buildPickableArea(object:ObjectPhysicalDataResource,instance:Node3D,meshInstance:MeshInstance3D=null)->StaticBody3D:
+func buildPickableArea(object:ObjectPhysicalDataResource,instance:Node3D,meshInstance:MeshInstance3D=null)->StaticBody3D:
 	
 	var mesh = object.mesh
 	if meshInstance!=null:mesh=meshInstance.mesh
@@ -77,13 +75,13 @@ static func buildPickableArea(object:ObjectPhysicalDataResource,instance:Node3D,
 	area.add_child(body)
 	body.shape=mesh.create_trimesh_shape()
 	
-	area.mouse_entered.connect(func():signalService.emitSignal(&"MouseEnteredObject",[instance]))
-	area.mouse_exited.connect(func():signalService.emitSignal(&"MouseExitedObject",[instance]))
-	#area.input_event.connect(PhysicalObjectInputController.objectInputEvent.bind(instance))
+	area.mouse_entered.connect(func():mouseEnteredObject.emit(instance))
+	area.mouse_exited.connect(func():mouseExitedObject.emit(instance))
+	
 	return area
 
 
-static func buildPickableAreaFromDisplay(instance:ObjectModel)->StaticBody3D:
+func buildPickableAreaFromDisplay(instance:ObjectModel)->StaticBody3D:
 	var area=StaticBody3D.new()
 	var body=CollisionShape3D.new()
 	if instance:instance.add_child(area)
@@ -100,13 +98,13 @@ static func buildPickableAreaFromDisplay(instance:ObjectModel)->StaticBody3D:
 			body.shape=BoxShape3D.new()
 			body.shape.size=Vector3(0.25,0.25,0.25)
 	
-	area.mouse_entered.connect(func():signalService.emitSignal(&"MouseEnteredObject",[instance]))
-	area.mouse_exited.connect(func():signalService.emitSignal(&"MouseExitedObject",[instance]))
-	#area.input_event.connect(PhysicalObjectInputController.objectInputEvent.bind(instance))
+	area.mouse_entered.connect(func():mouseEnteredObject.emit(instance))
+	area.mouse_exited.connect(func():mouseExitedObject.emit(instance))
+	
 	return area
 
 
-static func updatePickableArea(object:Node3D)->void:
+func updatePickableArea(object:Node3D)->void:
 	var meshObject=object.get_node_or_null("MESH_OBJECT")
 	var areaObject=object.get_node_or_null("PICKABLE_OBJECT")
 	if meshObject==null or areaObject==null:return

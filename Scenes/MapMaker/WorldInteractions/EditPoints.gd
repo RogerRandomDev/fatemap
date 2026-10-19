@@ -19,9 +19,9 @@ const pointSize:float=8
 var  multimesh:MultiMeshInstance3D
 
 func _ready() -> void:
-	signalService.bindToSignal(&"UpdateEditingMesh",updateMeshSelection)
-	signalService.bindToSignal(&"meshSelectionChanged",updateMeshSelection)
-	signalService.bindToSignal(&"mapObjectSelected",selectMatchingOnNewMesh)
+	MeshEditService.updateEditing.connect(updateMeshSelection)
+	SelectService.selectionUpdated.connect(updateMeshSelection)
+	SelectService.objectsSelected.connect(selectMatchingOnNewMesh)
 	multimesh=get_child(0)
 
 func updateMeshSelection()->void:
@@ -117,7 +117,7 @@ func _handle_mouse_drag(event: InputEventMouseMotion) -> bool:
 			dataObject.call("transformed")
 		for editingObject in MeshEditService.editor.editingObjects:
 			PhysicalObjectService.updatePickableArea(editingObject)
-		signalService.emitSignal(&"meshSelectionChanged")
+		SelectService.selectionUpdated.emit()
 		return true
 	return false
 
@@ -128,7 +128,7 @@ func _handle_mouse_click(event: InputEventMouseButton) -> bool:
 		return true
 	if not get_child(0).visible and MeshEditService.isEditing() and InputService.pressed(&"MouseLeft"):
 		MeshEditService.editing.clearSelections()
-		signalService.emitSignal(&"meshSelectionChanged")
+		SelectService.selectionUpdated.emit()
 	#clear focus from outside the area if you click in here
 	if  event is InputEventMouseButton:get_tree().root.gui_release_focus()
 	if not InputService.pressed(&"MouseLeft"):
@@ -141,7 +141,7 @@ func _handle_mouse_click(event: InputEventMouseButton) -> bool:
 		if not InputService.pressed(&"SelectMultiple"):
 			MeshEditService.editing.clearSelections()
 		if selectPointToChange(holder.get_local_mouse_position()):
-			signalService.emitSignal(&"meshSelectionChanged")
+			SelectService.selectionUpdated.emit()
 			dragSafe=true
 			hasSelected=true
 			MeshEditService.editing.updateSelectionTracked()
@@ -149,8 +149,6 @@ func _handle_mouse_click(event: InputEventMouseButton) -> bool:
 		else:
 			dragSafe=false
 			MeshEditService.editing.updateSelectionTracked()
-			#if not InputService.pressed(&"SelectMultiple"):
-				#signalService.emitSignal(&"meshSelectionChanged")
 			
 	if hasSelected and InputService.released(&"MouseLeft",true):
 		hasSelected=false
@@ -190,11 +188,11 @@ func moveSelection(moveBy:Vector3,local:bool=true)->void:
 				UndoRedoService.addDoProperty(selectedObj,"global_position",selectedObj.global_position+moveBy)
 				UndoRedoService.addUndoProperty(selectedObj,"global_position",selectedObj.global_position)
 				UndoRedoService.addMethods(
-					func():signalService.emitSignal.call_deferred(&"meshSelectionChanged"),
-					func():signalService.emitSignal.call_deferred(&"meshSelectionChanged"),
+					func():SelectService.selectionUpdated.emit.call_deferred(),
+					func():SelectService.selectionUpdated.emit.call_deferred(),
 				)
 				UndoRedoService.commitAction(true)
-				signalService.emitSignal(&"meshSelectionChanged")
+				SelectService.selectionUpdated.emit()
 				if selectedObj.has_method("transformed"):
 					selectedObj.call("transformed")
 		MeshEditService.editing.translateSelection(moveBy,local)
@@ -203,7 +201,7 @@ func moveSelection(moveBy:Vector3,local:bool=true)->void:
 			mesh.rebuild(false)
 		for dataObject in MeshEditService.editing.dataObjects:
 			PhysicalObjectService.updatePickableArea(dataObject)
-	signalService.emitSignal(&"meshSelectionChanged")
+	SelectService.selectionUpdated.emit()
 
 var newPointDeselected = false
 
@@ -235,7 +233,7 @@ func deselectPoint()->void:
 	selectedPoints=[]
 	
 	
-	signalService.emitSignal(&"meshSelectionChanged")
+	SelectService.selectionUpdated.emit()
 
 func updateSelected()->void:
 	selectedPoints=[]
@@ -304,13 +302,13 @@ func selectMatchingOnNewMesh(_v=null)->void:
 		for i in 6:for selectable in changes[&"added"][i]:newEdit.select(selectable,false)
 		for i in 6:for selectable in changes[&"removed"][i]:newEdit.deselect(selectable)
 		newEdit.updateSelectionTracked(true)
-		signalService.emitSignal(&"meshSelectionChanged")
+		SelectService.selectionUpdated.emit()
 		)
 	UndoRedoService.addUndo(func():
 		var newEdit=MeshEditService.getEditing()
 		for i in 6:for selectable in changes[&"added"][i]:newEdit.deselect(selectable)
 		for i in 6:for selectable in changes[&"removed"][i]:newEdit.select(selectable,false)
 		newEdit.updateSelectionTracked(true)
-		signalService.emitSignal(&"meshSelectionChanged")
+		SelectService.selectionUpdated.emit()
 	)
 	UndoRedoService.commitAction(false)

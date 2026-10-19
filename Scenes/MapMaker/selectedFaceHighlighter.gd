@@ -10,7 +10,7 @@ func _ready() -> void:
 	add_child(m)
 	m.mesh=mesh
 	m.set_layer_mask_value(20,true)#ill need to make a static enum somwhere to track what layers are for rendering what
-	signalService.bindToSignal.call_deferred(&"meshSelectionChanged",updatedMeshSelection)
+	SelectService.selectionUpdated.connect(updatedMeshSelection)
 
 
 func updatedMeshSelection()->void:

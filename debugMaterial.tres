@@ -1,11 +1,10 @@
 [gd_resource type="StandardMaterial3D" format=3 uid="uid://imc6xbrl1erl"]
 
 [resource]
-render_priority = 127
-transparency = 1
+transparency = 4
 blend_mode = 1
 cull_mode = 2
-depth_draw_mode = 2
 no_depth_test = true
 shading_mode = 0
 albedo_color = Color(1, 0, 0, 0.784314)
+stencil_flags = 2

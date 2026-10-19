@@ -18,14 +18,14 @@ func _handle_mouse_click(_event: InputEventMouseButton) -> bool:
 		UndoRedoService.addDo(func():
 			ParameterService.setParam(&"activeObjects",currentObjs)
 			MeshEditService.setEditing(currentObjs)
-			signalService.emitSignal(&"meshSelectionChanged")
-			signalService.emitSignal(&"mapObjectSelected",[currentObjs])
+			SelectService.selectionUpdated.emit()
+			SelectService.objectsSelected.emit(currentObjs)
 			)
 		UndoRedoService.addUndo(func():
 			ParameterService.setParam(&"activeObjects",oldObjs)
 			MeshEditService.setEditing(oldObjs)
-			signalService.emitSignal(&"meshSelectionChanged")
-			signalService.emitSignal(&"mapObjectSelected",[oldObjs])
+			SelectService.selectionUpdated.emit()
+			SelectService.objectsSelected.emit(oldObjs)
 			)
 		UndoRedoService.commitAction(false)
 		return true

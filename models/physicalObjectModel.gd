@@ -56,6 +56,7 @@ func transformed()->void:
 	if rotationRelativeToWorld:
 		(objectDisplay.mesh as objectMeshModel).globalTransform.basis=meshTransform.basis
 	(objectDisplay.mesh as objectMeshModel).rebuild()
+	paramUpdated.emit()
 
 func paramChanged(param:StringName,value:Variant)->void:
 	set(param,value)

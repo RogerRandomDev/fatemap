@@ -30,20 +30,20 @@ func joinAtMiddle(_v=null):
 				for pos in postChange[mesh]:
 					mesh.positionIDs[pos]=postChange[mesh][pos]
 				mesh.rebuild()
-			signalService.emitSignal(&"meshSelectionChanged"),
+			SelectService.selectionUpdated.emit(),
 		func():
 			for mesh in preChange:
 				for pos in preChange[mesh]:
 					mesh.positionIDs[pos]=preChange[mesh][pos]
 				mesh.rebuild()
-			signalService.emitSignal(&"meshSelectionChanged")
+			SelectService.selectionUpdated.emit()
 	)
 	UndoRedoService.commitAction()
 	#rebuild them to make changes visible
 	for mesh in preChange:
 		mesh.rebuild()
 	
-	signalService.emitSignal(&"meshSelectionChanged")
+	SelectService.selectionUpdated.emit()
 
 func snapToSnapGrid(_v=null):
 	if not MeshEditService.isEditing():return
@@ -80,17 +80,17 @@ func snapToSnapGrid(_v=null):
 				for pos in postChange[mesh]:
 					mesh.positionIDs[pos]=postChange[mesh][pos]
 				mesh.rebuild()
-			signalService.emitSignal(&"meshSelectionChanged"),
+			SelectService.selectionUpdated.emit(),
 		func():
 			for mesh in preChange:
 				for pos in preChange[mesh]:
 					mesh.positionIDs[pos]=preChange[mesh][pos]
 				mesh.rebuild()
-			signalService.emitSignal(&"meshSelectionChanged")
+			SelectService.selectionUpdated.emit()
 	)
 	UndoRedoService.commitAction()
 	#rebuild them to make changes visible
 	for mesh in preChange:
 		mesh.rebuild()
 	
-	signalService.emitSignal(&"meshSelectionChanged")
+	SelectService.selectionUpdated.emit()

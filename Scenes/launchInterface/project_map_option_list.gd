@@ -2,7 +2,7 @@ extends Node
 
 func _ready()->void:
 	await get_tree().process_frame
-	signalService.bindToSignal(&"changedProjectDirectory",updateMapList)
+	get_parent().get_child(0).projectFolderChanged.connect(updateMapList)
 	
 	var mapOptionSet:HFlowContainer=GUIService.insertElement(
 		GUIService.createElement(

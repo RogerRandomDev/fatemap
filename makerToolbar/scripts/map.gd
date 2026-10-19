@@ -64,7 +64,7 @@ func compileMap(_v=null):
 
 func updateEditorSettings(value,editorSetting):
 	ParameterService.getParam(&"editorSettings").set(editorSetting,value)
-	signalService.emitSignal(&"editorSettingChanged")
+	ParameterService.editorSettingChanged.emit()
 
 func viewCompilerParams(_v=null):
 	GUIService.getByName(&"CompilerParamViewControl").reference.get_child(0).popup()
