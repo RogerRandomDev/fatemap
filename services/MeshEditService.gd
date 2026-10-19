@@ -101,7 +101,22 @@ class editingMesh extends Resource:
 		selectedEdges=old.selectedEdges.filter(func(f):return meshes.has(f._mesh))
 		selectedVertices=old.selectedVertices.filter(func(f):return meshes.has(f._mesh))
 	
-	
+	func updateClean()->void:
+		var newFaces:Array[objectMeshModel.cleanedFace]=[]
+		for f in selectedFaces:
+			if newFaces.has(f.cleaned):continue
+			newFaces.push_back(f.cleaned)
+		var newEdges:Array[objectMeshModel.cleanedEdge]=[]
+		for f in selectedEdges:
+			if newEdges.has(f.cleaned):continue
+			newEdges.push_back(f.cleaned)
+		var newVertices:Array[objectMeshModel.cleanedVertex]=[]
+		for f in selectedVertices:
+			if newVertices.has(f.cleaned):continue
+			newVertices.push_back(f.cleaned)
+		selectedCleanFaces=newFaces
+		selectedCleanEdges=newEdges
+		selectedCleanVertices=newVertices
 	
 	##initialize info to begin altering the mesh
 	func beginEdit(commitPast:bool=true)->void:
@@ -116,6 +131,8 @@ class editingMesh extends Resource:
 	##clears selected arrays
 	func clearSelections(_ignoreChange:bool=true)->void:
 		selectedCleanFaces=[]
+		selectedCleanEdges=[]
+		selectedCleanVertices=[]
 		selectedFaces=[]
 		selectedEdges=[]
 		selectedVertices=[]
@@ -179,6 +196,7 @@ class editingMesh extends Resource:
 		if not meshes.any(func(mesh):return mesh!=null and mesh.cleanedEdges.has(cleanEdge)):return
 		if not selectedCleanEdges.has(cleanEdge):
 			selectedCleanEdges.push_back(cleanEdge)
+			for vertex in cleanEdge.cleanedVertices:selectCleanVertex(vertex,false)
 			for edge in cleanEdge.edges:selectEdge(edge,false)
 		else:if toggleSelected:deselectCleanEdge(cleanEdge)
 	func selectCleanFace(cleanFace:objectMeshModel.cleanedFace,toggleSelected:bool=false)->void:
@@ -206,7 +224,7 @@ class editingMesh extends Resource:
 		if meshPart is objectMeshModel.cleanedVertex:return selectedCleanVertices.has(meshPart)
 		return false
 	
-	func updateSelectionTracked(ignore:bool=false)->void:
+	func updateSelectionTracked(ignore:bool=false):
 		if meshObjects.size()==0:return
 		var changes:Dictionary={
 			&"added":[[],[],[],[],[],[]],
@@ -225,12 +243,12 @@ class editingMesh extends Resource:
 				)
 			var addSet=meshChanges.get(&"added",[[],[],[],[]])
 			var removeSet=meshChanges.get(&"removed",[[],[],[],[]])
-			for i in 4:
+			for i in 6:
 				changes.get(&"added")[i].append_array(addSet[i])
 				changes.get(&"removed")[i].append_array(removeSet[i])
 			
 			
-		if ignore:return
+		if ignore:return changes
 		#we changed
 		if changes.values().any(func(v):return v.any(func(e):return e.size()>0 and not (e[0] is objectMeshModel.cleanedVertexObject or e[0] is objectMeshModel.cleanedVertex))):
 			loadSelectionUndoRedo(changes)

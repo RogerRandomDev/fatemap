@@ -6,7 +6,7 @@ var renderPointFaces:Array=[]
 var renderPointEdges:Array=[]
 var renderPointVertices:Array=[]
 
-var selectedPoints:PackedInt32Array=[]
+var selectedPoints:PackedInt64Array=[]
 
 var dragSafe:bool=false
 var hasDragged:bool=false
@@ -21,6 +21,7 @@ var  multimesh:MultiMeshInstance3D
 func _ready() -> void:
 	signalService.bindToSignal(&"UpdateEditingMesh",updateMeshSelection)
 	signalService.bindToSignal(&"meshSelectionChanged",updateMeshSelection)
+	signalService.bindToSignal(&"mapObjectSelected",selectMatchingOnNewMesh)
 	multimesh=get_child(0)
 
 func updateMeshSelection()->void:
@@ -44,21 +45,27 @@ func updateMeshSelection()->void:
 			MeshEditService.MeshEditMode.FACE:
 				for index in mesh.cleanedFaces:
 					var pointAt=index.getCenter()*mesh.ownerInstance.global_transform.basis+mesh.ownerInstance.global_transform.origin
-					renderPoints[pointAt]=index
-					renderPointFaces.push_back(index.faces)
+					renderPoints.get_or_add(pointAt.snappedf(0.0001),[]).append_array(index.faces)
+					for f in index.faces:
+						if renderPointFaces.has(f):continue
+						renderPointFaces.push_back(f)
 			MeshEditService.MeshEditMode.EDGE:
 				var cleanEdges=mesh.cleanedEdges
 				for edge in cleanEdges:
 					var pointAt=edge.getCenter()+mesh.ownerInstance.global_transform.origin
-					renderPoints[pointAt]=edge
-					renderPointEdges.push_back(edge.edges)
+					renderPoints.get_or_add(pointAt,[]).append_array(edge.edges)
+					for f in edge.edges:
+						if renderPointEdges.has(f):continue
+						renderPointEdges.push_back(f)
 					
 			MeshEditService.MeshEditMode.VERTEX:
 				var cleanVertices=mesh.getCleanVertices()
 				for vertex in cleanVertices:
 					var pointAt=vertex.position+mesh.ownerInstance.global_transform.origin
-					renderPoints[pointAt]=vertex
-					renderPointVertices.push_back(vertex.vertices)
+					renderPoints.get_or_add(pointAt,[]).append_array(vertex.vertices)
+					for f in vertex.vertices:
+						if renderPointVertices.has(f):continue
+						renderPointVertices.push_back(f)
 	updateEditPointRender()
 	updateSelected()
 
@@ -206,12 +213,18 @@ func selectPointToChange(atPos:Vector2)->bool:
 	var sortedDistances=sortDistance.duplicate()
 	sortedDistances.sort()
 	var pointIndex=sortDistance.find(sortedDistances[0])
-	var newPoint=renderPoints.values()[pointIndex]
+	var allIndices:Array=[]
+	var newPoints:Array=[]
+	while pointIndex!=-1:
+		allIndices.push_back(pointIndex)
+		newPoints.append_array(renderPoints.values()[pointIndex])
+		pointIndex = sortDistance.find(sortedDistances[0],pointIndex+1)
 	if sortedDistances[0]>pointSize*pointSize:return false
 	var _previousSelected=MeshEditService.editing.selectedVertices.size()
-	newPointDeselected=InputService.pressed(&"SelectMultiple") and MeshEditService.editing.isSelected(newPoint)
-	MeshEditService.editing.select(newPoint,InputService.pressed(&"SelectMultiple"))
-	MeshEditService.editor.updateSelected(newPoint)
+	newPointDeselected=InputService.pressed(&"SelectMultiple") and newPoints.all(func(newPoint):return MeshEditService.editing.isSelected(newPoint))
+	for newPoint in newPoints:
+		MeshEditService.editing.select(newPoint,InputService.pressed(&"SelectMultiple"))
+	MeshEditService.editor.updateSelected(newPoints[-1])
 	updateSelected()
 	return true
 
@@ -225,31 +238,79 @@ func deselectPoint()->void:
 	signalService.emitSignal(&"meshSelectionChanged")
 
 func updateSelected()->void:
-	for index in len(renderPointFaces):
-		var face=renderPointFaces[index]
-		if face.any(func(f):return MeshEditService.editing.selectedFaces.has(f)):
-			pointSelected(index)
+	selectedPoints=[]
+	for point in len(renderPoints):
+		var ref=renderPoints.values()[point]
+		if ref.any(func(r):
+			if r is objectMeshModel.cleanedVertex:
+				return MeshEditService.editing.isSelected(r.vertices[0])
+			if r is objectMeshModel.cleanedEdge:
+				return MeshEditService.editing.isSelected(r.edges[0])
+			if r is objectMeshModel.cleanedFace:
+				return MeshEditService.editing.isSelected(r.faces[0])
+			return MeshEditService.editing.isSelected(r)):
+			pointSelected(point)
 		else:
-			pointDeselected(index)
-	for index in len(renderPointEdges):
-		var edge=renderPointEdges[index]
-		if edge.any(func(edg):return MeshEditService.editing.selectedEdges.has(edg)):
-			pointSelected(index)
-		else:
-			pointDeselected(index)
-	for index in len(renderPointVertices):
-		var vertex=renderPointVertices[index]
-		if vertex.any(func(vert):return MeshEditService.editing.selectedVertices.has(vert)):
-			pointSelected(index)
-		else:
-			pointDeselected(index)
-
+			for r in ref:
+				if r is objectMeshModel.cleanedVertex:MeshEditService.editing.deselect(r.vertices[0].cleaned)
+				elif r is objectMeshModel.cleanedEdge:MeshEditService.editing.deselect(r.edges[0].cleaned)
+				elif r is objectMeshModel.cleanedFace:MeshEditService.editing.deselect(r.faces[0].cleaned)
+				else:MeshEditService.editing.deselect(r)
+			pointDeselected(point)
+	
 func pointSelected(pointIndex:int)->void:
-	if selectedPoints.has(pointIndex) or renderPoints.size()<=pointIndex:return
 	multimesh.multimesh.set_instance_color(pointIndex,Color.RED)
+	if selectedPoints.has(pointIndex) or renderPoints.size()<=pointIndex:return
 	selectedPoints.push_back(pointIndex)
 
 func pointDeselected(pointIndex:int)->void:
-	if not selectedPoints.has(pointIndex) or renderPoints.size()<=pointIndex:return
 	multimesh.multimesh.set_instance_color(pointIndex,Color.BLACK)
+	if not selectedPoints.has(pointIndex) or renderPoints.size()<=pointIndex:return
 	selectedPoints.remove_at(selectedPoints.find(pointIndex))
+
+var oldObjs=[]
+func selectMatchingOnNewMesh(_v=null)->void:
+	#the filter makes it only cause the action
+	#if we ADD an object.
+	#this prevents recursive loops breaking it
+	var prevOld=oldObjs
+	oldObjs=[] if not _v is Array else _v.duplicate()
+	if not MeshEditService.isEditing():return
+	var newObjs=oldObjs.filter(func(v):return not prevOld.has(v))
+	if newObjs.size()==0:return
+	
+	UndoRedoService.startAction(&"SelectObject",UndoRedo.MERGE_ALL)
+	for point in len(renderPoints):
+		var ref=renderPoints.values()[point]
+		if ref.any(func(r):
+			if r is objectMeshModel.cleanedVertex:
+				return MeshEditService.editing.isSelected(r.vertices[0])
+			if r is objectMeshModel.cleanedEdge:
+				return MeshEditService.editing.isSelected(r.edges[0])
+			if r is objectMeshModel.cleanedFace:
+				return MeshEditService.editing.isSelected(r.faces[0])
+			return MeshEditService.editing.isSelected(r)):
+			#make sure any of them there is also selected.
+			#use the cleaned because if we regenerated them the cleaned references
+			#changed.
+			for r in ref:
+				if r is objectMeshModel.cleanedVertex:MeshEditService.editing.select(r.vertices[0].cleaned)
+				elif r is objectMeshModel.cleanedEdge:MeshEditService.editing.select(r.edges[0].cleaned)
+				elif r is objectMeshModel.cleanedFace:MeshEditService.editing.select(r.faces[0].cleaned)
+				else:MeshEditService.editing.select(r)
+	var changes = MeshEditService.editing.updateSelectionTracked(true)
+	UndoRedoService.addDo(func():
+		var newEdit=MeshEditService.getEditing()
+		for i in 6:for selectable in changes[&"added"][i]:newEdit.select(selectable,false)
+		for i in 6:for selectable in changes[&"removed"][i]:newEdit.deselect(selectable)
+		newEdit.updateSelectionTracked(true)
+		signalService.emitSignal(&"meshSelectionChanged")
+		)
+	UndoRedoService.addUndo(func():
+		var newEdit=MeshEditService.getEditing()
+		for i in 6:for selectable in changes[&"added"][i]:newEdit.deselect(selectable)
+		for i in 6:for selectable in changes[&"removed"][i]:newEdit.select(selectable,false)
+		newEdit.updateSelectionTracked(true)
+		signalService.emitSignal(&"meshSelectionChanged")
+	)
+	UndoRedoService.commitAction(false)

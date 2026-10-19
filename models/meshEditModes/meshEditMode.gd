@@ -72,10 +72,13 @@ func updateEditingObjects(objects:Array)->void:
 func updateSelected(cleanPoint:RefCounted)->void:
 	if cleanPoint is objectMeshModel.cleanedFace:
 		updateSelectedCleanFace(cleanPoint)
-	if cleanPoint is objectMeshModel.cleanedEdge:
+	elif cleanPoint is objectMeshModel.cleanedEdge:
 		updateSelectedCleanEdge(cleanPoint)
-	if cleanPoint is objectMeshModel.cleanedVertex:
+	elif cleanPoint is objectMeshModel.cleanedVertex:
 		referenceVertex=cleanPoint
+	else:
+		updateSelected(cleanPoint.cleaned)
+		return
 	updatePlane()
 
 ## updates the selected face we will use for the edit direction and location info
