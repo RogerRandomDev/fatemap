@@ -1,4 +1,4 @@
-[gd_scene load_steps=2 format=3 uid="uid://hdi1dbiy6hdd"]
+[gd_scene format=3 uid="uid://hdi1dbiy6hdd"]
 
 [sub_resource type="GDScript" id="GDScript_yd8wa"]
 script/source = "extends PopupMenu
@@ -70,11 +70,13 @@ func buildRightMenu()->void:
 	base.set_item_tooltip(base.item_count-1,\"create a datamodel for a selected type\")
 	#construct a list of all types we can create from this and add them to the options
 	loadTypeMenu(addTypes,\"FateMap/modelData\")
-	
+	updateMenuSize(addTypes)
 	
 	var submenuHolder = load(\"res://makerMenus/resources/rightClickFaceSubMenuHolder.tres\")
-	
 	buildFromResource(submenuHolder,self)
+	
+	updateMenuSize(self)
+	
 
 func loadTypeMenu(menu:PopupMenu,subPath:String=\"\")->void:
 	var subPaths=DirAccess.get_directories_at(ProjectSettings.get_setting(\"fatemap/project_directory\",\"res:/\")+\"/\"+subPath)
@@ -127,6 +129,7 @@ func buildFromResource(resource:dropDownPopupResource,currentPopup:PopupMenu)->v
 					context.get(\"description\",null).split(\"\\r\")[-1]
 				)
 				buildFromResource(context.get(\"value\"),newSubMenu)
+				updateMenuSize(newSubMenu)
 				continue
 
 
@@ -186,9 +189,29 @@ func getCallable(script:String,method):
 	if scriptObject.has_method(method):
 		return Callable(scriptObject,method)
 	return null
+
+
+func updateMenuSize(menu:PopupMenu)->void:
+	const spacing:Vector2i=Vector2i(24,6)
+	var longest_width:int=0
+	var height:int=0
+	var font:Font = menu.get_theme_font(\"font\")
+	var font_size:int = menu.get_theme_font_size(\"font_size\")
+	for i in menu.item_count:
+		var text = menu.get_item_text(i)
+		var text_size = font.get_string_size(text,HORIZONTAL_ALIGNMENT_LEFT,-1.0,font_size)
+		longest_width=max(longest_width,text_size.x)
+		height+=text_size.y+spacing.y
+	var final_width=longest_width+spacing.x
+	menu.size.x=final_width
+	menu.size.y=height
+	
+	
 "
 
-[node name="RightClickMenu" type="PopupMenu"]
+[node name="RightClickMenu" type="PopupMenu" unique_id=63513928]
 oversampling_override = 1.0
 wrap_controls = false
+allow_search = false
+shrink_width = false
 script = SubResource("GDScript_yd8wa")

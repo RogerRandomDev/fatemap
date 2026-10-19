@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="dropDownPopupResource" format=3 uid="uid://db2sjxwyh3wqj"]
+
+[ext_resource type="Script" uid="uid://drds6tggj4lf8" path="res://models/resources/dropDownPopupResource.gd" id="1_ty385"]
+
+[resource]
+script = ExtResource("1_ty385")
+option_count = 3
+option_0/name = "Similiar normals"
+option_0/type = "default"
+option_0/script = "uid://b1gxic237ti4w"
+option_0/description = "Select any edges with matching normals to a selected edges"
+option_0/value = &"selectSimiliarNormal"
+option_0/param = ""
+option_1/name = "Similiar Length"
+option_1/type = "default"
+option_1/script = "uid://b1gxic237ti4w"
+option_1/description = "Select any edge with matching lengths"
+option_1/value = &"selectSimiliarLength"
+option_1/param = ""
+option_2/name = "Normal+Length"
+option_2/type = "default"
+option_2/script = "uid://b1gxic237ti4w"
+option_2/description = "Compare normal + length and select matches for both only"
+option_2/value = &"selectSimiliarLengthAndNormal"
+option_2/param = ""
+metadata/_custom_type_script = "uid://drds6tggj4lf8"

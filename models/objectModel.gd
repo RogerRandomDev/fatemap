@@ -35,10 +35,17 @@ func getCompiledData(compiler:compilerService.compilerMapData,_full:bool=false)-
 
 func getBounds()->AABB:
 	match(objectType):
-		objectTypes.OBJECT:
+		objectTypes.MESH:
 			var aabb=(objectDisplay as MeshInstance3D).get_aabb()
 			aabb.position+=objectDisplay.global_position
 			return aabb
+		objectTypes.OBJECT:
+			var bounds:Array = _getChildBounds(self)
+			var aabb:AABB=AABB()
+			for b in bounds:
+				aabb=aabb.merge(b)
+			return aabb
+			
 	return AABB(global_position-Vector3(0.25,0.25,0.25),Vector3(0.5,0.5,0.5))
 
 func setObjectData(data)->void:
@@ -67,3 +74,11 @@ func _notification(what: int) -> void:
 	match what:
 		NOTIFICATION_TRANSFORM_CHANGED:
 			paramUpdated.emit()
+
+func _getChildBounds(a):
+	var b=[]
+	for node in a.get_children():
+		b.append_array(_getChildBounds(node))
+	if a is MeshInstance3D:
+		b.push_back(a.get_aabb())
+	return b

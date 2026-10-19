@@ -25,6 +25,7 @@ func updateSelectionLocation(mousePosition:Vector2,mergeMoves:bool=false)->bool:
 	updatePlane()
 	var targetSlideLocation=getTargetFromMouse(mousePosition)
 	if not targetSlideLocation.is_finite():return false
+	if referenceFace==null:return false
 	#snap the slide location and push it back onto the ray afterwards
 	#targetSlideLocation=getPointAlongRay(targetSlideLocation.snappedf(ParameterService.getParam(&"snapDistance")))
 	

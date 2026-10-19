@@ -13,7 +13,7 @@ func _handle_mouse_drag(_event: InputEventMouseMotion) -> bool:
 	return false
 
 func _handle_mouse_click(_event: InputEventMouseButton) -> bool:
-	if _event.is_released() and _event.button_index==MOUSE_BUTTON_RIGHT:
+	if _event.is_released() and   _event.button_index==MOUSE_BUTTON_RIGHT:
 		if Input.mouse_mode!=Input.MOUSE_MODE_VISIBLE:return false
 		menu.popup()
 	return false

@@ -57,7 +57,6 @@ func _ready() -> void:
 			get_parent().launchData.set("projectDirectory",dir)
 			signalService.emitSignal(&"changedProjectDirectory")
 	)
-	
 	var target=get_parent().launchData.get("projectDirectory")
 	if target!=null:
 		filePathSelectPopup.dir_selected.emit.call_deferred(target)

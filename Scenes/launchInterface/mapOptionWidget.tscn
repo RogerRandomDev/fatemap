@@ -1,8 +1,8 @@
-[gd_scene load_steps=2 format=3 uid="uid://cigw70rq11kbj"]
+[gd_scene format=3 uid="uid://cigw70rq11kbj"]
 
 [ext_resource type="Script" uid="uid://vjpx8qkvoaly" path="res://Scenes/launchInterface/map_option_widget.gd" id="1_5bxvb"]
 
-[node name="MapOptionWidget" type="MarginContainer"]
+[node name="MapOptionWidget" type="MarginContainer" unique_id=903533214]
 custom_minimum_size = Vector2(128, 160)
 anchors_preset = 8
 anchor_left = 0.5
@@ -17,16 +17,16 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_5bxvb")
 
-[node name="VBoxContainer" type="VBoxContainer" parent="."]
+[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=52982236]
 layout_mode = 2
 
-[node name="ItemList" type="ItemList" parent="VBoxContainer"]
+[node name="ItemList" type="ItemList" parent="VBoxContainer" unique_id=1926297910]
 layout_mode = 2
 size_flags_vertical = 3
 mouse_filter = 1
 allow_search = false
 
-[node name="Label" type="Label" parent="VBoxContainer"]
+[node name="Label" type="Label" parent="VBoxContainer" unique_id=1331973391]
 layout_mode = 2
 mouse_filter = 1
 horizontal_alignment = 1

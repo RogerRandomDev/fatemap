@@ -1,0 +1,43 @@
+extends Node
+
+
+func _ready() -> void:
+	await get_tree().process_frame
+	var tooltipBox := GUIService.insertElement(
+		GUIService.createElement(
+			PanelContainer.new(),
+			&"EditingTooltipBox",
+			[&"Tooltip",&"Editing",&"Layout",&"Selection"],
+			&"PrimaryViewportVBox"
+		)
+	).reference as PanelContainer
+	tooltipBox.size_flags_horizontal=Control.SIZE_SHRINK_BEGIN
+	tooltipBox.size_flags_vertical=Control.SIZE_EXPAND|Control.SIZE_SHRINK_END
+	
+	signalService.bindToSignal(&"meshSelectionChanged",func():
+		var obj = ParameterService.getParam(&"activeObjects")
+		tooltipBox.visible=obj.size()!=0)
+	
+	var tooltipBounds := GUIService.insertElement(
+		GUIService.createElement(
+			Label.new(),
+			&"EditingTooltipBoundingBox",
+			[&"Tooltip",&"Editing",&"Layout",&"Selection"],
+			&"EditingTooltipBox"
+		)
+	).reference as Label
+	
+	signalService.bindToSignal(&"meshSelectionChanged",func():
+		var obj = ParameterService.getParam(&"activeObjects")
+		if obj.size()==0:
+			tooltipBounds.text=""
+			return
+		var bounds:AABB=AABB()
+		for item in obj:
+			bounds=bounds.merge(item.getBounds())
+		tooltipBounds.text="%s"%[str(bounds.size.snappedf(0.01))]
+		
+		)
+	
+	
+	

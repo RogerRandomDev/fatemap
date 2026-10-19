@@ -75,6 +75,8 @@ class editingMesh extends Resource:
 	#surface special info
 	#part selections
 	var selectedCleanFaces:Array[objectMeshModel.cleanedFace]=[]
+	var selectedCleanEdges:Array[objectMeshModel.cleanedEdge]=[]
+	var selectedCleanVertices:Array[objectMeshModel.cleanedVertex]=[]
 	var selectedFaces:Array[objectMeshModel.meshFace]=[]
 	var selectedEdges:Array[objectMeshModel.meshEdge]=[]
 	var selectedVertices:Array[objectMeshModel.meshVertex]=[]
@@ -93,11 +95,28 @@ class editingMesh extends Resource:
 	func copyOver(old:editingMesh):
 		if old==null:return
 		selectedCleanFaces=old.selectedCleanFaces.filter(func(f):return meshes.has(f.faces[0]._mesh))
+		selectedCleanEdges=old.selectedCleanEdges.filter(func(f):return meshes.has(f.edges[0]._mesh))
+		selectedCleanVertices=old.selectedCleanVertices.filter(func(f):return meshes.has(f.vertices[0]._mesh))
 		selectedFaces=old.selectedFaces.filter(func(f):return meshes.has(f._mesh))
 		selectedEdges=old.selectedEdges.filter(func(f):return meshes.has(f._mesh))
 		selectedVertices=old.selectedVertices.filter(func(f):return meshes.has(f._mesh))
 	
-	
+	func updateClean()->void:
+		var newFaces:Array[objectMeshModel.cleanedFace]=[]
+		for f in selectedFaces:
+			if newFaces.has(f.cleaned):continue
+			newFaces.push_back(f.cleaned)
+		var newEdges:Array[objectMeshModel.cleanedEdge]=[]
+		for f in selectedEdges:
+			if newEdges.has(f.cleaned):continue
+			newEdges.push_back(f.cleaned)
+		var newVertices:Array[objectMeshModel.cleanedVertex]=[]
+		for f in selectedVertices:
+			if newVertices.has(f.cleaned):continue
+			newVertices.push_back(f.cleaned)
+		selectedCleanFaces=newFaces
+		selectedCleanEdges=newEdges
+		selectedCleanVertices=newVertices
 	
 	##initialize info to begin altering the mesh
 	func beginEdit(commitPast:bool=true)->void:
@@ -112,6 +131,8 @@ class editingMesh extends Resource:
 	##clears selected arrays
 	func clearSelections(_ignoreChange:bool=true)->void:
 		selectedCleanFaces=[]
+		selectedCleanEdges=[]
+		selectedCleanVertices=[]
 		selectedFaces=[]
 		selectedEdges=[]
 		selectedVertices=[]
@@ -128,6 +149,14 @@ class editingMesh extends Resource:
 		if not selectedFaces.has(face):return
 		selectedFaces.erase(face)
 		for edge in face.edges:deselectEdge(edge)
+	func deselectCleanVertex(cleanVertex:objectMeshModel.cleanedVertex)->void:
+		if not selectedCleanVertices.has(cleanVertex):return
+		selectedCleanVertices.erase(cleanVertex)
+		for vertex in cleanVertex.vertices:deselectVertex(vertex)
+	func deselectCleanEdge(cleanEdge:objectMeshModel.cleanedEdge)->void:
+		if not selectedCleanEdges.has(cleanEdge):return
+		selectedCleanEdges.erase(cleanEdge)
+		for edge in cleanEdge.edges:deselectEdge(edge)
 	func deselectCleanFace(cleanFace:objectMeshModel.cleanedFace)->void:
 		if not selectedCleanFaces.has(cleanFace):return
 		selectedCleanFaces.erase(cleanFace)
@@ -137,6 +166,8 @@ class editingMesh extends Resource:
 		if meshPart is objectMeshModel.meshVertex:deselectVertex(meshPart)
 		if meshPart is objectMeshModel.meshEdge:deselectEdge(meshPart)
 		if meshPart is objectMeshModel.meshFace:deselectFace(meshPart)
+		if meshPart is objectMeshModel.cleanedVertex:deselectCleanVertex(meshPart)
+		if meshPart is objectMeshModel.cleanedEdge:deselectCleanEdge(meshPart)
 		if meshPart is objectMeshModel.cleanedFace:deselectCleanFace(meshPart)
 	
 	func selectVertex(vertex:objectMeshModel.meshVertex,toggleSelected:bool=false)->void:
@@ -155,10 +186,24 @@ class editingMesh extends Resource:
 			selectedFaces.push_back(face)
 			for edge in face.edges:selectEdge(edge,false)
 		else:if toggleSelected:deselectFace(face)
+	func selectCleanVertex(cleanVertex:objectMeshModel.cleanedVertex,toggleSelected:bool=false)->void:
+		if not meshes.any(func(mesh):return mesh!=null and mesh.cleanedVertices.has(cleanVertex)):return
+		if not selectedCleanVertices.has(cleanVertex):
+			selectedCleanVertices.push_back(cleanVertex)
+			for vertex in cleanVertex.vertices:selectVertex(vertex,false)
+		else:if toggleSelected:deselectCleanVertex(cleanVertex)
+	func selectCleanEdge(cleanEdge:objectMeshModel.cleanedEdge,toggleSelected:bool=false)->void:
+		if not meshes.any(func(mesh):return mesh!=null and mesh.cleanedEdges.has(cleanEdge)):return
+		if not selectedCleanEdges.has(cleanEdge):
+			selectedCleanEdges.push_back(cleanEdge)
+			for vertex in cleanEdge.cleanedVertices:selectCleanVertex(vertex,false)
+			for edge in cleanEdge.edges:selectEdge(edge,false)
+		else:if toggleSelected:deselectCleanEdge(cleanEdge)
 	func selectCleanFace(cleanFace:objectMeshModel.cleanedFace,toggleSelected:bool=false)->void:
 		if not meshes.any(func(mesh):return mesh!=null and mesh.cleanedFaces.has(cleanFace)):return
 		if not selectedCleanFaces.has(cleanFace):
 			selectedCleanFaces.push_back(cleanFace)
+			for edge in cleanFace.cleanEdges:selectCleanEdge(edge,false)
 			for face in cleanFace.faces:selectFace(face,false)
 		else:if toggleSelected:deselectCleanFace(cleanFace)
 		
@@ -166,24 +211,24 @@ class editingMesh extends Resource:
 		if meshPart is objectMeshModel.meshVertex:selectVertex(meshPart,toggleSelected)
 		if meshPart is objectMeshModel.meshEdge:selectEdge(meshPart,toggleSelected)
 		if meshPart is objectMeshModel.meshFace:selectFace(meshPart,toggleSelected)
+		if meshPart is objectMeshModel.cleanedVertex:selectCleanVertex(meshPart)
+		if meshPart is objectMeshModel.cleanedEdge:selectCleanEdge(meshPart)
 		if meshPart is objectMeshModel.cleanedFace:selectCleanFace(meshPart,toggleSelected)
-		if meshPart is objectMeshModel.cleanedEdge:for edge in meshPart.edges:selectEdge(edge,toggleSelected)
-		if meshPart is objectMeshModel.cleanedVertex:for vertex in meshPart.vertices:selectVertex(vertex,toggleSelected)
 	
 	func isSelected(meshPart)->bool:
 		if meshPart is objectMeshModel.meshVertex:return selectedVertices.has(meshPart)
 		if meshPart is objectMeshModel.meshEdge:return selectedEdges.has(meshPart)
 		if meshPart is objectMeshModel.meshFace:return selectedFaces.has(meshPart)
 		if meshPart is objectMeshModel.cleanedFace:return selectedCleanFaces.has(meshPart)
-		if meshPart is objectMeshModel.cleanedEdge:return meshPart.edges.all(func(e):return selectedEdges.has(e))
-		if meshPart is objectMeshModel.cleanedVertex:return meshPart.vertices.all(func(v):return selectedVertices.has(v))
+		if meshPart is objectMeshModel.cleanedEdge:return selectedCleanEdges.has(meshPart)
+		if meshPart is objectMeshModel.cleanedVertex:return selectedCleanVertices.has(meshPart)
 		return false
 	
-	func updateSelectionTracked(ignore:bool=false)->void:
+	func updateSelectionTracked(ignore:bool=false):
 		if meshObjects.size()==0:return
 		var changes:Dictionary={
-			&"added":[[],[],[],[]],
-			&"removed":[[],[],[],[]]
+			&"added":[[],[],[],[],[],[]],
+			&"removed":[[],[],[],[],[],[]]
 		}
 		#get all uupdated selections for each mesh in the selection
 		for mesh in meshes:
@@ -192,32 +237,34 @@ class editingMesh extends Resource:
 				selectedVertices.filter(func(v):return v._mesh==mesh),
 				selectedEdges.filter(func(v):return v._mesh==mesh),
 				selectedFaces.filter(func(v):return v._mesh==mesh),
+				selectedCleanVertices.filter(func(v):return v.vertices[0]._mesh==mesh),
+				selectedCleanEdges.filter(func(v):return v.edges[0]._mesh==mesh),
 				selectedCleanFaces.filter(func(v):return v.faces[0]._mesh==mesh),
 				)
 			var addSet=meshChanges.get(&"added",[[],[],[],[]])
 			var removeSet=meshChanges.get(&"removed",[[],[],[],[]])
-			for i in 4:
+			for i in 6:
 				changes.get(&"added")[i].append_array(addSet[i])
 				changes.get(&"removed")[i].append_array(removeSet[i])
 			
 			
-		if ignore:return
+		if ignore:return changes
 		#we changed
-		if changes.values().any(func(v):return v.any(func(e):return e.size()>0 and not e[0] is objectMeshModel.cleanedVertexObject)):
+		if changes.values().any(func(v):return v.any(func(e):return e.size()>0 and not (e[0] is objectMeshModel.cleanedVertexObject or e[0] is objectMeshModel.cleanedVertex))):
 			loadSelectionUndoRedo(changes)
 	func loadSelectionUndoRedo(changes:Dictionary)->void:
 		UndoRedoService.startAction(&"SelectMeshParts")
 		UndoRedoService.addDo(func():
 			var newEdit=MeshEditService.getEditing()
-			for i in 4:for selectable in changes[&"added"][i]:newEdit.select(selectable,false)
-			for i in 4:for selectable in changes[&"removed"][i]:newEdit.deselect(selectable)
+			for i in 6:for selectable in changes[&"added"][i]:newEdit.select(selectable,false)
+			for i in 6:for selectable in changes[&"removed"][i]:newEdit.deselect(selectable)
 			newEdit.updateSelectionTracked(true)
 			signalService.emitSignal(&"meshSelectionChanged")
 			)
 		UndoRedoService.addUndo(func():
 			var newEdit=MeshEditService.getEditing()
-			for i in 4:for selectable in changes[&"added"][i]:newEdit.deselect(selectable)
-			for i in 4:for selectable in changes[&"removed"][i]:newEdit.select(selectable,false)
+			for i in 6:for selectable in changes[&"added"][i]:newEdit.deselect(selectable)
+			for i in 6:for selectable in changes[&"removed"][i]:newEdit.select(selectable,false)
 			newEdit.updateSelectionTracked(true)
 			signalService.emitSignal(&"meshSelectionChanged")
 		)
