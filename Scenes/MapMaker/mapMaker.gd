@@ -28,6 +28,7 @@ func _ready() -> void:
 			f.close()
 			return
 		f.seek(0)
+		await get_tree().process_frame
 		loader.loadMapData(worldChecked.get_node("PlacedObjects"),f.get_buffer(f.get_length()))
 		f.close()
 		UndoRedoService.clearAllActions()

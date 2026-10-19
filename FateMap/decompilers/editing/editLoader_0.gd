@@ -80,6 +80,10 @@ static func loadMapData(loadOnto:Node,data:PackedByteArray=[])->void:
 				#TODO: parse and actually load OBJECT contents
 				var objectSize:int=data.decode_u32(checkFrom)
 				var objectLoaded=data.slice(checkFrom+4,checkFrom+4+objectSize).get_string_from_ascii()
+				#objectLoaded=objectLoaded.replace(
+					#"res:/",
+					#ProjectSettings.get_setting("fatemap/project_directory","res:/")
+				#)
 				obj.objectModelFile=objectLoaded
 				
 				obj.add_child(load(objectLoaded).instantiate())

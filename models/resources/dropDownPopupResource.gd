@@ -76,7 +76,7 @@ func getCustomProperties()->Array[Dictionary]:
 				"hint": PROPERTY_HINT_ENUM,
 				"hint_string": ",".join(dropdownTypeMap.keys()),
 			})
-		if optionTypes[i]=="default":
+		if ["default","checkbox"].has(optionTypes[i]):
 			properties.append({
 				"name": "option_%s/script" % i,
 				"type": TYPE_STRING,
@@ -91,7 +91,7 @@ func getCustomProperties()->Array[Dictionary]:
 			"type": TYPE_STRING,
 			"hint": PROPERTY_HINT_MULTILINE_TEXT,
 		})
-		if optionTypes[i]=="default":
+		if ["default","checkbox"].has(optionTypes[i]):
 			var scriptObject=_loadedScripts[i]
 			var scriptMethods = [] if scriptObject==null else scriptObject.get_script_method_list().map(func(o):return o.name)
 			properties.append({

@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="dropDownPopupResource" format=3 uid="uid://bpgpgomyl2cqf"]
+
+[ext_resource type="Script" uid="uid://drds6tggj4lf8" path="res://models/resources/dropDownPopupResource.gd" id="1_rvky7"]
+
+[resource]
+script = ExtResource("1_rvky7")
+option_count = 1
+option_0/name = "Open Docs"
+option_0/type = "default"
+option_0/script = "uid://c4f84kn0v01ln"
+option_0/description = "Open Documentation"
+option_0/value = &"openDocs"
+option_0/param = ""
+metadata/_custom_type_script = "uid://drds6tggj4lf8"

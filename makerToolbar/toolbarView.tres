@@ -1,67 +1,69 @@
-[gd_resource type="Resource" script_class="guiDropdownResource" load_steps=4 format=3 uid="uid://dr25645qk8jbv"]
+[gd_resource type="Resource" script_class="dropDownPopupResource" format=3 uid="uid://tmfwejxowltv"]
 
-[ext_resource type="Script" uid="uid://56abiotdxm3f" path="res://models/resources/guiDropdownResource.gd" id="1_ob8md"]
+[ext_resource type="Script" uid="uid://drds6tggj4lf8" path="res://models/resources/dropDownPopupResource.gd" id="1_wcarq"]
 
-[sub_resource type="Resource" id="Resource_eetcp"]
-script = ExtResource("1_ob8md")
+[sub_resource type="Resource" id="Resource_f1eg7"]
+script = ExtResource("1_wcarq")
 option_count = 6
 option_0/name = "Default"
 option_0/type = "default"
+option_0/script = "uid://jcc8fridtsxx"
 option_0/description = "Default view mode"
-option_0/value = &"SetDebugViewMode"
+option_0/value = &"setDebugViewMode"
 option_0/param = "0"
 option_1/name = "Unshaded"
 option_1/type = "default"
+option_1/script = "uid://jcc8fridtsxx"
 option_1/description = "Unshaded view"
-option_1/value = &"SetDebugViewMode"
+option_1/value = &"setDebugViewMode"
 option_1/param = "1"
 option_2/name = "Overdraw"
 option_2/type = "default"
+option_2/script = "uid://jcc8fridtsxx"
 option_2/description = "Overdraw view"
-option_2/value = &"SetDebugViewMode"
+option_2/value = &"setDebugViewMode"
 option_2/param = "3"
 option_3/name = "Wireframe"
 option_3/type = "default"
+option_3/script = "uid://jcc8fridtsxx"
 option_3/description = "Wireframe view"
-option_3/value = &"SetDebugViewMode"
+option_3/value = &"setDebugViewMode"
 option_3/param = "4"
 option_4/name = "Normals"
 option_4/type = "default"
+option_4/script = "uid://jcc8fridtsxx"
 option_4/description = "Normal view"
-option_4/value = &"SetDebugViewMode"
+option_4/value = &"setDebugViewMode"
 option_4/param = "5"
 option_5/name = "Occluders"
 option_5/type = "default"
+option_5/script = "uid://jcc8fridtsxx"
 option_5/description = "Occluders view"
-option_5/value = &"SetDebugViewMode"
+option_5/value = &"setDebugViewMode"
 option_5/param = "24"
-metadata/_custom_type_script = "uid://56abiotdxm3f"
+metadata/_custom_type_script = "uid://drds6tggj4lf8"
 
-[sub_resource type="Resource" id="Resource_ob8md"]
-script = ExtResource("1_ob8md")
-option_count = 2
-option_0/name = "Object Origin"
+[sub_resource type="Resource" id="Resource_iuf0f"]
+script = ExtResource("1_wcarq")
+option_count = 1
+option_0/name = "DataModel Icons"
 option_0/type = "checkbox"
-option_0/description = "Provides an indicator to the origin of an object"
-option_0/value = &""
-option_0/param = ""
-option_1/name = "DataModel Icons"
-option_1/type = "checkbox"
-option_1/description = "#editorsetting_param\\r
+option_0/script = "uid://jcc8fridtsxx"
+option_0/description = "#editorsetting_param\\r
 Icons for DataObjectModels"
-option_1/value = &"updateEditorSetting"
-option_1/param = "show_data_model_svg"
-metadata/_custom_type_script = "uid://56abiotdxm3f"
+option_0/value = &"updateEditorSettings"
+option_0/param = "show_data_model_svg"
+metadata/_custom_type_script = "uid://drds6tggj4lf8"
 
 [resource]
-script = ExtResource("1_ob8md")
+script = ExtResource("1_wcarq")
 option_count = 2
 option_0/name = "Debug Views"
 option_0/type = "submenu"
 option_0/description = "Special view modes for debuging/misc"
-option_0/value = SubResource("Resource_eetcp")
+option_0/value = SubResource("Resource_f1eg7")
 option_1/name = "Toggle View"
 option_1/type = "submenu"
 option_1/description = "Toggle view of specific categories of objects."
-option_1/value = SubResource("Resource_ob8md")
-metadata/_custom_type_script = "uid://56abiotdxm3f"
+option_1/value = SubResource("Resource_iuf0f")
+metadata/_custom_type_script = "uid://drds6tggj4lf8"
