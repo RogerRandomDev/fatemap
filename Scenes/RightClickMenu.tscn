@@ -70,12 +70,12 @@ func buildRightMenu()->void:
 	base.set_item_tooltip(base.item_count-1,\"create a datamodel for a selected type\")
 	#construct a list of all types we can create from this and add them to the options
 	loadTypeMenu(addTypes,\"FateMap/modelData\")
-	updateMenuWidth(addTypes)
+	updateMenuSize(addTypes)
 	
 	var submenuHolder = load(\"res://makerMenus/resources/rightClickFaceSubMenuHolder.tres\")
 	buildFromResource(submenuHolder,self)
 	
-	updateMenuWidth(self)
+	updateMenuSize(self)
 	
 
 func loadTypeMenu(menu:PopupMenu,subPath:String=\"\")->void:
@@ -129,7 +129,7 @@ func buildFromResource(resource:dropDownPopupResource,currentPopup:PopupMenu)->v
 					context.get(\"description\",null).split(\"\\r\")[-1]
 				)
 				buildFromResource(context.get(\"value\"),newSubMenu)
-				updateMenuWidth(newSubMenu)
+				updateMenuSize(newSubMenu)
 				continue
 
 
@@ -191,17 +191,22 @@ func getCallable(script:String,method):
 	return null
 
 
-func updateMenuWidth(menu:PopupMenu)->void:
+func updateMenuSize(menu:PopupMenu)->void:
+	const spacing:Vector2i=Vector2i(24,6)
 	var longest_width:int=0
-	
+	var height:int=0
 	var font:Font = menu.get_theme_font(\"font\")
 	var font_size:int = menu.get_theme_font_size(\"font_size\")
 	for i in menu.item_count:
 		var text = menu.get_item_text(i)
-		var text_width = font.get_string_size(text,HORIZONTAL_ALIGNMENT_LEFT,-1.0,font_size).x
-		longest_width=max(longest_width,text_width)
-	var final_width=longest_width+24
+		var text_size = font.get_string_size(text,HORIZONTAL_ALIGNMENT_LEFT,-1.0,font_size)
+		longest_width=max(longest_width,text_size.x)
+		height+=text_size.y+spacing.y
+	var final_width=longest_width+spacing.x
 	menu.size.x=final_width
+	menu.size.y=height
+	
+	
 "
 
 [node name="RightClickMenu" type="PopupMenu" unique_id=63513928]

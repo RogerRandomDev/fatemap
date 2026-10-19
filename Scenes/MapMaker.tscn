@@ -15,6 +15,7 @@
 [ext_resource type="Script" uid="uid://bllkwqns16g0j" path="res://Scenes/SelectObject.gd" id="8_bgu1o"]
 [ext_resource type="Script" uid="uid://b2nnfx4rj3ojo" path="res://Scenes/MapMaker/ViewCompilerParams.gd" id="8_gv50h"]
 [ext_resource type="Script" uid="uid://ddmd3kxolmy7b" path="res://Scenes/MapMaker/WorldInteractions/EditDeleteSelected.gd" id="8_ysyqw"]
+[ext_resource type="Script" uid="uid://jc01or8wdlwn" path="res://Scenes/editing_tooltips.gd" id="9_iuf0f"]
 [ext_resource type="Script" uid="uid://dxjm221ox8g4l" path="res://Scenes/MapMaker/RightInspector.gd" id="9_nposp"]
 [ext_resource type="Script" uid="uid://bgtxjyyro3vut" path="res://Scenes/MapMaker/WorldInteractions/EditCreateMesh.gd" id="9_qtfr5"]
 [ext_resource type="Script" uid="uid://brcic2pa4abxp" path="res://Scenes/right_click_menu.gd" id="10_2xmiw"]
@@ -102,6 +103,9 @@ selectorItems = {
 
 [node name="ViewCompilerParams" type="Node" parent="." unique_id=445759655]
 script = ExtResource("8_gv50h")
+
+[node name="EditingTooltips" type="Node" parent="." unique_id=535980835]
+script = ExtResource("9_iuf0f")
 
 [node name="MapView" type="SubViewport" parent="." unique_id=950029268]
 world_3d = SubResource("World3D_l3yla")
