@@ -88,6 +88,8 @@ func buildPickableAreaFromDisplay(instance:ObjectModel)->StaticBody3D:
 	var instanceDisplay=instance.objectDisplay
 	area.name="PICKABLE_OBJECT"
 	area.add_child(body)
+	body.shape=BoxShape3D.new()
+	body.shape.size=Vector3(0.25,0.25,0.25)
 	
 	match instanceDisplay.get_class():
 		"Label3D":
