@@ -122,30 +122,12 @@ func updateExampleMesh()->void:
 func finalizeMesh()->void:
 	highlight.hide()
 	if highlight.get_aabb().size.x==0||highlight.get_aabb().size.y==0:return
-	var m = ArrayMesh.new()
-	m.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,highlight.mesh.get_mesh_arrays())
-	var dt:MeshDataTool=MeshDataTool.new()
-	dt.create_from_surface(m,0)
-	#boy i sure do love accounting for scales so i can stretch my cylinder
-	for vertex in dt.get_vertex_count():
-		var pos=dt.get_vertex(vertex)
-		dt.set_vertex(vertex,pos*highlight.scale)
-	var obj=PhysicalObjectModel.new()
-	obj.paramUpdated.connect(
-		SelectService.selectionUpdated.emit
-	)
-	
-	var data = ObjectPhysicalDataResource.new()
-	data.inheritedData=load("res://FateMap/modelData/meshObject.tres")
-	m.clear_surfaces()
-	dt.commit_to_surface(m)
-	data.mesh=m
-	
-	obj.objectData=data
 	var placedObjects=get_parent().get_parent().get_node("PlacedObjects")
-	placedObjects.add_child(obj)
-	obj.global_position=highlight.global_position
-	(obj.get_node("MESH_OBJECT").mesh as objectMeshModel).globalTransform.origin=-obj.global_transform.origin
+	
+	var obj = ObjectCreationService.createMeshObject(
+		highlight.mesh,highlight.scale,null,
+		placedObjects,highlight.global_position
+	)
 	
 	UndoRedoService.startAction(&"CreateMesh")
 	UndoRedoService.addRef(obj)

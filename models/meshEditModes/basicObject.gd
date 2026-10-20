@@ -60,6 +60,7 @@ func updateSelectionLocation(mousePosition:Vector2,mergeMoves:bool=false)->bool:
 	if slideBy.is_zero_approx():return false
 	#slideBy*=editingObject.global_transform.basis.get_rotation_quaternion()
 	UndoRedoService.startAction("MoveObject",UndoRedo.MERGE_ALL if mergeMoves else UndoRedo.MERGE_DISABLE)
+	UndoRedoService.addUndo(func():SelectService.selectionUpdated.emit())
 	for editingObject in editingObjects:
 		UndoRedoService.addDoProperty(editingObject,"global_position",editingObject.global_position+slideBy)
 		UndoRedoService.addUndoProperty(editingObject,"global_position",editingObject.global_position)
@@ -68,9 +69,6 @@ func updateSelectionLocation(mousePosition:Vector2,mergeMoves:bool=false)->bool:
 			func():editingObject.paramUpdated.emit(),
 			func():editingObject.paramUpdated.emit()
 		)
-	UndoRedoService.addMethods(
-		func():SelectService.selectionUpdated.emit(),
-		func():SelectService.selectionUpdated.emit(),
-	)
+	UndoRedoService.addDo(func():SelectService.selectionUpdated.emit())
 	UndoRedoService.commitAction(true)
 	return not slideBy.is_zero_approx()

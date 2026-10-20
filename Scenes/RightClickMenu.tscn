@@ -19,23 +19,6 @@ func _ready() -> void:
 	)
 	
 
-
-func createByType(type:String,subPath:String=\"generic\")->void:
-	var built:Node
-	var id = ProjectSettings.get_global_class_list().find_custom(func(v):return v.class==type)
-	if id!=-1:built=load(ProjectSettings.get_global_class_list()[id].path).new()
-	if id==-1 and ClassDB.class_exists(type):built=ClassDB.instantiate(type)
-	elif id==-1:push_warning(\"invalid/unloaded class (%s)\"%type)
-	if not built:return
-	var obj=load(\"res://models/dataObjectModel.gd\").new()
-	var externalObjectData = ResourceLoader.load(ProjectSettings.get_setting(\"fatemap/project_directory\",\"res:/\")+\"/%s/%s.tres\"%[subPath,type],\"ObjectDataResource\")
-	obj.objectData=externalObjectData
-	obj.objectDisplay=built
-	obj.add_child(built)
-	var placeOn:Node3D = get_tree().current_scene.mapViewport.get_node(\"PlacedObjects\")
-	placeOn.add_child(obj)
-	moveObjToCursor(obj)
-
 func moveObjToCursor(obj)->void:
 	var viewport = (GUIService.getByName(&\"PrimaryViewport\").reference.get_child(0) as SubViewport)
 	var cursor=lastPos-GUIService.getByName(&\"PrimaryViewport\").reference.global_position
@@ -92,7 +75,31 @@ func loadTypeMenu(menu:PopupMenu,subPath:String=\"\")->void:
 	possibleTypes=possibleTypes.filter(func(v):return v.ends_with(\".tres\"))
 	for type in possibleTypes:
 		AddOption(menu,type.trim_suffix(\".tres\"),
-			createByType.bind(subPath),type.trim_suffix(\".tres\"),\"Create a %s\"%type.trim_suffix(\".tres\")
+			func(_type):
+				var dataContents=ResourceLoader.load(ProjectSettings.get_setting(\"fatemap/project_directory\",\"res:/\")+\"/%s/%s.tres\"%[subPath,_type],\"ObjectDataResource\")
+				var obj=ObjectCreationService.createDataObject(_type,dataContents)
+				var placeOn:Node3D = get_tree().current_scene.mapViewport.get_node(\"PlacedObjects\")
+				var before=ParameterService.getParam(&\"activeObjects\").duplicate()
+				var after=[obj]
+				UndoRedoService.startAction(&\"AddDataModel\")
+				UndoRedoService.addDoRef(obj)
+				UndoRedoService.addMethods(
+					func():
+						placeOn.add_child(obj)
+						ParameterService.setParam(&\"activeObjects\",after)
+						MeshEditService.setEditing(after)
+						SelectService.selectionUpdated.emit.call_deferred()
+						SelectService.objectsSelected.emit(after),
+					func():
+						placeOn.remove_child(obj)
+						ParameterService.setParam(&\"activeObjects\",before)
+						MeshEditService.setEditing(before)
+						SelectService.selectionUpdated.emit.call_deferred()
+						SelectService.objectsSelected.emit(before)
+				)
+				UndoRedoService.commitAction(true)
+				moveObjToCursor(obj)
+				,type.trim_suffix(\".tres\"),\"Create a %s\"%type.trim_suffix(\".tres\")
 			)
 
 func buildFromResource(resource:dropDownPopupResource,currentPopup:PopupMenu)->void:

@@ -73,39 +73,31 @@ func loadContents(contents:Array=[])->void:
 func optionEvent(event:InputEvent,option)->void:
 	if not event is InputEventMouseButton:return
 	if event.button_index==MOUSE_BUTTON_LEFT and event.is_pressed():
+		var placeOn:Node3D = get_tree().current_scene.mapViewport.get_node("PlacedObjects")
 		#lets you drag an object to place on the scene
 		var newObject=option.myObject.instantiate()
-		var placeOn:Node3D = get_tree().current_scene.mapViewport.get_node("PlacedObjects")
-		var holder=load("res://models/modelObjectModel.gd").new()
-		holder.objectType=ObjectModel.objectTypes.OBJECT
-		holder.add_child(newObject)
-		holder.objectModelFile=option.myObject.resource_path
-		holder.objectData=ObjectDataResource.new()
-		holder.objectData.inheritedData=load("res://FateMap/modelData/baseObject.tres")
-		holder.paramUpdated.connect(
-			SelectService.selectionUpdated.emit
-		)
-		holder.set_meta("reposition","")
+		var obj = ObjectCreationService.createModelObject(newObject,option.myObject.resource_path)
+		obj.set_meta("reposition","")
+		#set  the undo/redo so we can add/remove it with that
 		var before=ParameterService.getParam(&"activeObjects").duplicate()
-		var after=[holder]
+		var after=[obj]
 		UndoRedoService.startAction(&"AddModel")
-		UndoRedoService.addDoRef(holder)
+		UndoRedoService.addDoRef(obj)
 		UndoRedoService.addMethods(
 			func():
-				placeOn.add_child(holder)
+				placeOn.add_child(obj)
 				ParameterService.setParam(&"activeObjects",after)
 				MeshEditService.setEditing(after)
 				SelectService.selectionUpdated.emit()
-				SelectService.objectsSelected.emit(after),
+				SelectService.objectsSelected.emit.call_deferred(after),
 			func():
-				placeOn.remove_child(holder)
+				placeOn.remove_child(obj)
 				ParameterService.setParam(&"activeObjects",before)
 				MeshEditService.setEditing(before)
 				SelectService.selectionUpdated.emit()
-				SelectService.objectsSelected.emit(before)
+				SelectService.objectsSelected.emit.call_deferred(before)
 		)
 		UndoRedoService.commitAction(true)
-		
 		var f:Callable
 		f=func(_event:InputEvent):
 			GUIService.getByName("PrimaryViewport").reference.get_child(0).get_child(0)._input(_event)

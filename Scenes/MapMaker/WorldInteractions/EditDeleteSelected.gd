@@ -1,9 +1,6 @@
 extends EditInteractionBase
 
 
-func _check_valid(_event:InputEvent)->bool:
-	return MeshEditService.interactionMode!=MeshEditService.InteractionModes.MAX
-
 func _handle_keyboard_input(_event: InputEventKey) -> bool:
 	if not InputService.pressed(&"Delete",true):return false
 	var activeObjs=ParameterService.getParam(&"activeObjects")

@@ -274,10 +274,9 @@ func selectMatchingOnNewMesh(_v=null)->void:
 	var prevOld=oldObjs
 	oldObjs=[] if not _v is Array else _v.duplicate()
 	if not MeshEditService.isEditing():return
-	var newObjs=oldObjs.filter(func(v):return not prevOld.has(v))
+	var newObjs=oldObjs.filter(func(v):return not prevOld.has(v) and v.objectType==ObjectModel.objectTypes.MESH)
 	if newObjs.size()==0:return
 	
-	UndoRedoService.startAction(&"SelectObject",UndoRedo.MERGE_ALL)
 	for point in len(renderPoints):
 		var ref=renderPoints.values()[point]
 		if ref.any(func(r):
@@ -296,7 +295,14 @@ func selectMatchingOnNewMesh(_v=null)->void:
 				elif r is objectMeshModel.cleanedEdge:MeshEditService.editing.select(r.edges[0].cleaned)
 				elif r is objectMeshModel.cleanedFace:MeshEditService.editing.select(r.faces[0].cleaned)
 				else:MeshEditService.editing.select(r)
+	#if changes to non-clean faces are 0, we dont want to create a pointless action
 	var changes = MeshEditService.editing.updateSelectionTracked(true)
+	var all=0
+	for i in 3:
+		all+=changes[&"added"][i].size()
+		all+=changes[&"removed"][i].size()
+	if all==0:return
+	UndoRedoService.startAction(&"SelectObject",UndoRedo.MERGE_ALL)
 	UndoRedoService.addDo(func():
 		var newEdit=MeshEditService.getEditing()
 		for i in 6:for selectable in changes[&"added"][i]:newEdit.select(selectable,false)

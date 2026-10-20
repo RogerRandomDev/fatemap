@@ -291,9 +291,8 @@ class editingMesh extends Resource:
 			for face in  hitFace:selectFace(face,keep)
 		return hitFace
 	
-	func translateSelection(translateBy:Vector3,local:bool=true,mergeMove:bool=false)->void:
+	func translateSelection(translateBy:Vector3,_local:bool=true,mergeMove:bool=false)->void:
 		if selectedVertices.size()==0 or translateBy.is_zero_approx():return
-		UndoRedoService.startAction(&"TranslateMeshPoints",UndoRedo.MERGE_ENDS if mergeMove else UndoRedo.MERGE_DISABLE)
 		var selectedPositionIDs={}
 		var editingMeshPositionIDs={}
 		var editingMeshPositionIDsInitial={}
@@ -319,6 +318,7 @@ class editingMesh extends Resource:
 			meshOwnerOrigins[mesh]=mesh.ownerInstance.global_position
 			meshInternalTransforms[mesh]=mesh.globalTransform
 		if translateBy.is_zero_approx():return
+		UndoRedoService.startAction(&"TranslateMeshPoints",UndoRedo.MERGE_ENDS if mergeMove else UndoRedo.MERGE_DISABLE)
 		UndoRedoService.addMethods((func():
 			for mesh in selectedPositionIDs.keys():
 				mesh.positionIDs=editingMeshPositionIDs[mesh].duplicate()
