@@ -1,9 +1,11 @@
 extends Node
 
-
+var tooltipBounds:Label
+var tooltipPosition:Label
+var tooltipBox:PanelContainer
 func _ready() -> void:
 	await get_tree().process_frame
-	var tooltipBox := GUIService.insertElement(
+	tooltipBox = GUIService.insertElement(
 		GUIService.createElement(
 			PanelContainer.new(),
 			&"EditingTooltipBox",
@@ -28,7 +30,7 @@ func _ready() -> void:
 		)
 	)
 	
-	var tooltipBounds := GUIService.insertElement(
+	tooltipBounds = GUIService.insertElement(
 		GUIService.createElement(
 			Label.new(),
 			&"EditingTooltipBoundingBox",
@@ -37,7 +39,7 @@ func _ready() -> void:
 		)
 	).reference as Label
 	tooltipBounds.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
-	var tooltipPosition := GUIService.insertElement(
+	tooltipPosition = GUIService.insertElement(
 		GUIService.createElement(
 			Label.new(),
 			&"EditingTooltipPosition",
@@ -49,17 +51,29 @@ func _ready() -> void:
 	
 	
 	SelectService.selectionUpdated.connect(func():
+		if InputService.pressed(&"CreateMesh"):return
 		var obj = ParameterService.getParam(&"activeObjects")
 		if obj.size()==0:
 			tooltipBounds.text=""
 			return
-		var bounds:AABB=AABB()
+		var bounds:AABB=obj[0].getBounds()
 		for item in obj:
 			bounds=bounds.merge(item.getBounds())
 		tooltipBounds.text=str(bounds.size.snappedf(0.01))
 		tooltipPosition.text=str(bounds.get_center().snappedf(0.01))
 		
 		)
-	
-	
-	
+
+func _input(event: InputEvent) -> void:
+	if InputService.pressed(&"CreateMesh"):
+		tooltipBox.visible=true
+		var pcontrol=ParameterService.getParam(&"MeshCreateControl")
+		var aabb=AABB(
+			pcontrol.highlight.global_position,
+			pcontrol.editSizeFinal
+			)
+		if not aabb.size.is_finite():
+			tooltipBox.visible=false
+			return
+		tooltipBounds.text=str(aabb.size.snappedf(0.01))
+		tooltipPosition.text=str(aabb.position.snappedf(0.01))

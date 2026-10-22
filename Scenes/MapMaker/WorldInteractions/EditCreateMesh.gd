@@ -3,6 +3,7 @@ class_name EditCreateMesh
 
 var editOrigin:Vector3=Vector3.INF
 var editEnd:Vector3=Vector3.INF
+var editSizeFinal:Vector3=Vector3.INF
 
 var marker:Marker3D
 var  highlight:MeshInstance3D=MeshInstance3D.new()
@@ -15,6 +16,7 @@ func _ready()->void:
 	highlight.material_override=load("res://debugMaterial.tres")
 	highlightOutline.mesh=ArrayMesh.new()
 	SelectService.objectsSelected.connect(disableCreation)
+	ParameterService.setParam(&"MeshCreateControl",self)
 
 func disableCreation(_arr)->void:
 	await get_tree().process_frame
@@ -45,6 +47,7 @@ func _handle_mouse_click(_event: InputEventMouseButton) -> bool:
 			if highlight.visible:finalizeMesh()
 			editOrigin=Vector3.INF
 			editEnd=Vector3.INF
+			editSizeFinal=Vector3.INF
 		if not highlight.visible:return false
 	return true
 
@@ -86,16 +89,18 @@ func updateExampleMesh()->void:
 			highlight.mesh.size.x=editSize.x
 			highlight.mesh.size.y=editSize.y
 			highlight.mesh.size.z=editSize.z
+			editSizeFinal=editSize
 		"SphereMesh":
 			var scaleAxis=editSize
 			if highlight.mesh.get_meta("KeepEqual",false):
 				var scaleMax=max(scaleAxis.x,max(scaleAxis.y,scaleAxis.z))
 				scaleAxis=Vector3(scaleMax,scaleMax,scaleMax)
 			highlight.scale=scaleAxis
+			editSizeFinal=scaleAxis
 		"ArrayMesh":
 			var scaleAxis=editSize
 			highlight.scale=scaleAxis
-	
+			editSizeFinal=scaleAxis
 	highlight.global_position=(
 		editOrigin-(editOrigin-editEnd)*0.5
 		)
