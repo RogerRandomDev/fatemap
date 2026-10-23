@@ -17,10 +17,17 @@ func _ready() -> void:
 		func(value):
 		var updateFaces=MeshEditService.editing.selectedFaces
 		if updateFaces.size()==0:MeshEditService.editing.meshes.map(func(m):if m!=null:updateFaces.append_array(m.faces))
-		for face in updateFaces:
-			face.uvScale.x=value
+		UndoRedoService.startAction(&"ScaleUVs",UndoRedo.MERGE_ENDS)
+		UndoRedoService.addUndo(func():SelectService.selectionUpdated.emit())
 		for mesh in MeshEditService.editing.meshes:
-			if mesh!=null:mesh.rebuild()
+			UndoRedoService.addUndo(mesh.rebuild)
+		for face in updateFaces:
+			UndoRedoService.addDoProperty(face,&"uvScale",Vector2(value,face.uvScale.y))
+			UndoRedoService.addUndoProperty(face,&"uvScale",face.uvScale)
+		for mesh in MeshEditService.editing.meshes:
+			UndoRedoService.addDo(mesh.rebuild)
+		UndoRedoService.addDo(func():SelectService.selectionUpdated.emit())
+		UndoRedoService.commitAction(true)
 	)
 	uvScaleX.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	var uvScaleY:SpinBox=createSpinBox(
@@ -31,10 +38,17 @@ func _ready() -> void:
 		func(value):
 		var updateFaces=MeshEditService.editing.selectedFaces
 		if updateFaces.size()==0:MeshEditService.editing.meshes.map(func(m):if m!=null:updateFaces.append_array(m.faces))
-		for face in updateFaces:
-			face.uvScale.y=value
+		UndoRedoService.startAction(&"ScaleUVs",UndoRedo.MERGE_ENDS)
+		UndoRedoService.addUndo(func():SelectService.selectionUpdated.emit())
 		for mesh in MeshEditService.editing.meshes:
-			if mesh!=null:mesh.rebuild()
+			UndoRedoService.addUndo(mesh.rebuild)
+		for face in updateFaces:
+			UndoRedoService.addDoProperty(face,&"uvScale",Vector2(face.uvScale.x,value))
+			UndoRedoService.addUndoProperty(face,&"uvScale",face.uvScale)
+		for mesh in MeshEditService.editing.meshes:
+			UndoRedoService.addDo(mesh.rebuild)
+		UndoRedoService.addDo(func():SelectService.selectionUpdated.emit())
+		UndoRedoService.commitAction(true)
 	)
 	uvScaleY.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	var uvOffsetX:SpinBox=createSpinBox(
@@ -45,10 +59,17 @@ func _ready() -> void:
 		func(value):
 		var updateFaces=MeshEditService.editing.selectedFaces
 		if updateFaces.size()==0:MeshEditService.editing.meshes.map(func(m):if m!=null:updateFaces.append_array(m.faces))
-		for face in updateFaces:
-			face.uvOffset.x=value
+		UndoRedoService.startAction(&"OffsetUVs",UndoRedo.MERGE_ENDS)
+		UndoRedoService.addUndo(func():SelectService.selectionUpdated.emit())
 		for mesh in MeshEditService.editing.meshes:
-			if mesh!=null:mesh.rebuild()
+			UndoRedoService.addUndo(mesh.rebuild)
+		for face in updateFaces:
+			UndoRedoService.addDoProperty(face,&"uvOffset",Vector2(value,face.uvOffset.y))
+			UndoRedoService.addUndoProperty(face,&"uvOffset",face.uvOffset)
+		for mesh in MeshEditService.editing.meshes:
+			UndoRedoService.addDo(mesh.rebuild)
+		UndoRedoService.addDo(func():SelectService.selectionUpdated.emit())
+		UndoRedoService.commitAction(true)
 	)
 	uvOffsetX.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	var uvOffsetY:SpinBox=createSpinBox(
@@ -59,10 +80,17 @@ func _ready() -> void:
 		func(value):
 		var updateFaces=MeshEditService.editing.selectedFaces
 		if updateFaces.size()==0:MeshEditService.editing.meshes.map(func(m):if m!=null:updateFaces.append_array(m.faces))
-		for face in updateFaces:
-			face.uvOffset.y=value
+		UndoRedoService.startAction(&"OffsetUVs",UndoRedo.MERGE_ENDS)
+		UndoRedoService.addUndo(func():SelectService.selectionUpdated.emit())
 		for mesh in MeshEditService.editing.meshes:
-			if mesh!=null:mesh.rebuild()
+			UndoRedoService.addUndo(mesh.rebuild)
+		for face in updateFaces:
+			UndoRedoService.addDoProperty(face,&"uvOffset",Vector2(face.uvOffset.x,value))
+			UndoRedoService.addUndoProperty(face,&"uvOffset",face.uvOffset)
+		for mesh in MeshEditService.editing.meshes:
+			UndoRedoService.addDo(mesh.rebuild)
+		UndoRedoService.addDo(func():SelectService.selectionUpdated.emit())
+		UndoRedoService.commitAction(true)
 	)
 	uvOffsetY.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	var uvRotation:SpinBox=createSpinBox(
@@ -71,12 +99,19 @@ func _ready() -> void:
 		0.001,
 		&"Rotation",
 		func(value):
-		var updateFaces=MeshEditService.editing.selectedFaces
+		var updateFaces=MeshEditService.editing.selectedFaces.duplicate()
 		if updateFaces.size()==0:MeshEditService.editing.meshes.map(func(m):if m!=null:updateFaces.append_array(m.faces))
-		for face in updateFaces:
-			face.uvRotation=value/180 * PI
+		UndoRedoService.startAction(&"RotateUVs",UndoRedo.MERGE_ENDS)
+		UndoRedoService.addUndo(func():SelectService.selectionUpdated.emit())
 		for mesh in MeshEditService.editing.meshes:
-			if mesh!=null:mesh.rebuild()
+			UndoRedoService.addUndo(mesh.rebuild)
+		for face in updateFaces:
+			UndoRedoService.addDoProperty(face,&"uvRotation",(value/180)*PI)
+			UndoRedoService.addUndoProperty(face,&"uvRotation",face.uvRotation)
+		for mesh in MeshEditService.editing.meshes:
+			UndoRedoService.addDo(mesh.rebuild)
+		UndoRedoService.addDo(func():SelectService.selectionUpdated.emit())
+		UndoRedoService.commitAction(true)
 	)
 	uvRotation.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	
