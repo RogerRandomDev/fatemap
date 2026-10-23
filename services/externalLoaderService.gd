@@ -7,6 +7,9 @@ const extensionsForType:Dictionary={
 	"Material":["material"]
 }
 
+static var alreadyLoaded:Dictionary={}
+
+
 static func getExternalFileType(filePath:String):
 	var fileName=filePath.rsplit("/")[-1]
 	var fileType=fileName.split(".",true,1)[-1]
@@ -22,7 +25,8 @@ static func loadExternalFile(filePath:String,overrideType:String="")->Variant:
 	
 	var fileLoadType=getExternalFileType(filePath)
 	if not overrideType.is_empty():fileLoadType=overrideType
-	
+	if alreadyLoaded.has(filePath):
+		return alreadyLoaded[filePath]
 	match fileLoadType:
 		"PackedScene":
 			var packed:PackedScene=PackedScene.new()
@@ -39,14 +43,18 @@ static func loadExternalFile(filePath:String,overrideType:String="")->Variant:
 					FBXState.new())
 				document.append_from_file(filePath,state)
 				sceneToPack=document.generate_scene(state)
-			
 			packed.pack(sceneToPack)
+			alreadyLoaded[filePath]=packed
 			return packed
 		"Image":
-			var imageTexture=ImageTexture.create_from_image(Image.load_from_file(filePath))
+			var img=Image.load_from_file(filePath)
+			img.compress(Image.COMPRESS_S3TC)
+			var imageTexture=ImageTexture.create_from_image(img)
+			alreadyLoaded[filePath]=imageTexture
 			return imageTexture
 		"Material":
 			var externalMaterial:Material=ResourceLoader.load(filePath,"Material")
+			alreadyLoaded[filePath]=externalMaterial
 			return externalMaterial
 		
 	return null

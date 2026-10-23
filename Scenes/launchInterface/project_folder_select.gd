@@ -58,6 +58,7 @@ func _ready() -> void:
 			ProjectSettings.set_setting("fatemap/project_directory",dir)
 			get_parent().launchData.set("projectDirectory",dir)
 			projectFolderChanged.emit()
+			externalLoader.alreadyLoaded.clear() #clear this because we changed and dont want old data kep
 	)
 	var target=get_parent().launchData.get("projectDirectory")
 	if target!=null:
