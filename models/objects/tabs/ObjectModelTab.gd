@@ -34,25 +34,11 @@ func clearObjectList()->void:
 		child.queue_free()
 
 func loadModelList()->void:
-	var meshOptionsList:Dictionary={}
-	var searchDirectory="%s/FateMap/Imported/Models/"%ProjectSettings.get_setting("fatemap/project_directory","res://")
-	var doc = GLTFDocument.new()
-	for s in DirAccess.get_files_at(searchDirectory):
-		var fileType=externalLoader.getExternalFileType(s)
-		if fileType!="PackedScene":continue
-		externalLoader.loadExternalFile(searchDirectory+s)
-		#on load fail load GLB directly
-		var state = GLTFState.new()
-		var error = doc.append_from_file(searchDirectory+s,state)
-		if error == OK:
-			var packed=PackedScene.new()
-			packed.pack(doc.generate_scene(state))
-			packed.resource_path="res://FateMap/Imported/Models/%s"%s
-			meshOptionsList[searchDirectory+s]=packed
+	var options=ModelService.models
 	
-	for mesh in meshOptionsList.keys():
+	for mesh in options.keys():
 		var objectOption = objectGridOption.instantiate()
-		objectOption.loadContext(meshOptionsList[mesh],mesh.split("/")[-1])
+		objectOption.loadContext(options[mesh],mesh.split("/")[-1])
 		objectOption.setIconSize(objectIconSize)
 		objectOption.updateSpacings(optionExtraBorder)
 		objectOption.gui_input.connect(optionEvent.bind(objectOption))

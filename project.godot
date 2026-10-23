@@ -27,6 +27,8 @@ SelectService="*uid://cq43fesgkb717"
 MeshEditService="*uid://0rrenok3wbs2"
 PhysicalObjectService="*uid://d2y1vp5vqsr1u"
 ParameterService="*uid://d0al6galxua8n"
+ModelService="*uid://c05r7jyymw252"
+ResourcesLoaderService="*uid://bnc464541qprp"
 
 [debug_draw_3d]
 

@@ -3,15 +3,11 @@ extends VBoxContainer
 
 @onready var mapViewport = $MapView
 
-func _enter_tree() -> void:ServiceInitializer.initializeAllServices()
-
 func _ready() -> void:
 	# we have a map we already selected so load it in
 	loadGUILayout()
 	
-	MaterialService.materialSource=ProjectSettings.get_setting("fatemap/project_directory","res:/")+"/FateMap/Imported/"
-	
-	MaterialService.loadAllFMT(MaterialService.materialSource+"Materials")
+	ResourcesLoaderService.loadProjectResources()
 	PhysicalObjectInputController.initializeInputController()
 	
 	await get_tree().process_frame

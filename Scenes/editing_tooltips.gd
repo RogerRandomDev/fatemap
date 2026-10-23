@@ -64,7 +64,7 @@ func _ready() -> void:
 		
 		)
 
-func _input(event: InputEvent) -> void:
+func _input(_event: InputEvent) -> void:
 	if InputService.pressed(&"CreateMesh"):
 		tooltipBox.visible=true
 		var pcontrol=ParameterService.getParam(&"MeshCreateControl")

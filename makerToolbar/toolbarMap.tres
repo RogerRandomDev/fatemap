@@ -4,7 +4,7 @@
 
 [resource]
 script = ExtResource("1_chr00")
-option_count = 5
+option_count = 6
 option_0/name = "Export as GLB"
 option_0/type = "default"
 option_0/script = "uid://oe3yn5sh1qlj"
@@ -35,4 +35,10 @@ option_4/script = "uid://oe3yn5sh1qlj"
 option_4/description = "View and change settings for the compiler."
 option_4/value = &"viewCompilerParams"
 option_4/param = ""
+option_5/name = "Return"
+option_5/type = "default"
+option_5/script = "uid://oe3yn5sh1qlj"
+option_5/description = "Return to the launch interface"
+option_5/value = &"returnToSelect"
+option_5/param = ""
 metadata/_custom_type_script = "uid://drds6tggj4lf8"

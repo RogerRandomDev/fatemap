@@ -68,3 +68,6 @@ func updateEditorSettings(value,editorSetting):
 
 func viewCompilerParams(_v=null):
 	GUIService.getByName(&"CompilerParamViewControl").reference.get_child(0).popup()
+
+func returnToSelect(_v=null):
+	GUIService.get_tree().change_scene_to_file("res://Scenes/launchInterface/LaunchInterface.tscn")

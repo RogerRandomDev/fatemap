@@ -12,8 +12,11 @@ static var hoveredObjects:
 	get:return ParameterService.getParam(&"hoveredObjects")
 	set(value):ParameterService.setParam(&"hoveredObjects",value)
 
+static var initialized:bool=false
 
 static func initializeInputController()->void:
+	if initialized:return
+	initialized=true
 	PhysicalObjectService.mouseEnteredObject.connect(onMouseEnterObject)
 	PhysicalObjectService.mouseExitedObject.connect(onMouseExitObject)
 	

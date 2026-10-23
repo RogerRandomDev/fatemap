@@ -33,10 +33,42 @@ func _gui_input(event: InputEvent) -> void:
 		#placeholder while i improve this gui.
 		if event.button_index==MOUSE_BUTTON_LEFT and event.is_released():
 			editMapSelected()
-
+		if event.button_index==MOUSE_BUTTON_RIGHT and event.is_released():
+			if fullPath.contains("/"):
+				get_tree().current_scene.get_node("MapOptionRightClickPopup").openFor(self)
 func editMapSelected()->void:
 	if fullPath.contains("/"):
 		ParameterService.setParam("loadedMapFile",fullPath)
 	get_tree().change_scene_to_file("res://Scenes/MapMaker.tscn")
-	
-	
+
+func beginRename()->void:
+	var editBox=LineEdit.new()
+	$VBoxContainer/Label.add_child(editBox)
+	$VBoxContainer/Label.self_modulate=Color(1,1,1,0)
+	editBox.text=$VBoxContainer/Label.text
+	editBox.alignment=HORIZONTAL_ALIGNMENT_CENTER
+	editBox.select()
+	editBox.size=$VBoxContainer/Label.size
+	editBox.global_position=$VBoxContainer/Label.global_position-Vector2(0,4)
+	editBox.focus_exited.connect(
+		func():
+			editBox.queue_free()
+			$VBoxContainer/Label.self_modulate=Color(1,1,1,1)
+			)
+	editBox.text_submitted.connect(
+		func(new_text:String):
+			editBox.focus_exited.emit.call_deferred()
+			if not new_text.is_valid_filename():return
+			var new_path=fullPath.rsplit("/",true,1)[0]+"/%s.fmpe"%new_text
+			$VBoxContainer/Label.text=new_text
+			$VBoxContainer.tooltip_text=new_text+".fmpe"
+			DirAccess.rename_absolute(fullPath,new_path)
+			fullPath=new_path
+			
+	)
+	editBox.editing_toggled.connect(
+		func(_is_editing):
+			if !_is_editing:
+				editBox.release_focus()
+	)
+	editBox.grab_focus()
