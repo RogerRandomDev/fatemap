@@ -19,6 +19,7 @@ func ExportMapCustom(_v=null)->void:
 	var worldChecked = t.current_scene.mapViewport
 	var filePath :String= await mapFileDialog.saveOrLoad(0,ParameterService.getParam("loadedMapFile"))
 	if filePath.is_empty():return
+	ParameterService.setParam("loadedMapFile",filePath)
 	var mapData = compilerService.compileMapData(worldChecked)
 	#temporary file
 	var f=FileAccess.open_compressed(filePath,FileAccess.WRITE,FileAccess.COMPRESSION_GZIP)
