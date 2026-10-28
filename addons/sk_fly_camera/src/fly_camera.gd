@@ -185,7 +185,13 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	if not _mouse_hidden:
 		return
-
+	
+	#fixes issue from forcing camera to lookk somewhere
+	_yaw += _camera.rotation_degrees.y
+	_cam_pivot.rotation_degrees.y+=_camera.rotation_degrees.y
+	_camera.rotation_degrees.y=0
+	_pitch = _camera.rotation_degrees.x
+	
 	## Camera motion
 	if event is InputEventMouseMotion:
 		_yaw = fmod(_yaw - event.relative.x * mouse_sensitivity.x/10, 360)

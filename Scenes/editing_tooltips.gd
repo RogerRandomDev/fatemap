@@ -3,6 +3,7 @@ extends Node
 var tooltipBounds:Label
 var tooltipPosition:Label
 var tooltipBox:PanelContainer
+
 func _ready() -> void:
 	await get_tree().process_frame
 	tooltipBox = GUIService.insertElement(

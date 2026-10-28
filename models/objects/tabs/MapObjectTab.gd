@@ -4,6 +4,9 @@ class_name MapObjectTab
 var tree:Tree
 var childrenCreated:Dictionary={}
 
+
+
+
 func _ready() -> void:
 	buildView()
 	
