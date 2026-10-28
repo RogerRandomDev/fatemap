@@ -82,3 +82,7 @@ func _getChildBounds(a):
 	if a is MeshInstance3D:
 		b.push_back(a.get_aabb())
 	return b
+
+
+func _get_icon()->Texture2D:
+	return load("res://dataModelIcons/default.svg")

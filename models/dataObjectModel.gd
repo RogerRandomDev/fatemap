@@ -1,5 +1,7 @@
 extends ObjectModel
 
+var myIcon:Texture2D
+
 func _ready() -> void:
 	if objectData==null:return
 	objectType=objectTypes.DATA
@@ -38,7 +40,13 @@ func createViewIcon()->void:
 	iconSprite.texture=ImageTexture.create_from_image(img)
 	iconSprite.render_priority=127
 	iconSprite.billboard=BaseMaterial3D.BILLBOARD_ENABLED
-	
+	myIcon=iconSprite.texture
 	ParameterService.editorSettingChanged.connect(func():
 		iconSprite.visible=ParameterService.getParam(&"editorSettings").get("show_data_model_svg",true)
 		)
+
+
+func _get_icon()->Texture2D:
+	if myIcon!=null:
+		return myIcon
+	return load("res://dataModelIcons/default.svg")

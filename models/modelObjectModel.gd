@@ -19,3 +19,6 @@ func getCompiledData(compiler:compilerService.compilerMapData,full:bool=false)->
 	compiledData.set("Object",objectModelFile.to_ascii_buffer())
 	
 	return compiledData
+
+func _get_icon()->Texture2D:
+	return load("res://dataModelIcons/_basics/model.svg")

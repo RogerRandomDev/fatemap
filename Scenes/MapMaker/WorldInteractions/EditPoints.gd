@@ -215,7 +215,8 @@ func selectPointToChange(atPos:Vector2)->bool:
 	var newPoints:Array=[]
 	while pointIndex!=-1:
 		allIndices.push_back(pointIndex)
-		newPoints.append_array(renderPoints.values()[pointIndex])
+		newPoints.push_back(renderPoints.values()[pointIndex][0].cleaned)
+		#newPoints.append_array(renderPoints.values()[pointIndex])
 		pointIndex = sortDistance.find(sortedDistances[0],pointIndex+1)
 	if sortedDistances[0]>pointSize*pointSize:return false
 	var _previousSelected=MeshEditService.editing.selectedVertices.size()

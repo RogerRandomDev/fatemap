@@ -61,3 +61,7 @@ func transformed()->void:
 func paramChanged(param:StringName,value:Variant)->void:
 	set(param,value)
 	paramUpdated.emit()
+
+
+func _get_icon()->Texture2D:
+	return load("res://dataModelIcons/_basics/mesh.svg")

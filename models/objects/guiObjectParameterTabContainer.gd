@@ -4,7 +4,14 @@ class_name guiObjectParameterTabContainer
 
 
 func _ready() -> void:
+	clip_tabs=false
 	SelectService.objectsSelected.connect(selectedObjectChanged)
+	addTab(
+		&"Map",
+		MapObjectTab.new(),
+		null
+	)
+	
 	addTab(
 		&"Models",
 		ObjectModelTab.new(),

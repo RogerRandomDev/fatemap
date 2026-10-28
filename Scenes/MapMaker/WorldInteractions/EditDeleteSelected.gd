@@ -8,8 +8,13 @@ func _handle_keyboard_input(_event: InputEventKey) -> bool:
 	UndoRedoService.startAction(&"DeleteObject")
 	var current_objs=ParameterService.getParam(&"activeObjects").duplicate()
 	var end_objs=ParameterService.getParam(&"activeObjects").duplicate()
+	var indices:Dictionary={}
+	#sort prevents breaking with move_child()
+	current_objs.sort_custom(func(a,b):return a.get_index()>b.get_index())
 	for activeObj in current_objs:
-		var _holder = activeObj.get_parent()
+		var _holder = activeObj.get_parent() as Node3D
+		var obj_pos=activeObj.get_index()
+		indices[activeObj]=[_holder,obj_pos]
 		end_objs.erase(activeObj)
 		SelectService.deselect(activeObj)
 		_holder.remove_child(activeObj)
@@ -22,6 +27,10 @@ func _handle_keyboard_input(_event: InputEventKey) -> bool:
 			_holder.add_child(activeObj)
 			)
 		)
+	#move them to their original positions as well
+	for activeObj in current_objs:
+		UndoRedoService.addUndo(func():indices[activeObj][0].move_child(activeObj,indices[activeObj][1]))
+		
 	UndoRedoService.addMethods(
 		func():
 			ParameterService.setParam(&"activeObjects",end_objs)
@@ -29,6 +38,7 @@ func _handle_keyboard_input(_event: InputEventKey) -> bool:
 			SelectService.selectionUpdated.emit()
 			SelectService.objectsSelected.emit(end_objs),
 		func():
+			await get_tree().process_frame
 			ParameterService.setParam(&"activeObjects",current_objs)
 			MeshEditService.setEditing(current_objs)
 			SelectService.selectionUpdated.emit()

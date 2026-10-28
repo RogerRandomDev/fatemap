@@ -16,7 +16,7 @@ func _ready() -> void:
 	).reference
 	primaryVertical.set_anchors_preset(Control.PRESET_FULL_RECT)
 	primaryVertical.size_flags_horizontal=Control.SIZE_EXPAND_FILL
-	primaryVertical.size_flags_stretch_ratio=0.25
+	primaryVertical.size_flags_stretch_ratio=0.0
 	
 	var _parameterLister = GUIService.insertElement(
 		GUIService.createElement(
